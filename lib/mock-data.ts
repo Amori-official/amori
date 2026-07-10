@@ -120,7 +120,6 @@ export const mockProducts: Product[] = [
     slug: "spread",
     name: "SPREAD",
     nameKo: "스프레드",
-    description: "거즈 스프레드",
     price: 18000,
     imageUrl: "/products/24.png",
     images: [
