@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm ls *)",
+      "Bash(xargs sed -i '' 's/bg-brand-black text-white \\\\\\(.*\\\\\\)hover:bg-brand-gray-mid/bg-brand-fill text-brand-black \\\\1hover:bg-brand-fill-hover/g')",
+      "Bash(xargs sed -i '' 's/hover:bg-brand-black hover:text-white/hover:bg-brand-fill hover:text-brand-black/g')",
+      "Bash(xargs sed -i '' 's/bg-brand-black text-white/bg-brand-fill text-brand-black/g')",
+      "Bash(sed -i '' 's/className=\"bg-brand-black py-1 overflow-hidden\"/className=\"bg-brand-gray-light py-1 overflow-hidden border-y border-brand-border\"/' components/sections/section-marquee.tsx)",
+      "Bash(sed -i '' 's/className=\"h-full bg-brand-black transition-all/className=\"h-full bg-brand-gray-mid transition-all/' components/comp-cart-drawer.tsx)",
+      "Bash(sed -i '' 's/i === current ? \"bg-brand-black\" : \"bg-brand-border\"/i === current ? \"bg-brand-gray-mid\" : \"bg-brand-border\"/' components/comp-product-gallery.tsx)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(lsof -ti:3000,3001)",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(screencapture -x /tmp/amori-home.png)",
+      "Bash(open -a \"Google Chrome\" \"http://localhost:3001\")",
+      "Bash(python3 *)",
+      "WebFetch(domain:smartstore.naver.com)",
+      "Bash(npx tsc *)",
+      "WebFetch(domain:earthstore.kr)",
+      "Skill(run)"
+    ]
+  }
+}
