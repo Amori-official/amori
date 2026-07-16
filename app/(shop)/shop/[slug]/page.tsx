@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getProductBySlug, getProductReviews } from "@/app/actions/products";
 import CompProductGallery from "@/components/comp-product-gallery";
 import CompProductInfo from "@/components/comp-product-info";
@@ -14,6 +15,9 @@ interface Props {
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://amori.kr";
+
+const KC_CERT_LINE = "· KC 안전 인증 완료 (어린이제품 공통안전기준)";
+const KC_CERT_NUMBER = "CB014H2463-6001";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
@@ -120,7 +124,19 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
               {product.material && (
                 <div className="flex flex-col gap-3">
                   <p className="text-[12px] tracking-widest text-brand-black">소재 정보</p>
-                  <p className="text-xs text-brand-gray-mid tracking-wide leading-7 whitespace-pre-line">{product.material}</p>
+                  <p className="text-xs text-brand-gray-mid tracking-wide leading-7 whitespace-pre-line">
+                    {product.material.includes(KC_CERT_LINE)
+                      ? product.material.replace(KC_CERT_LINE, "").trimEnd()
+                      : product.material}
+                  </p>
+                  {product.material.includes(KC_CERT_LINE) && (
+                    <div className="flex items-center gap-2">
+                      <Image src="/kc-mark.png" alt="KC 인증마크" width={20} height={20} className="shrink-0" />
+                      <span className="text-xs text-brand-gray-mid tracking-wide leading-7">
+                        KC 안전 인증 완료 (어린이제품 공통안전기준) · 인증번호 {KC_CERT_NUMBER}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
               {product.sizeGuide && (
