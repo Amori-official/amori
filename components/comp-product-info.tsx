@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
@@ -11,13 +11,22 @@ import type { Product } from "@/lib/types";
 interface Props {
   product: Product;
   initialColor?: string;
+  /** 상품명 아래에 노출할 한 줄 소개 */
+  tagline?: string;
+  /** 선택 컬러가 바뀔 때마다 호출 (갤러리 등 외부 컴포넌트와 동기화용) */
+  onColorChange?: (colorName: string) => void;
 }
 
-export default function CompProductInfo({ product, initialColor }: Props) {
+export default function CompProductInfo({ product, initialColor, tagline, onColorChange }: Props) {
   const [qty, setQty] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     initialColor ?? product.colors?.[0]?.name
   );
+
+  useEffect(() => {
+    if (selectedColor) onColorChange?.(selectedColor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedColor]);
   const { add } = useCartStore();
   const { setCartOpen, setAuthModalOpen, showToast } = useUIStore();
   const user = useAuthStore((s) => s.user);
@@ -60,6 +69,11 @@ export default function CompProductInfo({ product, initialColor }: Props) {
       <h1 className="text-2xl sm:text-3xl font-light tracking-[0.15em] text-brand-black uppercase">
         {product.name}
       </h1>
+
+      {/* 한 줄 소개 */}
+      {tagline && (
+        <p className="text-xs text-brand-gray-mid tracking-wide">{tagline}</p>
+      )}
 
       {/* 가격 */}
       <p className="text-xl tracking-wide">

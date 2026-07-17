@@ -8,23 +8,24 @@ export const mockProducts: Product[] = [
     nameKo: "거즈 빕",
     description:
       "국내산 면 100% 6겹 거즈로 만든 턱받이입니다. 겹겹이 쌓인 거즈 특유의 입체감이 흡수력과 부드러움을 동시에 갖추고 있어, 먹이고 닦고 받아내는 매일의 순간을 조금 더 편안하게 만들어줍니다. 신생아부터 사용할 수 있는 프리 사이즈로, 넉넉한 크기 덕분에 이유식 시기에도 유용하게 쓰입니다.",
+    tagline: "SMALL THINGS GAUZE BIB · 매일 닿는 아기 피부를 위한 6겹 거즈 턱받이 · ₩16,000",
     price: 16000,
-    imageUrl: "/products/1.png",
+    // 대표 이미지는 기본 선택 컬러(Cream)의 단독 컷. 컬러 선택 시 colors[].image로 대체됨
+    imageUrl: "/products/턱받이9.png",
+    // TODO: 아기 착용 정면/옆면 사진 없음 — 촬영 후 배열 2번째 자리에 추가 (현재는 전체컬러·디테일만 포함)
     images: [
-      "/products/2.png",
-      "/products/5.png",
-      "/products/3.png",
-      "/products/4.png",
+      "/products/턱받이1.png",
+      "/products/턱받이3.png",
     ],
     // TODO: Blush/Royal Blue/Yellow 컬러칩 hex는 실제 원단 색상 대조 후 조정 필요 (근사치로 반영됨)
     colors: [
-      { name: "Cream", hex: "#EFE4D4" },
-      { name: "Mint", hex: "#A8C4B4" },
-      { name: "Rose Pink", hex: "#CE9096" },
-      { name: "Blush", hex: "#E8C9C2" },
-      { name: "Yellow Green", hex: "#CDD678" },
-      { name: "Royal Blue", hex: "#4A5FA5" },
-      { name: "Yellow", hex: "#EAD98A" },
+      { name: "Cream", hex: "#EFE4D4", image: "/products/턱받이9.png" },
+      { name: "Mint", hex: "#A8C4B4", image: "/products/턱받이6.png" },
+      { name: "Rose Pink", hex: "#CE9096", image: "/products/턱받이11.png" },
+      { name: "Blush", hex: "#E8C9C2", image: "/products/턱받이8.png" },
+      { name: "Yellow Green", hex: "#CDD678", image: "/products/턱받이7.png" },
+      { name: "Royal Blue", hex: "#4A5FA5", image: "/products/턱받이12.png" },
+      { name: "Yellow", hex: "#EAD98A", image: "/products/턱받이10.png" },
     ],
     category: "small-things",
     stock: 80,
@@ -35,26 +36,24 @@ export const mockProducts: Product[] = [
       "프리 사이즈 (신생아 ~ 36개월)\n\n· 가로 24cm × 세로 27.5cm\n· 신생아부터 36개월까지, 착용 가능 시기는 아이의 체형에 따라 달라질 수 있으니 구매 전 상세 사이즈를 확인해 주세요.\n· 이유식 시기(6개월~)에는 앞면 전체를 충분히 가려주어 옷이 젖는 것을 막아줍니다.",
     careInstructions:
       "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 불가 — 수축 및 변형의 원인이 됩니다\n· 그늘에서 자연 건조\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
+    detailIntro:
+      "매일 입히고 싶은, 부드러운 거즈빕\n\n하루에도 몇 번씩 갈아주는 아기 턱받이. 피부에는 부드럽고, 침과 음식물은 충분히 받아주면서 어떤 옷에도 자연스럽게 어울리는 빕을 만들고 싶었어요.\n\n아모리 거즈빕은 국내산 면 100% 거즈 원단을 사용해 가볍고 포근하게 완성했습니다. 넉넉한 앞면이 아기의 옷을 편안하게 감싸주어 수유부터 이유식 시기까지 매일 손이 가는 턱받이입니다.",
     features: [
       {
-        label: "6겹 거즈 구조",
-        body: "국내산 면 100% 3중 거즈 원단을 두 겹으로 사용해 총 6겹의 포근한 두께로 완성했습니다. 세탁할수록 섬유가 수축되어 더 촘촘하고 부드러운 질감으로 변합니다.",
+        label: "포근한 6겹 거즈",
+        body: "국내산 면 100% 3중 거즈 원단을 두 겹으로 사용해 부드러우면서도 충분한 흡수력을 갖췄습니다.",
       },
       {
-        label: "면 100% 국내산",
-        body: "화학 첨가물 없이 면 100%로 만들었습니다. 자극에 민감한 신생아 피부에도 안심하고 사용할 수 있습니다.",
+        label: "넉넉한 앞면",
+        body: "침과 음식물이 묻기 쉬운 목 아래와 가슴 부분을 편안하게 감싸도록 넉넉한 크기로 만들었습니다.",
       },
       {
-        label: "KC 안전 인증",
-        body: "어린이제품 안전기준 시험 완료 (인증번호: CB014H2463-6001)",
+        label: "편안한 착용감",
+        body: "가볍고 통기성이 좋은 거즈 소재로 계절에 관계없이 편안하게 착용할 수 있습니다.",
       },
       {
-        label: "넉넉한 프리 사이즈",
-        body: "신생아부터 36개월까지, 착용 가능 시기는 아이의 체형에 따라 달라질 수 있으니 구매 전 상세 사이즈를 확인해 주세요.",
-      },
-      {
-        label: "스냅 단추 고정",
-        body: "매듭이나 벨크로 없이 스냅 단추로 간편하게 착탈할 수 있습니다.",
+        label: "KC 안전기준 확인",
+        body: "아기 피부에 직접 닿는 제품인 만큼 어린이제품 안전기준에 따른 시험을 완료했습니다. (인증번호: CB014H2463-6001)",
       },
     ],
     brandStory:

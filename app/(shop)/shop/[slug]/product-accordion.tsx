@@ -10,7 +10,7 @@ interface AccordionItemProps {
   defaultOpen?: boolean;
 }
 
-function AccordionItem({ title, children, defaultOpen = false }: AccordionItemProps) {
+export function AccordionItem({ title, children, defaultOpen = false }: AccordionItemProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-b border-brand-border">
@@ -66,7 +66,7 @@ const CARE_ICONS: { icon: string; label: string }[] = [
   { icon: "◎", label: "약세탁" },
 ];
 
-function CareIconRow() {
+export function CareIconRow() {
   return (
     <div className="flex gap-6 pb-3">
       {CARE_ICONS.map(({ icon, label }) => (

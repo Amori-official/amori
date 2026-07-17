@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
-import { getProductBySlug, getProductReviews } from "@/app/actions/products";
+import { getProductBySlug, getProductReviews, getProducts } from "@/app/actions/products";
 import CompProductGallery from "@/components/comp-product-gallery";
 import CompProductInfo from "@/components/comp-product-info";
 import ProductReviews from "./product-reviews";
+import GauzeBibDetail from "./gauze-bib-detail";
+import GauzeBibSections from "./gauze-bib-sections";
 
 // 30초마다 재검증
 export const revalidate = 30;
@@ -42,16 +44,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProductDetailPage({ params, searchParams }: Props) {
-  const [product, reviews] = await Promise.all([
-    getProductBySlug(params.slug),
-    getProductReviews(params.slug),
-  ]);
+  const product = await getProductBySlug(params.slug);
 
   if (!product) notFound();
 
-  const productReviews = reviews.filter(
-    (r) => r.productId === product.id || r.productId === params.slug
-  );
+  const productReviews = await getProductReviews(product.id);
+
+  const relatedProducts =
+    product.slug === "gauze-bib"
+      ? (await getProducts()).filter((p) => p.id !== product.id).slice(0, 3)
+      : [];
 
   // Product JSON-LD 구조화 데이터
   const jsonLd = {
@@ -98,12 +100,19 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
         </nav>
 
         {/* ── 1. 갤러리 + 구매 패널 ── */}
-        <section className="px-4 sm:px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
-          <CompProductGallery product={product} />
-          <CompProductInfo product={product} initialColor={searchParams.color} />
-        </section>
+        {product.slug === "gauze-bib" ? (
+          <GauzeBibDetail product={product} initialColor={searchParams.color} />
+        ) : (
+          <section className="px-4 sm:px-8 lg:px-16 grid grid-cols-1 lg:grid-cols-2 gap-8 pb-20">
+            <CompProductGallery product={product} />
+            <CompProductInfo product={product} initialColor={searchParams.color} />
+          </section>
+        )}
 
         {/* ── 2·5·3·4. 통합 상세 블록 ── */}
+        {product.slug === "gauze-bib" ? (
+          <GauzeBibSections product={product} reviews={productReviews} relatedProducts={relatedProducts} />
+        ) : (
         <div className="border-t border-brand-border bg-brand-gray-light">
 
           {/* 2. MORE INFORMATION */}
@@ -185,14 +194,17 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
           )}
 
         </div>
+        )}
 
         {/* ── 6. 리뷰 ── */}
-        <section
-          id="product-reviews"
-          className="border-t border-brand-border px-4 sm:px-8 lg:px-16 py-16"
-        >
-          <ProductReviews reviews={productReviews} productId={product.id} />
-        </section>
+        {product.slug !== "gauze-bib" && (
+          <section
+            id="product-reviews"
+            className="border-t border-brand-border px-4 sm:px-8 lg:px-16 py-16"
+          >
+            <ProductReviews reviews={productReviews} productId={product.id} />
+          </section>
+        )}
 
       </div>
     </>

@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
 
 interface Props {
   product: Product;
+  /** 대표 이미지를 덮어쓸 때 사용 (예: 선택된 컬러의 단독 컷) */
+  primaryImage?: string;
+  primaryImageAlt?: string;
+  /** product.images와 같은 순서의 alt 텍스트 */
+  imageAlts?: string[];
 }
 
-export default function CompProductGallery({ product }: Props) {
+export default function CompProductGallery({ product, primaryImage, primaryImageAlt, imageAlts }: Props) {
+  const resolvedPrimary = primaryImage ?? product.imageUrl ?? undefined;
   const allImages = [
-    ...(product.imageUrl ? [product.imageUrl] : []),
+    ...(resolvedPrimary ? [resolvedPrimary] : []),
     ...product.images,
+  ];
+  const allAlts = [
+    ...(resolvedPrimary ? [primaryImageAlt ?? product.name] : []),
+    ...product.images.map((_, i) => imageAlts?.[i] ?? `${product.name} ${i + 2}`),
   ];
   const hasImages = allImages.length > 0;
   const [current, setCurrent] = useState(0);
+
+  // 선택 컬러가 바뀌어 대표 이미지가 교체되면 첫 장으로 되돌림
+  useEffect(() => {
+    setCurrent(0);
+  }, [primaryImage]);
 
   return (
     <div id="product-gallery" className="flex flex-col gap-3 lg:sticky lg:top-[60px]">
@@ -23,7 +38,7 @@ export default function CompProductGallery({ product }: Props) {
         {hasImages ? (
           <Image
             src={allImages[current]}
-            alt={product.name}
+            alt={allAlts[current]}
             fill
             className="object-cover object-bottom"
             priority
@@ -66,7 +81,7 @@ export default function CompProductGallery({ product }: Props) {
                 i === current ? "border-brand-black" : "border-transparent"
               }`}
             >
-              <Image src={img} alt={`${product.name} ${i + 1}`} fill className="object-cover" />
+              <Image src={img} alt={allAlts[i]} fill className="object-cover" />
             </button>
           ))}
         </div>

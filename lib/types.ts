@@ -1,6 +1,7 @@
 export interface ProductColor {
   name: string;
   hex: string;
+  image?: string;
 }
 
 export interface Product {
@@ -19,6 +20,8 @@ export interface Product {
   material?: string;
   sizeGuide?: string;
   careInstructions?: string;
+  detailIntro?: string;
+  tagline?: string;
   features?: { label: string; body: string }[];
   brandStory?: string;
   rating?: number;
