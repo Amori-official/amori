@@ -12,7 +12,7 @@ interface Item {
 const items: Item[] = [
   {
     label: "출고 안내",
-    body: "결제 완료 후 평균 2~5영업일 이내에 출고됩니다.",
+    body: "결제 완료 후 2~5영업일 이내 출고됩니다.",
   },
   {
     label: "배송비 안내",

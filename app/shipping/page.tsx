@@ -19,7 +19,7 @@ export default function ShippingPage() {
         <div className="flex flex-col gap-3">
           <p className="text-[12px] tracking-widest text-brand-black">배송 안내</p>
           <p className="text-sm text-brand-gray-mid tracking-wide leading-8 whitespace-pre-line">
-            {`· 평균 출고 기간: 결제 완료 후 2~5영업일\n· 기본 배송비: 3,000원\n· 무료배송: 50,000원 이상 구매 시\n· 제주·도서산간 지역: 추가 배송비 6,000원`}
+            {`· 결제 완료 후 2~5영업일 이내 출고됩니다.\n· 기본 배송비: 3,000원\n· 무료배송: 50,000원 이상 구매 시\n· 제주·도서산간 지역: 추가 배송비 6,000원`}
           </p>
         </div>
 
