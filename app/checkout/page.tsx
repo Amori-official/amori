@@ -10,7 +10,7 @@ import { useAuthStore } from "@/store/auth";
 import type { ShippingAddress } from "@/lib/types";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
-const FREE_SHIPPING = 30000;
+const FREE_SHIPPING = 50000;
 const SHIPPING_FEE = 3000;
 
 const EMPTY_ADDRESS: ShippingAddress = {

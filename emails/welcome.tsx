@@ -8,11 +8,11 @@ interface Props {
   couponCode?: string;
 }
 
-export function WelcomeEmail({ name = "고객", couponCode = "WELCOME10" }: Props) {
+export function WelcomeEmail({ name = "고객", couponCode = "WELCOME5" }: Props) {
   return (
     <Html lang="ko">
       <Head />
-      <Preview>AMORI에 오신 것을 환영합니다 — 첫 주문 10% 할인 코드를 드립니다</Preview>
+      <Preview>AMORI에 오신 것을 환영합니다 — 첫 주문 5% 할인 코드를 드립니다</Preview>
       <Body style={body}>
         <Container style={container}>
           {/* 로고 */}
@@ -38,7 +38,7 @@ export function WelcomeEmail({ name = "고객", couponCode = "WELCOME10" }: Prop
               <Text style={couponCode_}>
                 {couponCode}
               </Text>
-              <Text style={couponDesc}>결제 시 적용 · 10% 할인 · 1회 사용</Text>
+              <Text style={couponDesc}>결제 시 적용 · 5% 할인 · 1회 사용</Text>
             </Section>
 
             <Link href="https://amori.kr/shop" style={cta}>

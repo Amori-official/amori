@@ -11,11 +11,10 @@ import { useAuthStore } from "@/store/auth";
 import { signOut } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
 
+// TODO: ABOUT, LOOKBOOK 콘텐츠 준비되면 메뉴에 복원 (라우트/컴포넌트는 유지됨: app/about, app/lookbook)
 const navLinks = [
   { href: "/", label: "HOME" },
-  { href: "/about", label: "ABOUT" },
   { href: "/shop", label: "SHOP" },
-  { href: "/lookbook", label: "LOOKBOOK" },
   { href: "/faq", label: "FAQ" },
   { href: "/care", label: "CARE" },
 ];

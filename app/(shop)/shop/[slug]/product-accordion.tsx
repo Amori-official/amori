@@ -105,7 +105,7 @@ export default function ProductAccordion({ material, sizeGuide, careInstructions
         </AccordionItem>
       )}
       <AccordionItem title="배송 안내">
-        {`· 평일 오전 11시 이전 주문 시 당일 출고\n· 배송 기간: 1–3 영업일 (도서산간 제외)\n· 30,000원 이상 무료배송`}
+        {`· 평균 출고 기간: 결제 완료 후 2~5영업일\n· 50,000원 이상 무료배송 (기본 배송비 3,000원)\n· 제주·도서산간 추가 배송비 6,000원`}
       </AccordionItem>
     </div>
   );

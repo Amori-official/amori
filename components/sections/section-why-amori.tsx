@@ -6,21 +6,16 @@ import { motion, useInView } from "framer-motion";
 const reasons = [
   {
     num: "01",
-    title: "KC CERTIFIED",
-    desc: "국내 KC 안전 인증 통과. 유해 물질 없는 소재만 사용합니다.",
+    title: "SAFETY TESTED",
+    desc: "어린이제품 안전기준에 따른 시험 완료. (인증번호: CB014H2463-6001)",
   },
   {
     num: "02",
-    title: "ORGANIC COTTON",
-    desc: "100% 오가닉 코튼. 농약·화학물질 없이 재배된 면을 사용합니다.",
-  },
-  {
-    num: "03",
     title: "MACHINE WASHABLE",
     desc: "세탁기 사용 가능한 내구성. 바쁜 육아 생활을 배려했습니다.",
   },
   {
-    num: "04",
+    num: "03",
     title: "GIFT WRAPPING",
     desc: "선물 포장 무료 제공. 소중한 아기를 위한 특별한 첫 선물에.",
   },
@@ -47,7 +42,7 @@ export default function SectionWhyAmori() {
         </motion.div>
 
         {/* 4열 그리드 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
           {reasons.map((r, i) => (
             <motion.div
               key={r.num}

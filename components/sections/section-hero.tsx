@@ -59,18 +59,13 @@ export default function SectionHero() {
               작은 것부터 천천히 만들어가겠습니다.
             </motion.p>
 
+            {/* TODO: LOOKBOOK 콘텐츠 준비되면 버튼 복원 */}
             <motion.div {...fadeUp(0.5)} className="flex">
               <Link
                 href="/shop"
                 className="bg-brand-fill text-brand-black px-8 py-3.5 text-[12px] tracking-widest hover:opacity-70 transition-opacity"
               >
                 SHOP NOW
-              </Link>
-              <Link
-                href="/lookbook"
-                className="border border-brand-border-soft text-brand-black px-8 py-3.5 text-[12px] tracking-widest hover:bg-brand-fill hover:text-brand-black transition-colors"
-              >
-                LOOKBOOK
               </Link>
             </motion.div>
           </div>

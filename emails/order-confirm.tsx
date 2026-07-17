@@ -76,7 +76,7 @@ export function OrderConfirmEmail({
             </Link>
 
             <Text style={small}>
-              평일 오전 11시 이전 주문은 당일 출고되며, 배송 기간은 1–3 영업일입니다.
+              결제 완료 후 2~5영업일 이내 출고됩니다. (50,000원 이상 무료배송, 제주·도서산간 추가 배송비 6,000원)
             </Text>
           </Section>
         </Container>

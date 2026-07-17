@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUIStore } from "@/store/ui";
 import { useCartStore, type CartItem } from "@/store/cart";
 
-const FREE_SHIPPING = 30000;
+const FREE_SHIPPING = 50000;
 
 export default function CompCartDrawer() {
   const [mounted, setMounted] = useState(false);

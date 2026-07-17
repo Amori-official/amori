@@ -157,7 +157,7 @@ export default function CompProductInfo({ product, initialColor }: Props) {
 
       {/* 무료배송 안내 */}
       <p className="text-[13px] text-brand-gray-mid tracking-wide">
-        30,000원 이상 무료배송 · 제주 / 도서산간 제외
+        50,000원 이상 무료배송 · 제주/도서산간 추가 배송비 6,000원
       </p>
     </div>
   );

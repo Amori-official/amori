@@ -37,18 +37,14 @@ export default function SectionBrandStory() {
         >
           <p className="text-sm text-brand-gray-mid tracking-wide leading-8">
             AMORI는 아기를 처음 맞이하는 부모의 설렘과 걱정을 함께합니다.
-            우리가 만드는 모든 패브릭은 KC 안전 인증을 통과한 소재만을 사용하며,
-            형광증백제·독성 염료 없이 제작됩니다.
+            아모리의 유아용 섬유제품은 어린이제품 안전기준에 따른 시험을 완료했습니다.
+            (인증번호: CB014H2463-6001)
           </p>
           <p className="text-sm text-brand-gray-mid tracking-wide leading-8">
-            부드럽고 흡수력이 뛰어난 오가닉 코튼으로 만든 AMORI의 제품들은
+            부드럽고 흡수력이 뛰어난 면 100% 소재로 만든 AMORI의 제품들은
             아기의 첫 번째 피부 접촉부터 매일의 생활까지 안전하게 함께합니다.
           </p>
-          <div className="border-t border-brand-border pt-6">
-            <p className="text-[12px] tracking-widest text-brand-gray-mid">
-              SINCE 2023 · SEOUL, KOREA
-            </p>
-          </div>
+          {/* TODO: 실제 창립 연도 확인 필요 — 확정 전까지 SINCE 문구 노출하지 않음 */}
         </motion.div>
       </div>
     </section>

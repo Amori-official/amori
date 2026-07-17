@@ -3,30 +3,14 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
-const reviews = [
-  {
-    stars: 5,
-    text: "정말 부드러워서 아기가 편안해하는 게 느껴져요. 세탁 후에도 전혀 변형이 없어서 정말 만족합니다.",
-    name: "KIM J.",
-    product: "Organic Swaddle",
-  },
-  {
-    stars: 5,
-    text: "KC 인증이라 믿고 구매했어요. 선물 포장도 너무 예쁘게 와서 출산 선물로 딱이에요.",
-    name: "PARK S.",
-    product: "Muslin Bodysuit",
-  },
-  {
-    stars: 5,
-    text: "첫 아이 선물로 받았는데 질감이 정말 고급스럽고 흡수력도 뛰어나서 매일 사용하고 있어요.",
-    name: "LEE H.",
-    product: "Terry Bath Towel",
-  },
-];
+// TODO: 실제 구매 후기 확보 후 채워넣기 (가상 후기 데이터 삭제됨)
+const reviews: { stars: number; text: string; name: string; product: string }[] = [];
 
 export default function SectionReviews() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  if (reviews.length === 0) return null;
 
   return (
     <section id="reviews" className="bg-brand-gray-light">

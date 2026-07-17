@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     template: "%s | AMORI",
   },
   description:
-    "오가닉 코튼, 메리노 울, 뱀부 소재로 만든 아기 패브릭 브랜드. 수유, 침구, 패션, 외출 카테고리.",
-  keywords: ["아기 패브릭", "오가닉 코튼", "유아 의류", "아기 침구", "AMORI"],
+    "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드. 어린이제품 안전기준 시험을 완료했습니다.",
+  keywords: ["아기 패브릭", "거즈", "유아 의류", "아기 침구", "AMORI"],
   authors: [{ name: "AMORI" }],
   openGraph: {
     type: "website",
@@ -32,13 +32,13 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "AMORI",
     title: "AMORI — 아기를 위한 패브릭 브랜드",
-    description: "오가닉 코튼, 메리노 울, 뱀부 소재로 만든 아기 패브릭 브랜드.",
+    description: "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드.",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "AMORI" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "AMORI — 아기를 위한 패브릭 브랜드",
-    description: "오가닉 코튼, 메리노 울, 뱀부 소재로 만든 아기 패브릭 브랜드.",
+    description: "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드.",
     images: ["/og-image.jpg"],
   },
   robots: { index: true, follow: true },
