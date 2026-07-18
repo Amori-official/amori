@@ -54,13 +54,18 @@ export default function GauzeBibSections({ product, reviews, relatedProducts }: 
         </section>
       )}
 
-      {/* 1. 제품을 만든 이유 (TODO: 착용 이미지 없음 — 촬영 후 좌측 이미지 + 우측 텍스트 2단 구성으로 전환) */}
+      {/* 1. 좌측 착용 이미지 + 우측 제품을 만든 이유 */}
       {product.brandStory && (
-        <section className="px-4 sm:px-8 lg:px-16 pb-16">
-          <p className={sectionTitle}>Our Story</p>
-          <p className="text-sm text-brand-gray-mid tracking-wide leading-9 max-w-2xl">
-            {product.brandStory}
-          </p>
+        <section className="px-4 sm:px-8 lg:px-16 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="relative aspect-[4/5] bg-brand-gray-light">
+            <Image src="/products/bib7.png" alt="아모리 거즈빕을 착용한 아이들" fill className="object-cover" />
+          </div>
+          <div className="flex flex-col gap-4">
+            <p className={sectionTitle + " mb-0"}>Our Story</p>
+            <p className="text-sm text-brand-gray-mid tracking-wide leading-9 max-w-2xl">
+              {product.brandStory}
+            </p>
+          </div>
         </section>
       )}
 
@@ -75,18 +80,29 @@ export default function GauzeBibSections({ product, reviews, relatedProducts }: 
                   {String(i + 1).padStart(2, "0")}
                 </p>
                 <p className="text-[12px] tracking-widest text-brand-black">{f.label}</p>
-                <p className="text-xs text-brand-gray-mid tracking-wide leading-7">{f.body}</p>
+                <p className="text-xs text-brand-gray-mid tracking-wide leading-7">
+                  {f.body.includes(KC_CERT_NUMBER) ? (
+                    <>
+                      {f.body.split(`(인증번호: ${KC_CERT_NUMBER})`)[0]}
+                      <span className="font-bold text-brand-black">
+                        (인증번호: {KC_CERT_NUMBER})
+                      </span>
+                    </>
+                  ) : (
+                    f.body
+                  )}
+                </p>
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {/* 4. 원단 확대 이미지 전체 폭 */}
+      {/* 3. 원단 확대 이미지 전체 폭 */}
       <section className="pb-16">
         <div className="relative w-full aspect-[16/9] lg:aspect-[21/9] bg-brand-gray-light">
           <Image
-            src="/products/턱받이4.png"
+            src="/products/bib4.png"
             alt="아모리 거즈빕 원단 확대"
             fill
             className="object-cover"
@@ -94,23 +110,26 @@ export default function GauzeBibSections({ product, reviews, relatedProducts }: 
         </div>
       </section>
 
-      {/* 5. 디테일 사진 (라벨/스냅) — TODO: 원단 단독 클로즈업 등 3번째 디테일 컷 추가 촬영 필요, 현재 2장만 배치 */}
+      {/* 4. 디테일 사진 3장 가로 배열 */}
       <section className="px-4 sm:px-8 lg:px-16 pb-16">
         <p className={sectionTitle}>Details</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="relative aspect-square bg-brand-gray-light">
-            <Image src="/products/턱받이2.png" alt="아모리 거즈빕 라벨 디테일" fill className="object-cover" />
+            <Image src="/products/bib3.png" alt="아모리 거즈빕 스냅 디테일" fill className="object-cover" />
           </div>
           <div className="relative aspect-square bg-brand-gray-light">
-            <Image src="/products/턱받이3.png" alt="아모리 거즈빕 목둘레 스냅 디테일" fill className="object-cover" />
+            <Image src="/products/bib6.png" alt="아모리 거즈빕 라벨 디테일" fill className="object-cover" />
+          </div>
+          <div className="relative aspect-square bg-brand-gray-light">
+            <Image src="/products/bib10.png" alt="아모리 거즈빕 원단 텍스처 디테일" fill className="object-cover" />
           </div>
         </div>
       </section>
 
-      {/* 6. 전체 컬러 이미지 + 컬러 설명 */}
+      {/* 5. 전체 컬러 이미지 + 컬러 설명 */}
       <section className="px-4 sm:px-8 lg:px-16 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div className="relative aspect-[4/5] bg-brand-gray-light">
-          <Image src="/products/턱받이5.png" alt="아모리 거즈빕 7가지 컬러" fill className="object-cover" />
+          <Image src="/products/bib1.png" alt="아모리 거즈빕 7가지 컬러" fill className="object-cover" />
         </div>
         <div className="flex flex-col gap-4">
           <p className={sectionTitle + " mb-0"}>7 Colors</p>
@@ -135,64 +154,20 @@ export default function GauzeBibSections({ product, reviews, relatedProducts }: 
         </div>
       </section>
 
-      {/* 7. 착용 정면·옆면 — TODO: 아기 착용 사진 없음, 촬영 후 노출 */}
-
-      {/* 8. 사이즈표 (TODO: 실측 이미지 없음 — 촬영 후 사이즈표 옆에 배치) */}
-      {product.sizeGuide && (
-        <section className="hidden lg:block px-4 sm:px-8 lg:px-16 pb-16">
-          <p className={sectionTitle}>Size</p>
-          <div className="max-w-xl border border-brand-border divide-y divide-brand-border text-sm">
-            <div className="flex justify-between px-5 py-3">
-              <span className="text-brand-gray-mid tracking-wide">사이즈</span>
-              <span>가로 24cm × 세로 27.5cm</span>
-            </div>
-            <div className="flex justify-between px-5 py-3">
-              <span className="text-brand-gray-mid tracking-wide">사용 연령</span>
-              <span>신생아 ~ 36개월</span>
-            </div>
-            <div className="px-5 py-3 text-xs text-brand-gray-mid tracking-wide leading-6">
-              착용 가능 시기는 아이의 체형에 따라 달라질 수 있으니 구매 전 상세 사이즈를 확인해 주세요.
-            </div>
+      {/* 6. 착용 정면·옆면 2장 */}
+      <section className="px-4 sm:px-8 lg:px-16 pb-16">
+        <p className={sectionTitle}>On the Baby</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="relative aspect-[4/5] bg-brand-gray-light">
+            <Image src="/products/bib8.png" alt="아모리 거즈빕 아기 착용 정면" fill className="object-cover" />
           </div>
-        </section>
-      )}
-
-      {/* 9. KC 정보표 */}
-      <section className="hidden lg:block px-4 sm:px-8 lg:px-16 pb-16">
-        <p className={sectionTitle}>Safety Certification</p>
-        <div className="max-w-xl border border-brand-border divide-y divide-brand-border text-sm">
-          <div className="flex items-center gap-3 px-5 py-4">
-            <Image src="/kc-mark.png" alt="KC 인증마크" width={28} height={28} />
-            <span className="text-xs text-brand-gray-mid tracking-wide">
-              어린이제품 안전기준에 따른 시험을 완료했습니다.
-            </span>
+          <div className="relative aspect-[4/5] bg-brand-gray-light">
+            <Image src="/products/bib9.png" alt="아모리 거즈빕 아기 착용 옆면" fill className="object-cover" />
           </div>
-          <div className="flex justify-between px-5 py-3">
-            <span className="text-brand-gray-mid tracking-wide">인증구분</span>
-            <span>어린이제품 공통안전기준(KC)</span>
-          </div>
-          <div className="flex justify-between px-5 py-3">
-            <span className="text-brand-gray-mid tracking-wide">인증번호</span>
-            <span>{KC_CERT_NUMBER}</span>
-          </div>
-          {/* TODO: 시험기관·발급일 등 세부 정보 확인 후 추가 */}
         </div>
       </section>
 
-      {/* 10. 세탁 방법 */}
-      {product.careInstructions && (
-        <section className="hidden lg:block px-4 sm:px-8 lg:px-16 pb-16">
-          <p className={sectionTitle}>Care</p>
-          <CareIconRow />
-          <p className="text-sm text-brand-gray-mid tracking-wide leading-8 whitespace-pre-line max-w-xl">
-            {product.careInstructions}
-          </p>
-        </section>
-      )}
-
-      {/* 11. 핸드메이드 및 원단 특성 — TODO: 확정된 카피(텍스트) 없음, 문구 확정 후 작성 (이미지 문제 아님) */}
-
-      {/* 12. 함께 사용하기 좋은 상품 */}
+      {/* 7. 함께 사용하기 좋은 상품 */}
       {relatedProducts.length > 0 && (
         <section className="px-4 sm:px-8 lg:px-16 pb-16">
           <p className={sectionTitle}>You May Also Like</p>
@@ -204,7 +179,7 @@ export default function GauzeBibSections({ product, reviews, relatedProducts }: 
         </section>
       )}
 
-      {/* 13. 리뷰 */}
+      {/* 8. 리뷰 — 실제 리뷰는 현재 스마트스토어에만 있어 API/자격증명 없이 가져올 수 없음. 확인 완료된 사이트 구매 리뷰가 쌓이면 자동으로 노출됨 */}
       <section id="product-reviews" className="border-t border-brand-border px-4 sm:px-8 lg:px-16 py-16">
         <ProductReviews reviews={reviews} productId={product.id} />
       </section>

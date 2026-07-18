@@ -13,11 +13,13 @@ interface Props {
   initialColor?: string;
   /** 상품명 아래에 노출할 한 줄 소개 */
   tagline?: string;
+  /** 한 줄 소개 바로 아래에 삽입할 콘텐츠 (예: SIZE/SAFETY/CARE 아코디언) */
+  belowTagline?: React.ReactNode;
   /** 선택 컬러가 바뀔 때마다 호출 (갤러리 등 외부 컴포넌트와 동기화용) */
   onColorChange?: (colorName: string) => void;
 }
 
-export default function CompProductInfo({ product, initialColor, tagline, onColorChange }: Props) {
+export default function CompProductInfo({ product, initialColor, tagline, belowTagline, onColorChange }: Props) {
   const [qty, setQty] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     initialColor ?? product.colors?.[0]?.name
@@ -74,6 +76,8 @@ export default function CompProductInfo({ product, initialColor, tagline, onColo
       {tagline && (
         <p className="text-xs text-brand-gray-mid tracking-wide">{tagline}</p>
       )}
+
+      {belowTagline}
 
       {/* 가격 */}
       <p className="text-xl tracking-wide">
