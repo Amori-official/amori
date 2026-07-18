@@ -61,8 +61,7 @@ function FeatureGrid({ features }: { features: Feature[] }) {
 
 const CARE_ICONS: { icon: string; label: string }[] = [
   { icon: "〜", label: "30°C 이하" },
-  { icon: "✕", label: "건조기 불가" },
-  { icon: "☀", label: "그늘 건조" },
+  { icon: "✕", label: "건조기 사용 자제" },
   { icon: "◎", label: "약세탁" },
 ];
 

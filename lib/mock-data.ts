@@ -23,8 +23,8 @@ export const mockProducts: Product[] = [
     colors: [
       { name: "Cream", hex: "#EFE4D4", image: "/products/bib-cream.png" },
       { name: "Mint", hex: "#A8C4B4", image: "/products/bib-mint.png" },
-      { name: "Rose Pink", hex: "#CE9096", image: "/products/bib-rose-pink.png" },
-      { name: "Blush", hex: "#E8C9C2", image: "/products/bib-blush.png" },
+      { name: "Rose Pink", hex: "#E8C9C2", image: "/products/bib-rose-pink.png" },
+      { name: "Blush", hex: "#CE9096", image: "/products/bib-blush.png" },
       { name: "Yellow Green", hex: "#CDD678", image: "/products/bib-yellow-green.png" },
       { name: "Royal Blue", hex: "#4A5FA5", image: "/products/bib-royal-blue.png" },
       { name: "Yellow", hex: "#EAD98A", image: "/products/bib-yellow.png" },
@@ -37,7 +37,7 @@ export const mockProducts: Product[] = [
     sizeGuide:
       "프리 사이즈 (신생아 ~ 36개월)\n\n· 가로 24cm × 세로 27.5cm\n· 신생아부터 36개월까지, 착용 가능 시기는 아이의 체형에 따라 달라질 수 있으니 구매 전 상세 사이즈를 확인해 주세요.\n· 이유식 시기(6개월~)에는 앞면 전체를 충분히 가려주어 옷이 젖는 것을 막아줍니다.",
     careInstructions:
-      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 불가 — 수축 및 변형의 원인이 됩니다\n· 그늘에서 자연 건조\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
+      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
     detailIntro:
       "매일 입히고 싶은, 부드러운 거즈빕\n\n하루에도 몇 번씩 갈아주는 아기 턱받이. 피부에는 부드럽고, 침과 음식물은 충분히 받아주면서 어떤 옷에도 자연스럽게 어울리는 빕을 만들고 싶었어요.\n\n아모리 거즈빕은 국내산 면 100% 거즈 원단을 사용해 가볍고 포근하게 완성했습니다. 넉넉한 앞면이 아기의 옷을 편안하게 감싸주어 수유부터 이유식 시기까지 매일 손이 가는 턱받이입니다.",
     features: [
@@ -92,7 +92,7 @@ export const mockProducts: Product[] = [
     sizeGuide:
       "프리 사이즈 (신생아 ~ 24개월)\n\n· 삼각 앞판 폭 약 38cm × 높이 약 26cm\n· 목 둘레: 최대 34cm (스냅 단추 조절)\n· 넉넉한 앞판이 가슴까지 충분히 가려줍니다.\n· 이유식 시기(6개월~)에 특히 유용하며, 외출 시 스카프 아이템으로도 활용됩니다.",
     careInstructions:
-      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 불가 — 수축 및 변형의 원인이 됩니다\n· 그늘에서 자연 건조\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
+      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
     features: [
       {
         label: "스카프형 넓은 앞판",
@@ -150,7 +150,7 @@ export const mockProducts: Product[] = [
     sizeGuide:
       "약 110cm × 110cm\n\n· 신생아 속싸개, 낮잠 이불, 수유 케이프 등 다양하게 활용\n· 신생아부터 36개월까지 사용 가능한 여유로운 크기입니다.\n· 세탁 후 약 5–7% 수축될 수 있습니다.",
     careInstructions:
-      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 불가 — 수축 및 변형의 원인이 됩니다\n· 그늘에서 자연 건조\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
+      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
     features: [
       {
         label: "다용도 활용",
