@@ -1,6 +1,6 @@
 import Image from "next/image";
 import CompProductCard from "@/components/comp-product-card";
-import { AccordionItem, CareIconRow } from "./product-accordion";
+import { AccordionItem } from "./product-accordion";
 import ProductReviews from "./product-reviews";
 import type { Product, Review } from "@/lib/types";
 
@@ -14,7 +14,7 @@ const KC_CERT_NUMBER = "CB014H2463-6001";
 
 const SHIPPING_TEXT = `· 결제 완료 후 2~5영업일 이내 출고됩니다.\n· 50,000원 이상 무료배송 (기본 배송비 3,000원)\n· 제주·도서산간 추가 배송비 6,000원`;
 
-const PRE_PURCHASE_NOTES = `· 모니터·조명 환경에 따라 실제 컬러와 다소 차이가 있을 수 있습니다.\n· 사이즈는 실측 기준이며, 측정 방법에 따라 1~2cm의 오차가 있을 수 있습니다.\n· 어린이제품 안전기준에 따른 시험을 완료했습니다. (인증번호: ${KC_CERT_NUMBER})`;
+const PRE_PURCHASE_NOTES = `· 모니터·조명 환경에 따라 실제 컬러와 다소 차이가 있을 수 있습니다.\n· 사이즈는 실측 기준이며, 측정 방법에 따라 1~2cm의 오차가 있을 수 있습니다.`;
 
 const sectionTitle = "text-base font-bold tracking-[0.25em] text-brand-black uppercase mb-8";
 
@@ -36,29 +36,6 @@ const DETAIL_IMAGES: { src: string; alt: string; w: number; h: number }[] = [
 export default function GauzeBibSections({ product, reviews, relatedProducts }: Props) {
   return (
     <div className="border-t border-brand-border bg-brand-gray-light">
-      {/* 모바일 전용 아코디언: 제품 정보 / 사이즈 / 세탁 및 관리 / 배송 및 교환 / 구매 전 확인사항 */}
-      <section className="lg:hidden px-4 sm:px-8 py-6 bg-white">
-        {product.material && (
-          <AccordionItem title="제품 정보">{product.material}</AccordionItem>
-        )}
-        {product.sizeGuide && (
-          <AccordionItem title="사이즈">{product.sizeGuide}</AccordionItem>
-        )}
-        {product.careInstructions && (
-          <AccordionItem title="세탁 및 관리">
-            <CareIconRow />
-            {product.careInstructions}
-          </AccordionItem>
-        )}
-        {/* TODO: 교환 가능 기간·배송비 부담 기준 등 세부 정책 미확정 — 확정 후 보강, 우선 배송·반품 안내 페이지로 연결 */}
-        <AccordionItem title="배송 및 교환">
-          {SHIPPING_TEXT}
-          {"\n\n"}
-          자세한 배송·반품 정책은 배송·반품 안내 페이지를 확인해 주세요.
-        </AccordionItem>
-        <AccordionItem title="구매 전 확인사항">{PRE_PURCHASE_NOTES}</AccordionItem>
-      </section>
-
       {/* More Information 도입부 (히어로 바로 아래 소개글) */}
       {product.detailIntro && (
         <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-12">
@@ -170,6 +147,21 @@ export default function GauzeBibSections({ product, reviews, relatedProducts }: 
             ))}
           </div>
         </div>
+      </section>
+
+      {/* 모바일 전용 아코디언: 제품 정보 / 배송 및 교환 / 구매 전 확인사항
+          (사이즈·세탁 및 관리는 히어로 영역의 SIZE/CARE 아코디언과 중복되어 제외) */}
+      <section className="lg:hidden px-4 sm:px-8 py-6 bg-white">
+        {product.material && (
+          <AccordionItem title="제품 정보">{product.material}</AccordionItem>
+        )}
+        {/* TODO: 교환 가능 기간·배송비 부담 기준 등 세부 정책 미확정 — 확정 후 보강, 우선 배송·반품 안내 페이지로 연결 */}
+        <AccordionItem title="배송 및 교환">
+          {SHIPPING_TEXT}
+          {"\n\n"}
+          자세한 배송·반품 정책은 배송·반품 안내 페이지를 확인해 주세요.
+        </AccordionItem>
+        <AccordionItem title="구매 전 확인사항">{PRE_PURCHASE_NOTES}</AccordionItem>
       </section>
 
       {/* 6. 함께 사용하기 좋은 상품 */}
