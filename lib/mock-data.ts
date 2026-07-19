@@ -8,6 +8,7 @@ export const mockProducts: Product[] = [
     nameKo: "거즈 빕",
     description:
       "국내산 면 100% 6겹 거즈로 만든 턱받이입니다. 겹겹이 쌓인 거즈 특유의 입체감이 흡수력과 부드러움을 동시에 갖추고 있어, 먹이고 닦고 받아내는 매일의 순간을 조금 더 편안하게 만들어줍니다. 신생아부터 사용할 수 있는 프리 사이즈로, 넉넉한 크기 덕분에 이유식 시기에도 유용하게 쓰입니다.",
+    shortDescription: "포근한 3중 거즈를 양면으로 겹쳐 만든 데일리 턱받이",
     tagline: "SMALL THINGS GAUZE BIB / 매일 닿는 아기 피부를 위한 6겹 거즈 턱받이 / ₩16,000",
     price: 16000,
     // 대표 이미지는 기본 선택 컬러(Cream)의 단독 컷. 컬러 선택 시 colors[].image로 대체됨
@@ -78,15 +79,16 @@ export const mockProducts: Product[] = [
       "/products/scarf4.png",
     ],
     colors: [
-      { name: "옐로우그린", hex: "#CDD678" },
-      { name: "민트", hex: "#A8C4B4" },
-      { name: "로즈핑크", hex: "#CE9096" },
-      { name: "크림", hex: "#EFE4D4" },
+      { name: "옐로우그린", hex: "#CDD678", image: "/products/scarf-yellowgreen.png" },
+      { name: "민트", hex: "#A8C4B4", image: "/products/scarf-mint.png" },
+      { name: "로즈핑크", hex: "#CE9096", image: "/products/scarf-rosepink.png" },
+      { name: "크림", hex: "#EFE4D4", image: "/products/scarf-cream.png" },
     ],
     category: "small-things",
     stock: 80,
     description:
       "국내산 면 100% 6겹 거즈로 만든 스카프형 턱받이입니다. 삼각형으로 재단된 넓은 앞판이 목부터 가슴까지 충분히 감싸주어, 이유식이나 수유 중 옷이 젖는 것을 효과적으로 막아줍니다. 스카프처럼 자연스럽게 연출되어 집에서도 외출 시에도 편안하게 착용할 수 있습니다.",
+    shortDescription: "턱받이처럼 실용적이고 스카프처럼 자연스럽게",
     material:
       "국내산 면 100% 6겹 거즈\n\n거즈 특유의 성긴 직조 방식이 겹칠수록 공기층을 형성해 부드럽고 흡수력이 뛰어납니다. Amori의 거즈 스카프 빕은 6겹 구조로 직조되어 침과 음식물을 빠르게 흡수하며, 세탁을 반복할수록 섬유가 수축되어 더욱 촘촘하고 포근한 질감으로 변합니다.\n\n· 소재: 면(cotton) 100%\n· 원산지: 국내산\n· KC 안전 인증 완료 (어린이제품 공통안전기준)",
     sizeGuide:
@@ -138,13 +140,14 @@ export const mockProducts: Product[] = [
       "/products/spread8.png",
     ],
     colors: [
-      { name: "크림", hex: "#EFE4D4" },
-      { name: "오트", hex: "#C8B89A" },
+      { name: "크림", hex: "#EFE4D4", image: "/products/spread-cream.png" },
+      { name: "오트", hex: "#C8B89A", image: "/products/spread-oat.png" },
     ],
     category: "fabric-goods",
     stock: 50,
     description:
       "국내산 면 100% 6겹 거즈로 만든 다용도 스프레드입니다. 신생아를 감싸는 속싸개부터 낮잠 이불, 수유 케이프, 외출 바람막이까지 — 한 장이 아이와 함께하는 다양한 순간에 맞게 펼쳐집니다. 부드럽고 통기성 좋은 거즈 소재로 사계절 내내 사용할 수 있습니다.",
+    shortDescription: "아이의 다양한 순간에 함께하는 거즈 스프레드",
     material:
       "국내산 면 100% 6겹 거즈\n\n거즈는 성기게 직조된 평직 원단으로, 6겹 구조에서 형성되는 공기층이 온도 조절을 도와 여름에는 시원하고 겨울에는 따뜻합니다. Amori의 스프레드는 세탁을 반복할수록 섬유가 수축되어 더욱 포근하고 촘촘한 질감으로 변합니다.\n\n· 소재: 면(cotton) 100%\n· 원산지: 국내산\n· KC 안전 인증 완료 (어린이제품 공통안전기준)",
     sizeGuide:

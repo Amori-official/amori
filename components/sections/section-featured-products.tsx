@@ -9,6 +9,13 @@ import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
 import type { Product } from "@/lib/types";
 
+// 컬러칩 hover 전 카드 기본 이미지 — 여러 컬러가 함께 보이는 컷
+const MULTI_COLOR_IMAGE: Record<string, string> = {
+  "gauze-bib": "/products/bib2.png",
+  "gauze-scarf-bib": "/products/scarf2.png",
+  spread: "/products/spread3.png",
+};
+
 function ProductCard({
   product,
   index,
@@ -17,15 +24,28 @@ function ProductCard({
   index: number;
 }) {
   const [hovered, setHovered] = useState(false);
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const { add } = useCartStore();
   const { showToast } = useUIStore();
 
+  const displayImage =
+    hoveredImage ?? MULTI_COLOR_IMAGE[product.slug] ?? product.imageUrl;
+
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     add(product, 1, product.colors?.[0]?.name);
     showToast(`${product.name} 장바구니에 추가됨`);
+  };
+
+  const handleColorHover = (image?: string) => {
+    setHoveredImage(image ?? null);
+  };
+
+  const handleColorClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   return (
@@ -43,9 +63,9 @@ function ProductCard({
       <Link href={`/shop/${product.slug}`} className="block p-5">
         {/* 이미지 */}
         <div className="relative aspect-[3/4] bg-brand-gray-light mb-5 overflow-hidden">
-          {product.imageUrl ? (
+          {displayImage ? (
             <Image
-              src={product.imageUrl}
+              src={displayImage}
               alt={product.name}
               fill
               className="object-cover"
@@ -63,8 +83,25 @@ function ProductCard({
           {product.name}
         </p>
         <p className="text-[13px] text-brand-gray-mid tracking-wide mb-3">
-          {product.description}
+          {product.shortDescription ?? product.description}
         </p>
+        {product.colors && product.colors.length > 0 && (
+          <div className="flex gap-1.5 mb-2">
+            {product.colors.map((c) => (
+              <button
+                key={c.name}
+                type="button"
+                title={c.name}
+                aria-label={c.name}
+                onMouseEnter={() => handleColorHover(c.image)}
+                onMouseLeave={() => handleColorHover(undefined)}
+                onClick={handleColorClick}
+                className="w-3.5 h-3.5 rounded-full border border-brand-border hover:border-brand-gray-mid transition-colors"
+                style={{ backgroundColor: c.hex }}
+              />
+            ))}
+          </div>
+        )}
         <p className="text-sm font-light">
           ₩{product.price.toLocaleString("ko-KR")}
         </p>

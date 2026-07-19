@@ -10,6 +10,7 @@ export interface Product {
   name: string;
   nameKo?: string;
   description: string;
+  shortDescription?: string;
   price: number;
   imageUrl: string | null;
   images: string[];

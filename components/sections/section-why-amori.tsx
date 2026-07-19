@@ -6,18 +6,18 @@ import { motion, useInView } from "framer-motion";
 const reasons = [
   {
     num: "01",
-    title: "SAFETY TESTED",
-    desc: "어린이제품 안전기준에 따른 시험 완료. (인증번호: CB014H2463-6001)",
+    title: "KC SAFETY TESTED",
+    desc: "아이가 사용하는 제품인 만큼 어린이제품 안전기준을 꼼꼼하게 확인합니다.",
   },
   {
     num: "02",
-    title: "MACHINE WASHABLE",
-    desc: "세탁기 사용 가능한 내구성. 바쁜 육아 생활을 배려했습니다.",
+    title: "HANDMADE",
+    desc: "재단부터 봉제까지 과정 하나하나 빠짐없이 직접 합니다. 아이에 대한 사랑을 담아 두 엄마가 정성스럽게 만들고 있습니다.",
   },
   {
     num: "03",
-    title: "GIFT WRAPPING",
-    desc: "선물 포장 무료 제공. 소중한 아기를 위한 특별한 첫 선물에.",
+    title: "FOR OUR BABY",
+    desc: "불필요한 포장을 줄이고 생분해 소재 포장재를 사용합니다. 앞으로도 아모리는 아이들이 살아갈 미래를 위한 방향으로 걸어가기 위한 지속적인 노력을 하겠습니다.",
   },
 ];
 

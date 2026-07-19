@@ -12,6 +12,7 @@ function mapRow(row: Record<string, unknown>): Product {
     slug: String(row.slug),
     name: String(row.name),
     description: String(row.description ?? ""),
+    shortDescription: row.short_description ? String(row.short_description) : undefined,
     price: Number(row.price),
     imageUrl: row.image_url ? String(row.image_url) : null,
     images: Array.isArray(row.images) ? (row.images as string[]) : [],
