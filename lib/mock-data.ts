@@ -109,11 +109,11 @@ export const mockProducts: Product[] = [
       "/products/scarf3.png",
       "/products/scarf4.png",
     ],
-    // TODO: Blush/Royal Blue/Yellow 컬러칩 hex는 GAUZE BIB와 동일 원단 기준 근사치 — 실물 대조 후 조정 필요 (GAUZE BIB TODO와 동일 사안)
+    // 컬러칩 hex는 GAUZE BIB와 동일 값으로 통일 (동일 원단 기준). 실물 대조 후 조정 필요 여부는 GAUZE BIB TODO와 동일 사안
     colors: [
       { name: "옐로우그린", hex: "#CDD678", image: "/products/scarf-yellowgreen.png" },
       { name: "민트", hex: "#A8C4B4", image: "/products/scarf-mint.png" },
-      { name: "로즈핑크", hex: "#CE9096", image: "/products/scarf-rosepink.png" },
+      { name: "로즈핑크", hex: "#E8C9C2", image: "/products/scarf-rosepink.png" },
       { name: "크림", hex: "#EFE4D4", image: "/products/scarf-cream.png" },
       { name: "블러쉬", hex: "#CE9096", image: "/products/scarf-blush.png" },
       { name: "로열 블루", hex: "#4A5FA5", image: "/products/scarf-royalblue.png" },
@@ -127,29 +127,25 @@ export const mockProducts: Product[] = [
     material:
       "국내산 면 100% 6겹 거즈\n\n거즈 특유의 성긴 직조 방식이 겹칠수록 공기층을 형성해 부드럽고 흡수력이 뛰어납니다. Amori의 거즈 스카프 빕은 6겹 구조로 직조되어 침과 음식물을 빠르게 흡수하며, 세탁을 반복할수록 섬유가 수축되어 더욱 촘촘하고 포근한 질감으로 변합니다.\n\n· 소재: 면(cotton) 100%\n· 원산지: 국내산\n· KC 안전 인증 완료 (어린이제품 공통안전기준)",
     sizeGuide:
-      "프리 사이즈 (신생아 ~ 24개월)\n\n· 삼각 앞판 폭 약 37cm × 높이 약 11cm\n· 스냅 단추로 간편하게 착용할 수 있습니다.\n· 넉넉한 앞판이 가슴까지 충분히 가려줍니다.\n· 이유식 시기(6개월~)에 특히 유용하며, 외출 시 스카프 아이템으로도 활용됩니다.",
+      "프리 사이즈 (신생아 ~ 36개월)\n\n· 삼각 앞판 폭 약 37cm × 길이 약 11cm\n· 스냅 단추로 간편하게 착용할 수 있습니다.\n· 간절기 아기의 목을 보호해주며, 외출 시 스카프 아이템으로도 활용됩니다.",
     careInstructions:
       "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
     features: [
       {
-        label: "스카프형 넓은 앞판",
-        body: "삼각형으로 재단된 넓은 앞판이 목부터 가슴까지 충분히 가려줍니다. 이유식 시기 옷이 젖는 걱정을 덜어줍니다.",
+        label: "포근한 6겹 거즈",
+        body: "국내산 면 100% 3중 거즈 원단을 두 겹으로 사용해 부드러우면서도 충분한 흡수력을 갖췄습니다.",
       },
       {
-        label: "6겹 거즈 구조",
-        body: "6겹으로 직조된 거즈가 빠른 흡수력과 부드러운 촉감을 동시에 갖춥니다. 세탁할수록 더욱 포근한 질감으로 변합니다.",
+        label: "넉넉한 앞면",
+        body: "침과 음식물이 묻기 쉬운 목 아래와 가슴 부분을 편안하게 감싸도록 넉넉한 크기로 만들었습니다.",
       },
       {
-        label: "면 100% 국내산",
-        body: "화학 첨가물 없이 면 100%로 만들었습니다. 자극에 민감한 신생아 피부에도 안심하고 사용할 수 있습니다.",
+        label: "편안한 착용감",
+        body: "가볍고 통기성이 좋은 거즈 소재로 계절에 관계없이 편안하게 착용할 수 있습니다.",
       },
       {
-        label: "KC 안전 인증",
-        body: "어린이제품 공통안전기준(KC 인증)을 완료한 제품입니다. 유해물질 검사를 통과한 소재만을 사용합니다.",
-      },
-      {
-        label: "일상과 외출 모두",
-        body: "스카프처럼 자연스러운 실루엣으로 집에서도 외출 시에도 멋스럽게 착용할 수 있습니다.",
+        label: "KC 안전기준 확인",
+        body: "아기 피부에 직접 닿는 제품인 만큼 어린이제품 안전기준에 따른 시험을 완료했습니다. (인증번호: CB014H2463-6001)",
       },
     ],
     brandStory:
