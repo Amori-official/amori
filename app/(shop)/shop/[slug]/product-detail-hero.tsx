@@ -24,8 +24,10 @@ export default function ProductDetailHero({ product, initialColor }: Props) {
   const subject = product.imageAltSubject ?? product.name;
   const primaryImageAlt = selectedColor ? `아모리 ${selectedColor} 컬러 ${subject}` : `아모리 ${subject}`;
 
+  // sizeGuide는 빈 문자열("")이면 SIZE 아코디언은 노출하되 내용은 비워둔다(예: 사이즈 미확정 상품).
+  // undefined일 때만 SIZE 아코디언 자체를 숨긴다.
   const hasAccordion =
-    Boolean(product.sizeGuide) ||
+    product.sizeGuide !== undefined ||
     Boolean(product.certificationNumber) ||
     Boolean(product.careInstructions) ||
     Boolean(product.accordionItems?.length);
@@ -45,7 +47,9 @@ export default function ProductDetailHero({ product, initialColor }: Props) {
         belowTagline={
           hasAccordion && (
             <div className="border-t border-brand-border">
-              {product.sizeGuide && <AccordionItem title="SIZE">{product.sizeGuide}</AccordionItem>}
+              {product.sizeGuide !== undefined && (
+                <AccordionItem title="SIZE">{product.sizeGuide}</AccordionItem>
+              )}
               {product.certificationNumber && (
                 <AccordionItem title="SAFETY CERTIFICATION">
                   {product.certificationText ??
