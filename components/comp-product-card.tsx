@@ -32,7 +32,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    add(product, 1, selectedColor);
+    add(product, 1, selectedColor, product.sizes?.[0]?.name);
     setCartOpen(true);
   };
 
@@ -118,7 +118,11 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         )}
 
         <div className="flex items-center justify-between pt-0.5">
-          <p className="text-sm">₩{product.price.toLocaleString("ko-KR")}</p>
+          <p className="text-sm">
+            {product.sizes && product.sizes.length > 0
+              ? `₩${Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~`
+              : `₩${product.price.toLocaleString("ko-KR")}`}
+          </p>
           {(product.reviewCount ?? 0) > 0 && (
             <p className="text-[12px] text-brand-gray-mid">
               ★ {product.rating?.toFixed(1)} ({product.reviewCount})

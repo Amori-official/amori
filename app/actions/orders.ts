@@ -74,7 +74,7 @@ export async function createOrder(data: {
         product_id: i.product.id,
         product_name: i.product.name,
         quantity: i.quantity,
-        price: i.product.price,
+        price: i.unitPrice,
       }))
     );
 

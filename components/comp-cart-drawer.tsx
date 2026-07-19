@@ -90,7 +90,7 @@ export default function CompCartDrawer() {
                 <ul className="space-y-5">
                   {displayItems.map((item) => (
                     <CartItemRow
-                      key={`${item.product.id}-${item.selectedColor ?? "default"}`}
+                      key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.selectedSize ?? "default"}`}
                       item={item}
                       onUpdateQty={updateQty}
                       onRemove={remove}
@@ -136,10 +136,11 @@ function CartItemRow({
   onRemove,
 }: {
   item: CartItem;
-  onUpdateQty: (id: string, qty: number, selectedColor?: string) => void;
-  onRemove: (id: string, selectedColor?: string) => void;
+  onUpdateQty: (id: string, qty: number, selectedColor?: string, selectedSize?: string) => void;
+  onRemove: (id: string, selectedColor?: string, selectedSize?: string) => void;
 }) {
   const colorHex = item.product.colors?.find((c) => c.name === item.selectedColor)?.hex;
+  const variantLabel = [item.selectedSize, item.selectedColor].filter(Boolean).join(" · ");
 
   return (
     <li className="flex gap-3">
@@ -162,7 +163,7 @@ function CartItemRow({
           <p className="text-[13px] text-brand-gray-mid mt-0.5 truncate">
             {item.product.description}
           </p>
-          {item.selectedColor && (
+          {variantLabel && (
             <div className="flex items-center gap-1.5 mt-1">
               {colorHex && (
                 <span
@@ -170,7 +171,7 @@ function CartItemRow({
                   style={{ backgroundColor: colorHex }}
                 />
               )}
-              <span className="text-[12px] text-brand-gray-mid">{item.selectedColor}</span>
+              <span className="text-[12px] text-brand-gray-mid">{variantLabel}</span>
             </div>
           )}
         </div>
@@ -179,14 +180,14 @@ function CartItemRow({
           {/* 수량 조절 */}
           <div className="flex items-center border border-brand-border">
             <button
-              onClick={() => onUpdateQty(item.product.id, item.quantity - 1, item.selectedColor)}
+              onClick={() => onUpdateQty(item.product.id, item.quantity - 1, item.selectedColor, item.selectedSize)}
               className="w-7 h-7 flex items-center justify-center text-sm hover:bg-brand-gray-light transition-colors"
             >
               −
             </button>
             <span className="w-7 text-center text-xs">{item.quantity}</span>
             <button
-              onClick={() => onUpdateQty(item.product.id, item.quantity + 1, item.selectedColor)}
+              onClick={() => onUpdateQty(item.product.id, item.quantity + 1, item.selectedColor, item.selectedSize)}
               className="w-7 h-7 flex items-center justify-center text-sm hover:bg-brand-gray-light transition-colors"
             >
               +
@@ -195,10 +196,10 @@ function CartItemRow({
 
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium">
-              ₩{(item.product.price * item.quantity).toLocaleString("ko-KR")}
+              ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
             </span>
             <button
-              onClick={() => onRemove(item.product.id, item.selectedColor)}
+              onClick={() => onRemove(item.product.id, item.selectedColor, item.selectedSize)}
               className="text-brand-gray-mid hover:text-brand-black transition-colors text-base leading-none"
               aria-label="삭제"
             >

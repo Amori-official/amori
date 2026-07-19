@@ -24,6 +24,9 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     initialColor ?? product.colors?.[0]?.name
   );
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(
+    product.sizes?.[0]?.name
+  );
 
   useEffect(() => {
     if (selectedColor) onColorChange?.(selectedColor);
@@ -37,6 +40,10 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
 
   const isSoldOut = product.stock === 0;
 
+  const displayPrice = selectedSize
+    ? (product.sizes?.find((s) => s.name === selectedSize)?.price ?? product.price)
+    : product.price;
+
   const stockLabel = () => {
     if (isSoldOut) return { text: "품절", color: "text-red-400" };
     if (product.stock <= 5) return { text: `${product.stock}개 남음`, color: "text-amber-500" };
@@ -44,7 +51,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
   };
 
   const handleAddToCart = () => {
-    add(product, qty, selectedColor);
+    add(product, qty, selectedColor, selectedSize);
     setCartOpen(true);
     showToast(`${product.name}이(가) 장바구니에 담겼습니다.`);
   };
@@ -54,7 +61,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
       setAuthModalOpen(true, "login");
       return;
     }
-    add(product, qty, selectedColor);
+    add(product, qty, selectedColor, selectedSize);
     router.push("/checkout?direct=true");
   };
 
@@ -81,8 +88,34 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
 
       {/* 가격 */}
       <p className="text-xl tracking-wide">
-        ₩{product.price.toLocaleString("ko-KR")}
+        ₩{displayPrice.toLocaleString("ko-KR")}
       </p>
+
+      {/* 사이즈 선택 (사이즈별 가격이 다른 상품만) */}
+      {product.sizes && product.sizes.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-[12px] tracking-widest text-brand-gray-mid">
+            SIZE{selectedSize ? ` · ${selectedSize}` : ""}
+          </p>
+          <div className="flex gap-2">
+            {product.sizes.map((s) => (
+              <button
+                key={s.name}
+                type="button"
+                onClick={() => setSelectedSize(s.name)}
+                aria-pressed={selectedSize === s.name}
+                className={`h-10 px-4 border text-[12px] tracking-widest transition-all ${
+                  selectedSize === s.name
+                    ? "border-brand-black bg-brand-black text-white"
+                    : "border-brand-border text-brand-black hover:border-brand-gray-mid"
+                }`}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 평점 */}
       {(product.reviewCount ?? 0) > 0 && (

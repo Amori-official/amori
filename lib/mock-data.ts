@@ -260,6 +260,171 @@ export const mockProducts: Product[] = [
     reviewCount: 0,
     createdAt: "2025-04-01",
   },
+  {
+    id: "4",
+    slug: "flower-pouch",
+    name: "FLOWER POUCH",
+    nameKo: "플라워 파우치",
+    price: 8000,
+    // 사이즈별로 가격이 달라 sizes[]가 실제 판매가를 결정 (price는 최저가 표시용 기본값)
+    sizes: [
+      { name: "S", price: 8000 },
+      { name: "L", price: 13000 },
+    ],
+    // 단독 촬영 컷이 없어 기존 미니 파우치와 신규 라지 사이즈가 함께 담긴 사진을 대표 이미지로 사용
+    // (기존 증정용 미니 파우치와는 다른 상품 — 겉감 거즈 + 안감 옥스퍼드의 대형 플라워 파우치)
+    imageUrl: "/products/flower-pouch1.png",
+    images: [
+      "/products/flower-pouch9.png",
+      "/products/flower-pouch4.png",
+      "/products/flower-pouch11.png",
+    ],
+    // 컬러별 단독 컷이 없어 colors[].image는 비워둠 (컬러칩 hover 시 이미지가 바뀌지 않음)
+    // TODO: Pink/Blue 컬러칩 hex는 사진 기준 근사치 — 실물 대조 후 조정 필요
+    colors: [
+      { name: "Pink", hex: "#D9AFAE" },
+      { name: "Blue", hex: "#A9BBCE" },
+    ],
+    category: "small-things",
+    stock: 50,
+    description:
+      "아기와의 외출에 필요한 것들을 사랑스럽게 담아주는 플라워 파우치입니다. 기저귀, 물티슈, 손수건까지 넉넉하게 수납할 수 있는 큰 사이즈로, 가로로 긴 형태라 물건을 넣고 꺼내기 편합니다. 겉감은 부드러운 거즈로, 안감에는 옥스퍼드 원단을 덧대어 적당히 도톰하고 안정적인 형태를 유지합니다. 아이가 자란 뒤에도 여행용, 다용도 파우치로 오래 활용할 수 있습니다.",
+    shortDescription: "아기와의 외출을 사랑스럽게 담는 플라워 파우치",
+    material:
+      "겉감: 거즈(면)\n안감: 옥스퍼드 원단\n\n겉면은 부드러운 거즈로, 안감에는 옥스퍼드 원단을 덧대어 적당히 도톰하고 안정적인 형태를 유지합니다.",
+    // 정확한 사이즈 미확정 — SIZE는 위 사이즈 선택 버튼(S/L)으로 대체, 별도 사이즈 아코디언은 노출하지 않음
+    careInstructions:
+      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
+    detailIntro:
+      "아기와 외출할 때는 챙길 것들이 참 많습니다. 기저귀, 물티슈, 손수건까지 — 여러 개의 작은 물건을 한곳에 정리해서 담을 수 있는 파우치를 만들고 싶었어요.\n\n큰 블랭킷도 들어가는 넉넉한 크기에 가로로 긴 형태를 더해 물건을 넣고 꺼내기 편하게 만들었습니다. 겉감 거즈에 옥스퍼드 안감을 덧대어 적당히 도톰하게 완성해 내용물이 적어도 쉽게 흐물거리지 않습니다. 아이가 자란 뒤에도 여행용, 다용도 파우치로 오래 곁에 둘 수 있는 아이템입니다.",
+    features: [
+      {
+        label: "넉넉한 수납",
+        body: "큰 블랭킷도 들어가는 넉넉한 크기로, 기저귀와 물티슈, 손수건 같은 외출용품을 한 번에 담을 수 있습니다.",
+      },
+      {
+        label: "편리한 가로형 디자인",
+        body: "가로 폭이 넉넉한 형태로 만들어 물건을 넣고 꺼내기 편합니다.",
+      },
+      {
+        label: "도톰하고 안정적인 형태",
+        body: "겉감 거즈에 옥스퍼드 안감을 덧대어 내용물이 적어도 쉽게 흐물거리지 않습니다.",
+      },
+      {
+        label: "오래 활용하는 다용도 파우치",
+        body: "아이가 자란 뒤에도 여행용, 다용도 파우치로 오래 활용할 수 있습니다.",
+      },
+    ],
+    brandStory:
+      "아모리의 미니 파우치는 처음엔 작은 증정품으로 시작했습니다. 아기를 위한 작은 물건들을 담아드리고 싶은 마음으로 만들었던 그 파우치가, 이제는 기저귀와 물티슈까지 넉넉하게 담을 수 있는 더 큰 사이즈의 플라워 파우치로 자라났습니다. 작은 것에서 시작해 실용적인 곁으로 — 아모리의 파우치는 그렇게 함께 커가고 있습니다.",
+    storyImage: "/products/flower-pouch3.jpg",
+    storyImageAlt: "아모리 플라워 파우치가 놓인 침실 풍경",
+    materialDetailImage: "/products/flower-pouch6.png",
+    materialDetailImageAlt: "아모리 플라워 파우치가 놓인 주방 풍경",
+    detailImages: [
+      { src: "/products/flower-pouch2.png", alt: "아모리 플라워 파우치 침실 연출", width: 2000, height: 3000 },
+      { src: "/products/flower-pouch7.png", alt: "아모리 플라워 파우치 주방 연출", width: 2000, height: 3000 },
+      { src: "/products/flower-pouch10.png", alt: "아모리 플라워 파우치 창가 연출", width: 2000, height: 1333 },
+    ],
+    colorSectionTitle: "2 Colors",
+    colorDescription: "Pink, Blue — 아이의 외출용품에 자연스럽게 어우러지는 2가지 컬러로 준비했습니다.",
+    colorSectionImage: "/products/flower-pouch1.png",
+    colorSectionImageAlt: "아모리 플라워 파우치 블루·핑크 컬러",
+    // KC 인증 대상 아님 — certificationNumber 미설정 (SAFETY CERTIFICATION 미노출)
+    relatedProductSlugs: ["hand-towel", "spread"],
+    imageAlts: [
+      "아모리 플라워 파우치 단독 사진",
+      "아모리 플라워 파우치 라벨과 끈 디테일",
+      "아모리 플라워 파우치 원단 패턴 클로즈업",
+    ],
+    imageAltSubject: "플라워 파우치",
+    rating: undefined,
+    reviewCount: 0,
+    createdAt: "2026-07-20",
+  },
+  {
+    id: "5",
+    slug: "hand-towel",
+    name: "HAND TOWEL",
+    nameKo: "핸드타월",
+    price: 9000,
+    imageUrl: "/products/hand-tower-babypink.png",
+    images: [
+      "/products/hand-tower1.png",
+      "/products/hand-tower4.png",
+      "/products/hand-tower12.png",
+      "/products/hand-tower18.png",
+    ],
+    // 컬러명은 실제 촬영 환경(조명)에 따라 사진상 색감 차이가 있어 파일명 기준으로 확정
+    // TODO: 컬러칩 hex는 색상명 기준 근사치 — 실물 대조 후 조정 필요
+    colors: [
+      { name: "Baby Pink", hex: "#F3B6C4", image: "/products/hand-tower-babypink.png" },
+      { name: "Green Apple", hex: "#B7C97A", image: "/products/hand-tower-greenapple.png" },
+      { name: "Lavender", hex: "#B9A0C9", image: "/products/hand-tower-larvendar.png" },
+      { name: "Sky", hex: "#AFCBE0", image: "/products/hand-tower-sky.png" },
+    ],
+    category: "small-things",
+    stock: 50,
+    description:
+      "작은 손과 얼굴에 매일 닿는 부드러운 거즈 핸드타월입니다. 3중 거즈 원단을 양면으로 덧대 총 6겹으로 완성해 가볍고 흡수가 빠르며, 헤링본 끈으로 만든 고리가 있어 걸어두고 사용하기 편합니다. 집에서도 어린이집에서도 부담 없이 매일 쓸 수 있습니다.",
+    shortDescription: "작은 손과 얼굴에 매일 닿는 부드러운 거즈 핸드타월",
+    material:
+      "면 100% 거즈\n\n3중 거즈 원단을 양면으로 덧대어 총 6겹으로 완성했습니다.",
+    // 정확한 사이즈 미확정 — SIZE 아코디언은 노출하되 내용은 비워둠
+    sizeGuide: "",
+    careInstructions:
+      "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
+    detailIntro:
+      "아기 얼굴과 손, 엉덩이까지 부담 없이 닦을 수 있는 크기로 만들었습니다. 너무 작지도 크지도 않은 사이즈에, 얇지도 두껍지도 않은 적당한 두께를 더했습니다.\n\n가볍고 부드러운 거즈 원단이라 빠르게 흡수되고, 헤링본 끈으로 만든 고리가 있어 집에서도 어린이집에서도 편하게 걸어두고 사용할 수 있습니다.",
+    features: [
+      {
+        label: "부드러운 거즈 원단",
+        body: "3중 거즈를 양면으로 덧대 총 6겹으로 완성해 부드러우면서도 도톰합니다.",
+      },
+      {
+        label: "가볍고 빠른 흡수",
+        body: "가벼운 거즈 소재로 빠르게 물기를 흡수합니다.",
+      },
+      {
+        label: "부담스럽지 않은 크기",
+        body: "휴대하기 부담스럽지 않은 크기로, 아기 얼굴과 손을 닦기에 알맞습니다.",
+      },
+      {
+        label: "고리형 디자인",
+        body: "헤링본 끈으로 만든 고리가 있어 집과 어린이집 어디서나 걸어두고 사용할 수 있습니다.",
+      },
+    ],
+    brandStory:
+      "아모리는 거즈 소재를 중심으로 아기를 위한 패브릭을 만들어왔습니다. 그 부드러운 소재로 매일 곁에 두고 쓸 수 있는 것을 고민하다, 아기 얼굴과 손을 닦아주는 작은 핸드타월을 만들게 되었습니다. 매일 아기 피부에 닿는 것이니만큼, 부드럽고 가벼운 거즈 그대로의 촉감을 담았습니다.",
+    storyImage: "/products/hand-tower3.png",
+    storyImageAlt: "아모리 핸드타월이 창가 고리에 걸린 모습",
+    materialDetailImage: "/products/hand-tower10.png",
+    materialDetailImageAlt: "아모리 핸드타월 거즈 원단 확대",
+    detailImages: [
+      { src: "/products/hand-tower7.png", alt: "아모리 핸드타월 고리 디테일", width: 2000, height: 1333 },
+      { src: "/products/hand-tower9.png", alt: "아모리 핸드타월 여러 컬러 원단 클로즈업", width: 2000, height: 1333 },
+      { src: "/products/hand-tower6.png", alt: "아모리 핸드타월 주방 바구니 연출", width: 1734, height: 1156 },
+      { src: "/products/hand-tower13.png", alt: "아모리 핸드타월 창가에 쌓인 모습", width: 2000, height: 3000 },
+      { src: "/products/hand-tower11.png", alt: "아모리 핸드타월 여러 컬러 쌓인 모습", width: 2000, height: 1333 },
+    ],
+    colorSectionTitle: "4 Colors",
+    colorDescription:
+      "Baby Pink, Green Apple, Lavender, Sky — 아이의 공간 어디에나 자연스럽게 어우러지는 4가지 컬러로 준비했습니다.",
+    colorSectionImage: "/products/hand-tower18.png",
+    colorSectionImageAlt: "아모리 핸드타월 여러 컬러 고리 연출",
+    certificationNumber: "CB014H2463-6001",
+    relatedProductSlugs: ["spread", "gauze-bib", "gauze-scarf-bib"],
+    imageAlts: [
+      "아모리 핸드타월 두 컬러 고리 연출",
+      "아모리 핸드타월 네 컬러 플랫레이",
+      "아모리 핸드타월 창가에 놓인 모습",
+      "아모리 핸드타월 여러 컬러 고리 연출",
+    ],
+    imageAltSubject: "핸드타월",
+    rating: undefined,
+    reviewCount: 0,
+    createdAt: "2026-07-20",
+  },
 ];
 
 export const mockOrders = [

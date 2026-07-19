@@ -47,7 +47,11 @@ export default function WishlistPage() {
                 </div>
                 <p className="text-[12px] tracking-widest">{product.name}</p>
                 <p className="text-xs text-brand-gray-mid mt-0.5 truncate">{product.description}</p>
-                <p className="text-sm mt-1">₩{product.price.toLocaleString("ko-KR")}</p>
+                <p className="text-sm mt-1">
+                  {product.sizes && product.sizes.length > 0
+                    ? `₩${Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~`
+                    : `₩${product.price.toLocaleString("ko-KR")}`}
+                </p>
               </Link>
 
               <div className="flex gap-2 mt-2">

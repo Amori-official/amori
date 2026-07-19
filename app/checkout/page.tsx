@@ -130,7 +130,7 @@ export default function CheckoutPage() {
     sessionStorage.setItem("pending-gift", JSON.stringify({ giftWrapping, giftMessage }));
     sessionStorage.setItem(
       "pending-items",
-      JSON.stringify(items.map((i) => ({ productId: i.product.id, name: i.product.name, qty: i.quantity, price: i.product.price })))
+      JSON.stringify(items.map((i) => ({ productId: i.product.id, name: i.product.name, qty: i.quantity, price: i.unitPrice })))
     );
 
     try {
@@ -290,35 +290,38 @@ export default function CheckoutPage() {
                 </h2>
 
                 <ul className="space-y-3">
-                  {items.map((item) => (
-                    <li
-                      key={`${item.product.id}-${item.selectedColor ?? "default"}`}
-                      className="flex gap-3"
-                    >
-                      <div className="w-14 aspect-[3/4] bg-brand-gray-light shrink-0 relative overflow-hidden">
-                        {item.product.imageUrl && (
-                          <Image
-                            src={item.product.imageUrl}
-                            alt={item.product.name}
-                            fill
-                            className="object-cover"
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] tracking-widest truncate">{item.product.name}</p>
-                        <p className="text-[12px] text-brand-gray-mid mt-0.5 truncate">
-                          {item.selectedColor ?? item.product.description}
-                        </p>
-                        <div className="flex justify-between mt-1.5">
-                          <span className="text-[12px] text-brand-gray-mid">×{item.quantity}</span>
-                          <span className="text-xs">
-                            ₩{(item.product.price * item.quantity).toLocaleString("ko-KR")}
-                          </span>
+                  {items.map((item) => {
+                    const variantLabel = [item.selectedSize, item.selectedColor].filter(Boolean).join(" · ");
+                    return (
+                      <li
+                        key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.selectedSize ?? "default"}`}
+                        className="flex gap-3"
+                      >
+                        <div className="w-14 aspect-[3/4] bg-brand-gray-light shrink-0 relative overflow-hidden">
+                          {item.product.imageUrl && (
+                            <Image
+                              src={item.product.imageUrl}
+                              alt={item.product.name}
+                              fill
+                              className="object-cover"
+                            />
+                          )}
                         </div>
-                      </div>
-                    </li>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] tracking-widest truncate">{item.product.name}</p>
+                          <p className="text-[12px] text-brand-gray-mid mt-0.5 truncate">
+                            {variantLabel || item.product.description}
+                          </p>
+                          <div className="flex justify-between mt-1.5">
+                            <span className="text-[12px] text-brand-gray-mid">×{item.quantity}</span>
+                            <span className="text-xs">
+                              ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
+                            </span>
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <div className="border-t border-brand-border pt-3 space-y-2 text-xs">

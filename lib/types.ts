@@ -4,6 +4,11 @@ export interface ProductColor {
   image?: string;
 }
 
+export interface ProductSize {
+  name: string;
+  price: number;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -11,10 +16,13 @@ export interface Product {
   nameKo?: string;
   description: string;
   shortDescription?: string;
+  /** 사이즈별 가격 차이가 없는 상품의 기본가. sizes가 있으면 sizes[].price가 실제 판매가로 우선 적용됨 */
   price: number;
   imageUrl: string | null;
   images: string[];
   colors?: ProductColor[];
+  /** 사이즈별로 가격이 다른 상품에만 사용 (예: FLOWER POUCH S/L). 없으면 기존처럼 단일 가격(price)만 사용 */
+  sizes?: ProductSize[];
   category: string;
   stock: number;
   isComingSoon?: boolean;

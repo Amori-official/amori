@@ -18,6 +18,7 @@ function mapRow(row: Record<string, unknown>): Product {
     imageUrl: row.image_url ? String(row.image_url) : null,
     images: Array.isArray(row.images) ? (row.images as string[]) : [],
     colors: Array.isArray(row.colors) ? (row.colors as Product["colors"]) : undefined,
+    sizes: Array.isArray(row.sizes) ? (row.sizes as Product["sizes"]) : undefined,
     category: String(row.category ?? ""),
     stock: Number(row.stock ?? 0),
     isComingSoon: Boolean(row.is_coming_soon),

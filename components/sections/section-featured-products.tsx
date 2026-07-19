@@ -16,6 +16,9 @@ const MULTI_COLOR_IMAGE: Record<string, string> = {
   spread: "/products/spread3.png",
 };
 
+// 메인 홈페이지에 노출할 상품을 명시적으로 지정 (신규 상품은 여기 추가하기 전까지 자동 노출되지 않음)
+const FEATURED_SLUGS = ["gauze-bib", "gauze-scarf-bib", "spread"];
+
 function ProductCard({
   product,
   index,
@@ -35,7 +38,7 @@ function ProductCard({
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
-    add(product, 1, product.colors?.[0]?.name);
+    add(product, 1, product.colors?.[0]?.name, product.sizes?.[0]?.name);
     showToast(`${product.name} 장바구니에 추가됨`);
   };
 
@@ -103,7 +106,9 @@ function ProductCard({
           </div>
         )}
         <p className="text-sm font-light">
-          ₩{product.price.toLocaleString("ko-KR")}
+          {product.sizes && product.sizes.length > 0
+            ? `₩${Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~`
+            : `₩${product.price.toLocaleString("ko-KR")}`}
         </p>
       </Link>
 
@@ -123,6 +128,9 @@ function ProductCard({
 export default function SectionFeaturedProducts() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
+  const featuredProducts = FEATURED_SLUGS.map((slug) =>
+    mockProducts.find((p) => p.slug === slug)
+  ).filter((p): p is Product => p !== undefined);
 
   return (
     <section id="featured-products" className="bg-white">
@@ -142,13 +150,13 @@ export default function SectionFeaturedProducts() {
             SHOP ALL
           </Link>
           <span className="text-[12px] text-brand-gray-mid tracking-wide">
-            {mockProducts.length} Products
+            {featuredProducts.length} Products
           </span>
         </motion.div>
 
         {/* 제품 그리드 */}
         <div className="grid grid-cols-2 md:grid-cols-4">
-          {mockProducts.map((p, i) => (
+          {featuredProducts.map((p, i) => (
             <ProductCard key={p.id} product={p} index={i} />
           ))}
         </div>
