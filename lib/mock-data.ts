@@ -1,4 +1,4 @@
-import type { Product } from "./types";
+import type { Product, Review } from "./types";
 
 export const mockProducts: Product[] = [
   {
@@ -61,7 +61,38 @@ export const mockProducts: Product[] = [
     ],
     brandStory:
       "아이가 먹고, 흘리고, 또 먹는 하루하루 — 그 작은 반복 속에서 곁을 지키는 것들은 단순하고 믿음직해야 한다고 생각합니다. Amori의 거즈 빕은 꾸밈보다 실용에, 세련됨보다 안전함에 집중했습니다. 아이의 피부에 가장 먼저 닿는 것이니까요.",
-    rating: 4.9,
+    storyImage: "/products/bib7.png",
+    storyImageAlt: "아모리 거즈빕을 착용한 아이들",
+    materialDetailImage: "/products/bib4.png",
+    materialDetailImageAlt: "아모리 거즈빕 원단 확대",
+    detailImages: [
+      { src: "/products/bib7.png", alt: "아모리 거즈빕을 착용한 아이들", width: 1333, height: 2000 },
+      { src: "/products/bib8.png", alt: "아모리 거즈빕 아기 착용 정면", width: 1333, height: 2000 },
+      { src: "/products/bib9.png", alt: "아모리 거즈빕 아기 착용 옆면", width: 1333, height: 2000 },
+      { src: "/products/bib6.png", alt: "아모리 거즈빕 아기 착용 목둘레 디테일", width: 2000, height: 1333 },
+      { src: "/products/bib10.png", alt: "아모리 거즈빕 아기 착용 클로즈업", width: 1333, height: 2000 },
+      { src: "/products/bib1.png", alt: "아모리 거즈빕 전체 컬러 담긴 바구니", width: 1000, height: 1000 },
+      { src: "/products/bib3.png", alt: "아모리 거즈빕 스냅 디테일", width: 1000, height: 1000 },
+      { src: "/products/bib2.png", alt: "아모리 거즈빕 컬러 스트랩 디테일", width: 1000, height: 1000 },
+      { src: "/products/bib11.png", alt: "아모리 거즈빕 컬러 조합", width: 2000, height: 1333 },
+      { src: "/products/bib5.png", alt: "아모리 거즈빕 옷걸이에 걸린 모습", width: 1000, height: 1000 },
+    ],
+    colorSectionTitle: "7 Colors",
+    colorDescription:
+      "Cream, Mint, Rose Pink, Blush, Yellow Green, Royal Blue, Yellow — 아이의 옷과 공간에 자연스럽게 어우러지는 7가지 컬러로 준비했습니다.",
+    colorSectionImage: "/products/bib1.png",
+    colorSectionImageAlt: "아모리 거즈빕 7가지 컬러",
+    certificationNumber: "CB014H2463-6001",
+    relatedProductSlugs: ["gauze-scarf-bib", "spread"],
+    imageAlts: [
+      "아모리 거즈빕 아기 착용 정면",
+      "아모리 거즈빕 아기 착용 옆면",
+      "아모리 거즈빕 7가지 컬러",
+      "아모리 거즈빕 스냅 디테일",
+    ],
+    imageAltSubject: "아기 거즈빕",
+    // 실제 후기 확보 전까지 평점 노출 안 함(reviewCount 0이 가드) — 확정된 후기 없어 값 자체도 비워둠
+    rating: undefined,
     reviewCount: 0,
     createdAt: "2025-04-01",
   },
@@ -78,11 +109,15 @@ export const mockProducts: Product[] = [
       "/products/scarf3.png",
       "/products/scarf4.png",
     ],
+    // TODO: Blush/Royal Blue/Yellow 컬러칩 hex는 GAUZE BIB와 동일 원단 기준 근사치 — 실물 대조 후 조정 필요 (GAUZE BIB TODO와 동일 사안)
     colors: [
       { name: "옐로우그린", hex: "#CDD678", image: "/products/scarf-yellowgreen.png" },
       { name: "민트", hex: "#A8C4B4", image: "/products/scarf-mint.png" },
       { name: "로즈핑크", hex: "#CE9096", image: "/products/scarf-rosepink.png" },
       { name: "크림", hex: "#EFE4D4", image: "/products/scarf-cream.png" },
+      { name: "블러쉬", hex: "#CE9096", image: "/products/scarf-blush.png" },
+      { name: "로열 블루", hex: "#4A5FA5", image: "/products/scarf-royalblue.png" },
+      { name: "옐로우", hex: "#EAD98A", image: "/products/scarf-yellow.png" },
     ],
     category: "small-things",
     stock: 80,
@@ -92,7 +127,7 @@ export const mockProducts: Product[] = [
     material:
       "국내산 면 100% 6겹 거즈\n\n거즈 특유의 성긴 직조 방식이 겹칠수록 공기층을 형성해 부드럽고 흡수력이 뛰어납니다. Amori의 거즈 스카프 빕은 6겹 구조로 직조되어 침과 음식물을 빠르게 흡수하며, 세탁을 반복할수록 섬유가 수축되어 더욱 촘촘하고 포근한 질감으로 변합니다.\n\n· 소재: 면(cotton) 100%\n· 원산지: 국내산\n· KC 안전 인증 완료 (어린이제품 공통안전기준)",
     sizeGuide:
-      "프리 사이즈 (신생아 ~ 24개월)\n\n· 삼각 앞판 폭 약 38cm × 높이 약 26cm\n· 목 둘레: 최대 34cm (스냅 단추 조절)\n· 넉넉한 앞판이 가슴까지 충분히 가려줍니다.\n· 이유식 시기(6개월~)에 특히 유용하며, 외출 시 스카프 아이템으로도 활용됩니다.",
+      "프리 사이즈 (신생아 ~ 24개월)\n\n· 삼각 앞판 폭 약 37cm × 높이 약 11cm\n· 스냅 단추로 간편하게 착용할 수 있습니다.\n· 넉넉한 앞판이 가슴까지 충분히 가려줍니다.\n· 이유식 시기(6개월~)에 특히 유용하며, 외출 시 스카프 아이템으로도 활용됩니다.",
     careInstructions:
       "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
     features: [
@@ -119,7 +154,34 @@ export const mockProducts: Product[] = [
     ],
     brandStory:
       "아이와 함께하는 매일의 식사 시간이 조금 더 여유롭기를 바랍니다. Amori의 거즈 스카프 빕은 잘 흡수하고 빨리 마르는 실용성에, 스카프처럼 자연스러운 모양새를 더했습니다. 부모와 아이 모두에게 편안한 하루를 위해.",
-    rating: 4.9,
+    storyImage: "/products/scarf7.png",
+    storyImageAlt: "아모리 거즈 스카프 빕과 함께하는 아이들의 일상",
+    materialDetailImage: "/products/scarf10.png",
+    materialDetailImageAlt: "아모리 거즈 스카프 빕 원단 확대",
+    // scarf5~9는 public/products에 있던 미사용 사진을 실제로 확인한 뒤 용도별로 배치함
+    detailImages: [
+      { src: "/products/scarf5.png", alt: "아모리 거즈 스카프 빕을 착용한 아기", width: 1333, height: 2000 },
+      { src: "/products/scarf6.png", alt: "아모리 거즈 스카프 빕을 착용하고 웃는 아기", width: 1333, height: 2000 },
+      { src: "/products/scarf8.png", alt: "아모리 거즈 스카프 빕 착용 클로즈업", width: 1333, height: 2000 },
+      { src: "/products/scarf9.png", alt: "아모리 거즈 스카프 빕 여러 컬러 플랫레이", width: 2000, height: 1333 },
+      { src: "/products/scarf1.png", alt: "아모리 거즈 스카프 빕 여러 컬러 행잉 연출", width: 1000, height: 1000 },
+    ],
+    colorSectionTitle: "7 Colors",
+    colorDescription:
+      "옐로우그린, 민트, 로즈핑크, 크림, 블러쉬, 로열 블루, 옐로우 — 아이의 옷과 공간에 자연스럽게 어우러지는 7가지 컬러로 준비했습니다.",
+    colorSectionImage: "/products/scarf9.png",
+    colorSectionImageAlt: "아모리 거즈 스카프 빕 여러 컬러",
+    certificationNumber: "CB014H2463-6001",
+    relatedProductSlugs: ["gauze-bib", "spread"],
+    imageAlts: [
+      "아모리 거즈 스카프 빕 여러 컬러 행잉 연출",
+      "아모리 거즈 스카프 빕 여러 컬러 플랫레이",
+      "아모리 거즈 스카프 빕 겹쳐진 원단 디테일",
+      "아모리 거즈 스카프 빕 컬러 겹침 클로즈업",
+    ],
+    imageAltSubject: "아기 거즈 스카프 빕",
+    // 실제 후기 확보 전까지 평점 노출 안 함(reviewCount 0이 가드) — 확정된 후기 없어 값 자체도 비워둠
+    rating: undefined,
     reviewCount: 0,
     createdAt: "2025-04-01",
   },
@@ -129,10 +191,10 @@ export const mockProducts: Product[] = [
     name: "SPREAD",
     nameKo: "스프레드",
     price: 18000,
-    imageUrl: "/products/spread1.png",
+    // 대표 이미지는 제품 전체 형태가 가장 잘 보이는 컷으로 지정 (기존 spread1.png는 인물 클로즈업이라 Details로 이동)
+    imageUrl: "/products/spread7.png",
     images: [
       "/products/spread4.png",
-      "/products/spread7.png",
       "/products/spread3.png",
       "/products/spread6.png",
       "/products/spread2.png",
@@ -150,8 +212,7 @@ export const mockProducts: Product[] = [
     shortDescription: "아이의 다양한 순간에 함께하는 거즈 스프레드",
     material:
       "국내산 면 100% 6겹 거즈\n\n거즈는 성기게 직조된 평직 원단으로, 6겹 구조에서 형성되는 공기층이 온도 조절을 도와 여름에는 시원하고 겨울에는 따뜻합니다. Amori의 스프레드는 세탁을 반복할수록 섬유가 수축되어 더욱 포근하고 촘촘한 질감으로 변합니다.\n\n· 소재: 면(cotton) 100%\n· 원산지: 국내산\n· KC 안전 인증 완료 (어린이제품 공통안전기준)",
-    sizeGuide:
-      "약 110cm × 110cm\n\n· 신생아 속싸개, 낮잠 이불, 수유 케이프 등 다양하게 활용\n· 신생아부터 36개월까지 사용 가능한 여유로운 크기입니다.\n· 세탁 후 약 5–7% 수축될 수 있습니다.",
+    // TODO: 사이즈 미확정 — 확정되면 sizeGuide 채워 SIZE 아코디언 노출
     careInstructions:
       "· 세탁: 30°C 이하 찬물, 중성세제 사용\n· 단독 또는 유사 색상끼리 세탁 권장\n· 손세탁 또는 세탁기 약세탁(울 코스)\n· 건조기 사용 자제 — 수축 및 변형의 원인이 될 수 있습니다\n· 직사광선 장시간 노출 시 색상이 바랄 수 있습니다\n· 처음 세탁 시 단독으로 세탁해 주세요 (이염 방지)",
     features: [
@@ -178,6 +239,35 @@ export const mockProducts: Product[] = [
     ],
     brandStory:
       "아이가 처음 세상 밖 공기를 마주하는 순간부터, Amori의 스프레드가 함께합니다. 감싸고, 덮고, 가리고, 깔고 — 아이 곁에서 가장 많이 쓰이는 한 장이 되기를 바랐습니다. 단순하지만 정직한 소재로, 매일의 육아가 조금 더 가볍기를 바랍니다.",
+    storyImage: "/products/spread6.png",
+    storyImageAlt: "아모리 스프레드를 접어둔 따뜻한 집안 풍경",
+    materialDetailImage: "/products/spread5.png",
+    materialDetailImageAlt: "아모리 스프레드 원단 확대",
+    // spread9~11은 public/products에 있던 미사용 사진을 실제로 확인한 뒤 용도별로 배치함.
+    // spread1(이전 대표 이미지)은 인물 클로즈업이라 대표 이미지에서는 제외했지만 삭제하지 않고 Details 라이프스타일 컷으로 유지
+    detailImages: [
+      { src: "/products/spread9.png", alt: "아모리 스프레드 전체 형태", width: 1333, height: 2000 },
+      { src: "/products/spread10.png", alt: "아모리 스프레드가 놓인 집안 풍경", width: 1333, height: 2000 },
+      { src: "/products/spread11.png", alt: "아모리 스프레드와 함께 있는 아이", width: 2000, height: 1333 },
+      { src: "/products/spread1.png", alt: "아모리 스프레드와 함께하는 아이의 일상", width: 2000, height: 1333 },
+    ],
+    colorSectionTitle: "2 Colors",
+    colorDescription:
+      "Cream, Oat — 아이의 공간 어디에나 자연스럽게 어우러지는 2가지 컬러로 준비했습니다.",
+    colorSectionImage: "/products/spread8.png",
+    colorSectionImageAlt: "아모리 스프레드 크림·오트 컬러",
+    certificationNumber: "CB014H2463-6001",
+    // 스냅 없는 제품 — hardwareInfo 미설정 (UI에 부자재 섹션 자체가 노출되지 않음)
+    relatedProductSlugs: ["gauze-bib", "gauze-scarf-bib"],
+    imageAlts: [
+      "아모리 스프레드 원단 디테일과 사과 오브제",
+      "아모리 스프레드 크림·오트 컬러 겹친 모습",
+      "아모리 스프레드 크림·오트 컬러 라운드 테이블 연출",
+      "아모리 스프레드 보관된 모습",
+      "아모리 스프레드 원단 확대",
+      "아모리 스프레드 크림·오트 컬러 소개",
+    ],
+    imageAltSubject: "거즈 스프레드",
     rating: undefined,
     reviewCount: 0,
     createdAt: "2025-04-01",
@@ -205,32 +295,5 @@ export const mockOrders = [
   },
 ];
 
-export const mockReviews = [
-  {
-    id: "r1",
-    productId: "1",
-    userId: "u1",
-    userName: "김**",
-    rating: 5,
-    content: "소재가 정말 부드러워요. 세탁 후에도 보풀 없이 그대로입니다.",
-    createdAt: "2025-05-10",
-  },
-  {
-    id: "r2",
-    productId: "1",
-    userId: "u2",
-    userName: "이**",
-    rating: 5,
-    content: "색감이 사진보다 훨씬 예뻐요. 선물용으로도 딱 좋아요.",
-    createdAt: "2025-05-22",
-  },
-  {
-    id: "r3",
-    productId: "2",
-    userId: "u3",
-    userName: "박**",
-    rating: 5,
-    content: "스카프처럼 예쁘게 둘러줄 수 있어서 좋아요. 거즈라 통기성도 좋고요.",
-    createdAt: "2025-06-01",
-  },
-];
+// 실제 고객 리뷰가 아직 없어 전부 비워둠 — 실제 구매 리뷰가 쌓이면 여기에 추가
+export const mockReviews: Review[] = [];
