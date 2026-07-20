@@ -75,8 +75,8 @@ export default function CompNav() {
             ))}
           </ul>
 
-          {/* 우측 아이콘 */}
-          <div className="flex items-center justify-end gap-4">
+          {/* 우측 아이콘 (모바일에서 센터 내비가 hidden으로 그리드에서 빠지므로 3번째 컬럼에 명시적으로 고정) */}
+          <div className="col-start-3 flex items-center justify-end gap-4">
             <button
               aria-label="검색"
               className="hidden md:block text-brand-black hover:text-brand-gray-mid transition-colors"
