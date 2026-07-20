@@ -1,9 +1,10 @@
 "use server";
 
 import { mockProducts, mockReviews } from "@/lib/mock-data";
+import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
 import type { Product, Review } from "@/lib/types";
 
-const IS_CONFIGURED = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").startsWith("http");
+const IS_CONFIGURED = isSupabaseConfigured();
 
 // Supabase 행 → Product 타입 변환
 function mapRow(row: Record<string, unknown>): Product {
@@ -81,7 +82,10 @@ export async function getProducts(filters?: {
 
       const { data, error } = await query;
       if (!error && data) return data.map(mapRow);
-    } catch {}
+      if (error) logSupabaseError("getProducts 조회", error);
+    } catch (error) {
+      logSupabaseError("getProducts", error);
+    }
   }
 
   // Mock 폴백
@@ -122,7 +126,10 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
         .single();
 
       if (!error && data) return mapRow(data);
-    } catch {}
+      if (error) logSupabaseError("getProductBySlug 조회", error);
+    } catch (error) {
+      logSupabaseError("getProductBySlug", error);
+    }
   }
 
   return mockProducts.find((p) => p.slug === slug) ?? null;
@@ -150,7 +157,10 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
           createdAt: String(r.created_at),
         }));
       }
-    } catch {}
+      if (error) logSupabaseError("getProductReviews 조회", error);
+    } catch (error) {
+      logSupabaseError("getProductReviews", error);
+    }
   }
 
   return mockReviews.filter((r) => r.productId === productId);

@@ -1,14 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isSupabaseConfigured } from "@/lib/supabase-config";
 
 const PROTECTED_PATHS = ["/account", "/checkout"];
 
 export async function middleware(request: NextRequest) {
-  // Supabase URL 미설정 시 패스스루
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  if (!supabaseUrl.startsWith("http")) {
+  // Supabase 미설정 시 패스스루 (mock fallback 유지)
+  if (!isSupabaseConfigured()) {
     return NextResponse.next({ request });
   }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 
   let supabaseResponse = NextResponse.next({ request });
 
