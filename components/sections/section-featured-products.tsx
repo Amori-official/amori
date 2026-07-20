@@ -4,20 +4,14 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
-import { mockProducts } from "@/lib/mock-data";
+import { mockProducts, CARD_DEFAULT_IMAGE } from "@/lib/mock-data";
 import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
 import type { Product } from "@/lib/types";
 
-// 컬러칩 hover 전 카드 기본 이미지 — 여러 컬러가 함께 보이는 컷
-const MULTI_COLOR_IMAGE: Record<string, string> = {
-  "gauze-bib": "/products/bib2.png",
-  "gauze-scarf-bib": "/products/scarf2.png",
-  spread: "/products/spread3.png",
-};
-
-// 메인 홈페이지에 노출할 상품을 명시적으로 지정 (신규 상품은 여기 추가하기 전까지 자동 노출되지 않음)
-const FEATURED_SLUGS = ["gauze-bib", "gauze-scarf-bib", "spread"];
+// TODO: 실제 판매 데이터가 쌓이면 베스트 상품 로직(판매량/리뷰 등 기준)으로 교체
+// 현재는 구매 데이터가 없어 임의로 GAUZE BIB을 최상단에 고정
+const BEST_SLUG = "gauze-bib";
 
 function ProductCard({
   product,
@@ -34,7 +28,7 @@ function ProductCard({
   const { showToast } = useUIStore();
 
   const displayImage =
-    hoveredImage ?? MULTI_COLOR_IMAGE[product.slug] ?? product.imageUrl;
+    hoveredImage ?? CARD_DEFAULT_IMAGE[product.slug] ?? product.imageUrl;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -128,9 +122,10 @@ function ProductCard({
 export default function SectionFeaturedProducts() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
-  const featuredProducts = FEATURED_SLUGS.map((slug) =>
-    mockProducts.find((p) => p.slug === slug)
-  ).filter((p): p is Product => p !== undefined);
+  const bestProduct = mockProducts.find((p) => p.slug === BEST_SLUG);
+  const featuredProducts = bestProduct
+    ? [bestProduct, ...mockProducts.filter((p) => p.slug !== BEST_SLUG)]
+    : mockProducts;
 
   return (
     <section id="featured-products" className="bg-white">

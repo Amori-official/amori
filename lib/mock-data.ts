@@ -427,6 +427,16 @@ export const mockProducts: Product[] = [
   },
 ];
 
+// 상품 카드(SHOP, 홈페이지, 추천상품) 기본 썸네일 — 컬러칩 hover 전 여러 컬러가 함께 보이는 컷.
+// 컬러칩에 hover하면 해당 컬러 이미지로 바뀌고, hover가 끝나면 이 기본 이미지로 되돌아감
+export const CARD_DEFAULT_IMAGE: Record<string, string> = {
+  "gauze-bib": "/products/bib2.png",
+  "gauze-scarf-bib": "/products/scarf2.png",
+  spread: "/products/spread3.png",
+  "flower-pouch": "/products/flower-pouch1.png",
+  "hand-towel": "/products/hand-tower4.png",
+};
+
 export const mockOrders = [
   {
     id: "ord-20250415-001",

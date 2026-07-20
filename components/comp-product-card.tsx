@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
+import { CARD_DEFAULT_IMAGE } from "@/lib/mock-data";
 import type { Product } from "@/lib/types";
 
 interface Props {
@@ -17,8 +18,11 @@ export default function CompProductCard({ product, comingSoon }: Props) {
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     product.colors?.[0]?.name
   );
+  const [hoveredImage, setHoveredImage] = useState<string | undefined>(undefined);
   const { add } = useCartStore();
   const { setCartOpen, showToast } = useUIStore();
+
+  const displayImage = hoveredImage ?? CARD_DEFAULT_IMAGE[product.slug] ?? product.imageUrl;
 
   const isSoldOut = product.stock === 0 && !product.isComingSoon;
   const isComingSoon = comingSoon || product.isComingSoon;
@@ -56,9 +60,9 @@ export default function CompProductCard({ product, comingSoon }: Props) {
     >
       {/* 이미지 영역 */}
       <div className="aspect-[3/4] relative overflow-hidden bg-brand-gray-light">
-        {product.imageUrl && (
+        {displayImage && (
           <Image
-            src={product.imageUrl}
+            src={displayImage}
             alt={product.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -106,6 +110,8 @@ export default function CompProductCard({ product, comingSoon }: Props) {
                 aria-label={c.name}
                 aria-pressed={selectedColor === c.name}
                 onClick={(e) => handleSelectColor(e, c.name)}
+                onMouseEnter={() => setHoveredImage(c.image)}
+                onMouseLeave={() => setHoveredImage(undefined)}
                 className={`w-3.5 h-3.5 rounded-full border transition-all ${
                   selectedColor === c.name
                     ? "border-brand-black ring-1 ring-brand-black ring-offset-1"
