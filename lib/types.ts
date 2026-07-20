@@ -40,7 +40,14 @@ export interface Product {
   materialDetailImage?: string;
   materialDetailImageAlt?: string;
   /** Details 섹션에 세로로 나열할 이미지 목록 */
-  detailImages?: { src: string; alt: string; width: number; height: number }[];
+  /** layout 미지정 시 "full"(전체 폭)로 렌더링. "grid"는 연속된 두 장이 함께 2단으로 묶임 */
+  detailImages?: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    layout?: "full" | "grid" | "left" | "right";
+  }[];
   /** 컬러 소개 섹션 (예: "7 Colors") */
   colorSectionTitle?: string;
   colorDescription?: string;

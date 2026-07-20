@@ -82,8 +82,8 @@ export default function CompProductGallery({ product, primaryImage, primaryImage
           )}
         </div>
 
-        {/* 데스크톱: 고정 대표 이미지 + 썸네일 클릭 */}
-        <div className="hidden md:block aspect-[3/4] lg:aspect-auto lg:h-[calc(100vh-160px)] relative overflow-hidden bg-brand-gray-light">
+        {/* 데스크톱: 고정 대표 이미지 + 썸네일 클릭 (3:4 비율 고정) */}
+        <div className="hidden md:block aspect-[3/4] relative overflow-hidden bg-brand-gray-light">
           {hasImages ? (
             <Image
               src={allImages[current]}

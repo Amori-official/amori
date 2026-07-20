@@ -10,6 +10,33 @@ interface Props {
   relatedProducts: Product[];
 }
 
+type DetailImage = NonNullable<Product["detailImages"]>[number];
+type DetailRow = { type: "full" | "left" | "right" | "grid"; items: DetailImage[] };
+
+// 연속된 "grid" 항목은 2단으로 짝지어 묶고, 나머지는 각자 한 행을 차지한다.
+function groupDetailImages(images: DetailImage[]): DetailRow[] {
+  const rows: DetailRow[] = [];
+  let i = 0;
+  while (i < images.length) {
+    const img = images[i];
+    const layout = img.layout ?? "full";
+    if (layout === "grid") {
+      const next = images[i + 1];
+      if (next && (next.layout ?? "full") === "grid") {
+        rows.push({ type: "grid", items: [img, next] });
+        i += 2;
+        continue;
+      }
+      rows.push({ type: "grid", items: [img] });
+      i += 1;
+      continue;
+    }
+    rows.push({ type: layout, items: [img] });
+    i += 1;
+  }
+  return rows;
+}
+
 const SHIPPING_TEXT = `· 결제 완료 후 2~5영업일 이내 출고됩니다.\n· 50,000원 이상 무료배송 (기본 배송비 3,000원)\n· 제주·도서산간 추가 배송비 6,000원`;
 
 const PRE_PURCHASE_NOTES = `· 모니터·조명 환경에 따라 실제 컬러와 다소 차이가 있을 수 있습니다.\n· 사이즈는 실측 기준이며, 측정 방법에 따라 1~2cm의 오차가 있을 수 있습니다.`;
@@ -96,23 +123,63 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
         </section>
       )}
 
-      {/* Details — 원본 비율 그대로 세로 일렬 배치 */}
+      {/* Details — 이미지별 layout(full/grid/left/right)에 따라 리듬감 있게 배치 */}
       {product.detailImages && product.detailImages.length > 0 && (
         <section className="px-4 sm:px-8 lg:px-16 pb-16">
           <p className={sectionTitle}>Details</p>
-          <div className="flex flex-col gap-6">
-            {product.detailImages.map((img) => (
-              <div key={img.src} className="relative w-full bg-brand-gray-light">
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  width={img.width}
-                  height={img.height}
-                  className="w-full h-auto"
-                  sizes="100vw"
-                />
-              </div>
-            ))}
+          <div className="flex flex-col gap-6 lg:gap-10">
+            {groupDetailImages(product.detailImages).map((row, i) => {
+              if (row.type === "grid") {
+                return (
+                  <div key={i} className="grid grid-cols-2 gap-4 sm:gap-6">
+                    {row.items.map((img) => (
+                      <div key={img.src} className="relative w-full bg-brand-gray-light">
+                        <Image
+                          src={img.src}
+                          alt={img.alt}
+                          width={img.width}
+                          height={img.height}
+                          className="w-full h-auto"
+                          sizes="(min-width: 1024px) 40vw, 50vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              const img = row.items[0];
+
+              if (row.type === "left" || row.type === "right") {
+                return (
+                  <div key={i} className={`flex ${row.type === "right" ? "justify-end" : "justify-start"}`}>
+                    <div className="relative w-full sm:w-[68%] lg:w-[60%] bg-brand-gray-light">
+                      <Image
+                        src={img.src}
+                        alt={img.alt}
+                        width={img.width}
+                        height={img.height}
+                        className="w-full h-auto"
+                        sizes="(min-width: 1024px) 60vw, 68vw"
+                      />
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={i} className="relative w-full bg-brand-gray-light">
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    width={img.width}
+                    height={img.height}
+                    className="w-full h-auto"
+                    sizes="100vw"
+                  />
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
