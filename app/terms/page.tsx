@@ -88,7 +88,7 @@ export default function TermsPage() {
       <div className="flex flex-col gap-10">
         {clauses.map((c) => (
           <div key={c.title} className="flex flex-col gap-3">
-            <p className="text-[12px] tracking-widest text-brand-black">{c.title}</p>
+            <p className="text-[14px] tracking-widest text-brand-black">{c.title}</p>
             <p className="text-sm text-brand-gray-mid tracking-wide leading-8 whitespace-pre-line">
               {c.body}
             </p>

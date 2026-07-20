@@ -41,7 +41,7 @@ export default function CarePage() {
       <div className="flex flex-col gap-10">
         {items.map((item) => (
           <div key={item.label} className="flex flex-col gap-3">
-            <p className="text-[12px] tracking-widest text-brand-black">{item.label}</p>
+            <p className="text-[14px] tracking-widest text-brand-black">{item.label}</p>
             <p className="text-sm text-brand-gray-mid tracking-wide leading-7">{item.body}</p>
           </div>
         ))}

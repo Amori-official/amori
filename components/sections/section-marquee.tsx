@@ -18,7 +18,7 @@ const items = [
 ];
 
 const cls =
-  "text-[11px] font-semibold tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors underline-offset-2 hover:underline";
+  "text-[13px] font-semibold tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors underline-offset-2 hover:underline";
 
 export default function SectionMarquee() {
   const [index, setIndex] = useState(0);

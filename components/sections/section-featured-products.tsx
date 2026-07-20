@@ -69,17 +69,17 @@ function ProductCard({
             />
           ) : (
             <div className="w-full h-full flex items-end p-4">
-              <span className="text-[9px] tracking-widest text-brand-border">
+              <span className="text-[11px] tracking-widest text-brand-border">
                 {product.category.toUpperCase()}
               </span>
             </div>
           )}
         </div>
 
-        <p className="text-[12px] tracking-widest uppercase mb-1.5">
+        <p className="text-[14px] tracking-widest uppercase mb-1.5">
           {product.name}
         </p>
-        <p className="text-[13px] text-brand-gray-mid tracking-wide mb-3">
+        <p className="text-[15px] text-brand-gray-mid tracking-wide mb-3">
           {product.shortDescription ?? product.description}
         </p>
         {product.colors && product.colors.length > 0 && (
@@ -111,7 +111,7 @@ function ProductCard({
         animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 4 }}
         transition={{ duration: 0.2 }}
         onClick={handleAdd}
-        className="absolute bottom-5 right-5 border border-brand-border-soft bg-white text-[9px] tracking-widest px-3 py-1.5 hover:bg-brand-fill hover:text-brand-black transition-colors"
+        className="absolute bottom-5 right-5 border border-brand-border-soft bg-white text-[11px] tracking-widest px-3 py-1.5 hover:bg-brand-fill hover:text-brand-black transition-colors"
       >
         ADD →
       </motion.button>
@@ -140,11 +140,11 @@ export default function SectionFeaturedProducts() {
         >
           <Link
             href="/shop"
-            className="text-[12px] tracking-widest hover:text-brand-gray-mid transition-colors"
+            className="text-[14px] tracking-widest hover:text-brand-gray-mid transition-colors"
           >
             SHOP ALL
           </Link>
-          <span className="text-[12px] text-brand-gray-mid tracking-wide">
+          <span className="text-[14px] text-brand-gray-mid tracking-wide">
             {featuredProducts.length} Products
           </span>
         </motion.div>
@@ -160,7 +160,7 @@ export default function SectionFeaturedProducts() {
         <div className="pt-7 text-right">
           <Link
             href="/shop"
-            className="text-[12px] tracking-widest hover:text-brand-gray-mid transition-colors"
+            className="text-[14px] tracking-widest hover:text-brand-gray-mid transition-colors"
           >
             VIEW ALL PRODUCTS →
           </Link>

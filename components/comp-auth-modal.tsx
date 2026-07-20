@@ -97,7 +97,7 @@ export default function CompAuthModal() {
               key={t}
               onClick={() => switchTab(t)}
               className={[
-                "text-[12px] tracking-widest mr-7 pb-3 pt-1 border-b-[1.5px] -mb-px transition-colors",
+                "text-[14px] tracking-widest mr-7 pb-3 pt-1 border-b-[1.5px] -mb-px transition-colors",
                 tab === t
                   ? "border-brand-black text-brand-black"
                   : "border-transparent text-brand-gray-mid hover:text-brand-black",
@@ -117,7 +117,7 @@ export default function CompAuthModal() {
         {tab === "login" && (
           <form onSubmit={handleLogin} className="flex flex-col gap-4 px-8 pb-8 pt-6">
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[12px] tracking-widest">EMAIL</Label>
+              <Label className="text-[14px] tracking-widest">EMAIL</Label>
               <Input
                 type="email"
                 placeholder="email@example.com"
@@ -128,7 +128,7 @@ export default function CompAuthModal() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[12px] tracking-widest">PASSWORD</Label>
+              <Label className="text-[14px] tracking-widest">PASSWORD</Label>
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -142,7 +142,7 @@ export default function CompAuthModal() {
             <Button
               type="submit"
               disabled={loading}
-              className="rounded-none bg-brand-fill text-brand-black h-11 text-[12px] tracking-widest hover:bg-brand-fill-hover mt-1"
+              className="rounded-none bg-brand-fill text-brand-black h-11 text-[14px] tracking-widest hover:bg-brand-fill-hover mt-1"
             >
               {loading ? "처리 중..." : "LOGIN"}
             </Button>
@@ -151,7 +151,7 @@ export default function CompAuthModal() {
 
             <KakaoButton onClick={handleKakao} disabled={loading} />
 
-            <p className="text-center text-[12px] text-brand-gray-mid tracking-wide pt-1">
+            <p className="text-center text-[14px] text-brand-gray-mid tracking-wide pt-1">
               계정이 없으신가요?{" "}
               <button
                 type="button"
@@ -168,7 +168,7 @@ export default function CompAuthModal() {
         {tab === "signup" && (
           <form onSubmit={handleSignup} className="flex flex-col gap-4 px-8 pb-8 pt-6">
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[12px] tracking-widest">NAME</Label>
+              <Label className="text-[14px] tracking-widest">NAME</Label>
               <Input
                 type="text"
                 placeholder="홍길동"
@@ -179,7 +179,7 @@ export default function CompAuthModal() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[12px] tracking-widest">EMAIL</Label>
+              <Label className="text-[14px] tracking-widest">EMAIL</Label>
               <Input
                 type="email"
                 placeholder="email@example.com"
@@ -190,7 +190,7 @@ export default function CompAuthModal() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[12px] tracking-widest">PASSWORD</Label>
+              <Label className="text-[14px] tracking-widest">PASSWORD</Label>
               <Input
                 type="password"
                 placeholder="6자 이상"
@@ -217,7 +217,7 @@ export default function CompAuthModal() {
               >
                 마케팅 수신 동의 (선택)
                 <br />
-                <span className="text-[12px]">
+                <span className="text-[14px]">
                   신제품 출시 및 프로모션 정보를 받아봅니다.
                 </span>
               </label>
@@ -226,7 +226,7 @@ export default function CompAuthModal() {
             <Button
               type="submit"
               disabled={loading}
-              className="rounded-none bg-brand-fill text-brand-black h-11 text-[12px] tracking-widest hover:bg-brand-fill-hover mt-1"
+              className="rounded-none bg-brand-fill text-brand-black h-11 text-[14px] tracking-widest hover:bg-brand-fill-hover mt-1"
             >
               {loading ? "처리 중..." : "CREATE ACCOUNT"}
             </Button>
@@ -235,7 +235,7 @@ export default function CompAuthModal() {
 
             <KakaoButton onClick={handleKakao} disabled={loading} />
 
-            <p className="text-center text-[12px] text-brand-gray-mid tracking-wide pt-1">
+            <p className="text-center text-[14px] text-brand-gray-mid tracking-wide pt-1">
               이미 계정이 있으신가요?{" "}
               <button
                 type="button"
@@ -256,7 +256,7 @@ function Divider() {
   return (
     <div className="relative flex items-center gap-3">
       <div className="flex-1 h-px bg-brand-border" />
-      <span className="text-[12px] tracking-widest text-brand-gray-mid shrink-0">OR</span>
+      <span className="text-[14px] tracking-widest text-brand-gray-mid shrink-0">OR</span>
       <div className="flex-1 h-px bg-brand-border" />
     </div>
   );
@@ -274,7 +274,7 @@ function KakaoButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="w-full h-11 flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] text-[12px] tracking-widest border border-[#FEE500] hover:bg-[#F0D800] transition-colors disabled:opacity-50"
+      className="w-full h-11 flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] text-[14px] tracking-widest border border-[#FEE500] hover:bg-[#F0D800] transition-colors disabled:opacity-50"
     >
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path

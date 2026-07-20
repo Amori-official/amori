@@ -30,29 +30,29 @@ export default function CompFooter() {
             <div style={{ position: "relative", width: "77px", height: "56px" }}>
               <Image src="/logo.png" alt="AMORI" fill className="object-contain" />
             </div>
-            <p className="text-[13px] text-brand-gray-mid tracking-wide leading-6">
+            <p className="text-[15px] text-brand-gray-mid tracking-wide leading-6">
               아기를 위한 패브릭 브랜드.
             </p>
             <a
               href="mailto:amori_official@naver.com"
-              className="text-[13px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
+              className="text-[15px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
             >
               amori_official@naver.com
             </a>
-            <p className="text-[12px] text-brand-gray-mid tracking-wide">
+            <p className="text-[14px] text-brand-gray-mid tracking-wide">
               고객센터 운영시간: 10:00-18:00 (주말 및 공휴일 휴무)
             </p>
           </div>
 
           {/* 메뉴 */}
           <div className="flex flex-col gap-4">
-            <p className="text-[12px] tracking-widest">MENU</p>
+            <p className="text-[14px] tracking-widest">MENU</p>
             <ul className="flex flex-col gap-3">
               {menuLinks.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[13px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
+                    className="text-[15px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
                   >
                     {l.label}
                   </Link>
@@ -63,13 +63,13 @@ export default function CompFooter() {
 
           {/* 정책 */}
           <div className="flex flex-col gap-4">
-            <p className="text-[12px] tracking-widest">POLICY</p>
+            <p className="text-[14px] tracking-widest">POLICY</p>
             <ul className="flex flex-col gap-3">
               {policyLinks.map((l) => (
                 <li key={l.href}>
                   <Link
                     href={l.href}
-                    className="text-[13px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
+                    className="text-[15px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
                   >
                     {l.label}
                   </Link>
@@ -80,7 +80,7 @@ export default function CompFooter() {
 
           {/* SNS */}
           <div className="flex flex-col gap-4">
-            <p className="text-[12px] tracking-widest">SNS</p>
+            <p className="text-[14px] tracking-widest">SNS</p>
             <ul className="flex flex-col gap-3">
               {snsLinks.map((l) => (
                 <li key={l.href}>
@@ -88,7 +88,7 @@ export default function CompFooter() {
                     href={l.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[13px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
+                    className="text-[15px] text-brand-gray-mid tracking-wide hover:text-brand-black transition-colors"
                   >
                     {l.label}
                   </a>
@@ -99,7 +99,7 @@ export default function CompFooter() {
         </div>
 
         {/* 사업자 정보 */}
-        <div className="pt-8 text-[12px] text-brand-gray-mid tracking-wide leading-7">
+        <div className="pt-8 text-[14px] text-brand-gray-mid tracking-wide leading-7">
           <p>
             상호명: 아모리 | 대표자: 양은옥 | 사업자등록번호: 54321-02-174
           </p>

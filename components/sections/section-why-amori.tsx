@@ -36,7 +36,7 @@ export default function SectionWhyAmori() {
           transition={{ duration: 0.5 }}
           className="pb-4"
         >
-          <p className="text-[12px] tracking-widest text-brand-gray-mid">
+          <p className="text-[14px] tracking-widest text-brand-gray-mid">
             WHY AMORI
           </p>
         </motion.div>
@@ -55,7 +55,7 @@ export default function SectionWhyAmori() {
               <p className="text-7xl font-light text-brand-border mb-6 leading-none">
                 {r.num}
               </p>
-              <p className="text-[12px] tracking-widest mb-3">{r.title}</p>
+              <p className="text-[14px] tracking-widest mb-3">{r.title}</p>
               <p className="text-xs text-brand-gray-mid tracking-wide leading-6">
                 {r.desc}
               </p>

@@ -72,7 +72,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         {/* SOLD OUT 오버레이 */}
         {isSoldOut && (
           <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-            <span className="text-[12px] tracking-[0.3em] text-brand-gray-mid">SOLD OUT</span>
+            <span className="text-[14px] tracking-[0.3em] text-brand-gray-mid">SOLD OUT</span>
           </div>
         )}
 
@@ -80,7 +80,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         {!isSoldOut && !isComingSoon && (
           <button
             onClick={handleQuickAdd}
-            className="absolute bottom-0 inset-x-0 h-10 bg-brand-fill text-brand-black text-[9px] tracking-[0.2em]
+            className="absolute bottom-0 inset-x-0 h-10 bg-brand-fill text-brand-black text-[11px] tracking-[0.2em]
               opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0
               transition-all duration-200 flex items-center justify-center gap-1.5"
           >
@@ -93,9 +93,9 @@ export default function CompProductCard({ product, comingSoon }: Props) {
       {/* 정보 */}
       <div className="mt-3 space-y-1.5">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[12px] tracking-[0.2em] text-brand-black">{product.name}</p>
+          <p className="text-[14px] tracking-[0.2em] text-brand-black">{product.name}</p>
           {product.nameKo && (
-            <p className="text-[11px] text-brand-gray-mid tracking-wide shrink-0">{product.nameKo}</p>
+            <p className="text-[13px] text-brand-gray-mid tracking-wide shrink-0">{product.nameKo}</p>
           )}
         </div>
 
@@ -130,7 +130,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
               : `₩${product.price.toLocaleString("ko-KR")}`}
           </p>
           {(product.reviewCount ?? 0) > 0 && (
-            <p className="text-[12px] text-brand-gray-mid">
+            <p className="text-[14px] text-brand-gray-mid">
               ★ {product.rating?.toFixed(1)} ({product.reviewCount})
             </p>
           )}
@@ -140,7 +140,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         {isComingSoon && (
           <button
             onClick={handleNotify}
-            className="text-[12px] tracking-wide underline text-brand-gray-mid pt-0.5 block"
+            className="text-[14px] tracking-wide underline text-brand-gray-mid pt-0.5 block"
           >
             {notifyDone ? "알림 신청 완료" : "출시 알림 신청"}
           </button>

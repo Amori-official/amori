@@ -48,7 +48,7 @@ export default function SectionNewsletter() {
             href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block w-fit border border-brand-border text-brand-black text-[12px] tracking-widest px-6 py-3.5 hover:bg-brand-fill transition-colors"
+            className="inline-block w-fit border border-brand-border text-brand-black text-[14px] tracking-widest px-6 py-3.5 hover:bg-brand-fill transition-colors"
           >
             @amori_atelier
           </a>

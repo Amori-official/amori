@@ -31,7 +31,7 @@ export default async function ShopPage({
       <section id="shop-header" className="px-4 sm:px-8 lg:px-16 pt-14 pb-2">
         <div className="flex items-end justify-between">
           <h1 className="text-4xl sm:text-5xl font-light tracking-[0.15em]">SHOP</h1>
-          <p className="text-[12px] tracking-widest text-brand-gray-mid pb-1">
+          <p className="text-[14px] tracking-widest text-brand-gray-mid pb-1">
             {products.length}개 제품
           </p>
         </div>
@@ -66,7 +66,7 @@ export default async function ShopPage({
           className="px-4 sm:px-8 lg:px-16 py-14 border-t border-brand-border"
         >
           <div className="mb-8">
-            <h2 className="text-[12px] tracking-[0.3em] text-brand-gray-mid">COMING SOON</h2>
+            <h2 className="text-[14px] tracking-[0.3em] text-brand-gray-mid">COMING SOON</h2>
             <p className="text-xs text-brand-gray-mid tracking-wide mt-1">
               곧 출시될 새로운 제품들입니다
             </p>

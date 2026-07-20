@@ -35,14 +35,14 @@ export default function ProductReviews({ reviews }: Props) {
                     </span>
                   ))}
                 </div>
-                <span className="text-[12px] text-brand-gray-mid tracking-wide">
+                <span className="text-[14px] text-brand-gray-mid tracking-wide">
                   {review.userName}
                 </span>
               </div>
               <p className="text-xs text-brand-gray-mid tracking-wide leading-relaxed">
                 {review.content}
               </p>
-              <p className="text-[12px] text-brand-border">
+              <p className="text-[14px] text-brand-border">
                 {new Date(review.createdAt).toLocaleDateString("ko-KR")}
               </p>
             </div>

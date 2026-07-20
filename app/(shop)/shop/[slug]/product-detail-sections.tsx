@@ -87,10 +87,10 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
             {product.features.map((f, i) => (
               <div key={f.label} className="flex flex-col gap-2.5">
-                <p className="text-[11px] tracking-widest text-brand-gray-mid">
+                <p className="text-[13px] tracking-widest text-brand-gray-mid">
                   {String(i + 1).padStart(2, "0")}
                 </p>
-                <p className="text-[12px] tracking-widest text-brand-black">{f.label}</p>
+                <p className="text-[14px] tracking-widest text-brand-black">{f.label}</p>
                 <p className="text-xs text-brand-gray-mid tracking-wide leading-7">
                   {product.certificationNumber && f.body.includes(product.certificationNumber) ? (
                     <>
@@ -206,7 +206,7 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
               {product.colors.map((c) => (
                 <span
                   key={c.name}
-                  className="flex items-center gap-1.5 text-[11px] tracking-wide text-brand-gray-mid border border-brand-border px-2.5 py-1"
+                  className="flex items-center gap-1.5 text-[13px] tracking-wide text-brand-gray-mid border border-brand-border px-2.5 py-1"
                 >
                   <span
                     className="w-3 h-3 rounded-full border border-brand-border"

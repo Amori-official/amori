@@ -16,7 +16,7 @@ export function AccordionItem({ title, children, defaultOpen = false }: Accordio
     <div className="border-b border-brand-border">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between py-4 text-[12px] tracking-[0.25em] text-left"
+        className="w-full flex items-center justify-between py-4 text-[14px] tracking-[0.25em] text-left"
         aria-expanded={open}
       >
         <span>{title}</span>
@@ -45,7 +45,7 @@ function FeatureGrid({ features }: { features: Feature[] }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 pb-6">
       {features.map((f) => (
         <div key={f.label} className="flex flex-col gap-1.5">
-          <p className="text-[11px] tracking-[0.2em] text-brand-black font-medium">
+          <p className="text-[13px] tracking-[0.2em] text-brand-black font-medium">
             {f.label}
           </p>
           <p className="text-xs text-brand-gray-mid tracking-wide leading-6">
@@ -71,7 +71,7 @@ export function CareIconRow() {
       {CARE_ICONS.map(({ icon, label }) => (
         <div key={label} className="flex flex-col items-center gap-1">
           <span className="text-base text-brand-gray-mid">{icon}</span>
-          <span className="text-[10px] tracking-wide text-brand-gray-mid">{label}</span>
+          <span className="text-[12px] tracking-wide text-brand-gray-mid">{label}</span>
         </div>
       ))}
     </div>

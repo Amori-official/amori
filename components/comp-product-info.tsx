@@ -70,7 +70,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
   return (
     <div id="product-info" className="flex flex-col gap-5 px-0 lg:px-12 py-4 lg:py-10">
       {/* 카테고리 */}
-      <p className="text-[12px] tracking-[0.3em] text-brand-gray-mid uppercase">
+      <p className="text-[14px] tracking-[0.3em] text-brand-gray-mid uppercase">
         {product.category}
       </p>
 
@@ -94,7 +94,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
       {/* 사이즈 선택 (사이즈별 가격이 다른 상품만) */}
       {product.sizes && product.sizes.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-[12px] tracking-widest text-brand-gray-mid">
+          <p className="text-[14px] tracking-widest text-brand-gray-mid">
             SIZE{selectedSize ? ` · ${selectedSize}` : ""}
           </p>
           <div className="flex gap-2">
@@ -104,7 +104,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
                 type="button"
                 onClick={() => setSelectedSize(s.name)}
                 aria-pressed={selectedSize === s.name}
-                className={`h-10 px-4 border text-[12px] tracking-widest transition-all ${
+                className={`h-10 px-4 border text-[14px] tracking-widest transition-all ${
                   selectedSize === s.name
                     ? "border-brand-black bg-brand-black text-white"
                     : "border-brand-border text-brand-black hover:border-brand-gray-mid"
@@ -129,7 +129,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
       {/* 컬러 선택 */}
       {product.colors && product.colors.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-[12px] tracking-widest text-brand-gray-mid">
+          <p className="text-[14px] tracking-widest text-brand-gray-mid">
             COLOR{selectedColor ? ` · ${selectedColor}` : ""}
           </p>
           <div className="flex gap-2">
@@ -179,7 +179,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
         <button
           onClick={handleAddToCart}
           disabled={isSoldOut}
-          className="flex-1 h-12 border border-brand-border-soft text-brand-black text-[12px] tracking-[0.2em]
+          className="flex-1 h-12 border border-brand-border-soft text-brand-black text-[14px] tracking-[0.2em]
             hover:bg-brand-fill hover:text-brand-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isSoldOut ? "품절" : "장바구니 담기"}
@@ -187,7 +187,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
         <button
           onClick={handleBuyNow}
           disabled={isSoldOut}
-          className="flex-1 h-12 bg-brand-fill text-brand-black text-[12px] tracking-[0.2em]
+          className="flex-1 h-12 bg-brand-fill text-brand-black text-[14px] tracking-[0.2em]
             hover:bg-brand-gray-mid transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           바로 구매하기
@@ -200,14 +200,14 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
           toggleWishlist(product);
           showToast(inWishlist(product.id) ? "위시리스트에서 제거되었습니다." : "위시리스트에 추가되었습니다.");
         }}
-        className="text-[12px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors flex items-center gap-1.5"
+        className="text-[14px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors flex items-center gap-1.5"
       >
         <span>{inWishlist(product.id) ? "♥" : "♡"}</span>
         <span>{inWishlist(product.id) ? "위시리스트에서 제거" : "위시리스트에 추가"}</span>
       </button>
 
       {/* 무료배송 안내 */}
-      <p className="text-[13px] text-brand-gray-mid tracking-wide">
+      <p className="text-[15px] text-brand-gray-mid tracking-wide">
         50,000원 이상 무료배송 · 제주/도서산간 추가 배송비 6,000원
       </p>
     </div>

@@ -89,7 +89,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
       <div className="pt-[60px] min-h-screen">
 
         {/* 브레드크럼 */}
-        <nav className="px-4 sm:px-8 lg:px-16 py-4 text-[12px] tracking-widest text-brand-gray-mid flex gap-2">
+        <nav className="px-4 sm:px-8 lg:px-16 py-4 text-[14px] tracking-widest text-brand-gray-mid flex gap-2">
           <a href="/shop" className="hover:text-brand-black transition-colors">SHOP</a>
           <span>/</span>
           <span className="text-brand-black">{product.name}</span>

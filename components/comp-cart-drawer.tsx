@@ -47,7 +47,7 @@ export default function CompCartDrawer() {
           >
             {/* 헤더 */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-brand-border shrink-0">
-              <h2 className="text-[12px] tracking-[0.3em]">
+              <h2 className="text-[14px] tracking-[0.3em]">
                 CART ({displayItems.reduce((s, i) => s + i.quantity, 0)})
               </h2>
               <button
@@ -61,7 +61,7 @@ export default function CompCartDrawer() {
 
             {/* 무료배송 프로그레스 바 */}
             <div className="px-6 py-3 bg-brand-gray-light shrink-0">
-              <p className="text-[12px] tracking-wide text-brand-gray-mid">
+              <p className="text-[14px] tracking-wide text-brand-gray-mid">
                 {remaining > 0
                   ? `₩${remaining.toLocaleString("ko-KR")} 더 담으면 무료배송!`
                   : "무료배송 대상입니다 ✓"}
@@ -81,7 +81,7 @@ export default function CompCartDrawer() {
                   <p className="text-sm tracking-wide">장바구니가 비어있습니다.</p>
                   <button
                     onClick={() => setCartOpen(false)}
-                    className="text-[12px] tracking-widest underline hover:text-brand-black transition-colors"
+                    className="text-[14px] tracking-widest underline hover:text-brand-black transition-colors"
                   >
                     쇼핑 계속하기
                   </button>
@@ -109,14 +109,14 @@ export default function CompCartDrawer() {
                     ₩{cartTotal.toLocaleString("ko-KR")}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-[12px] text-brand-gray-mid tracking-wide pb-1">
+                <div className="flex items-center justify-between text-[14px] text-brand-gray-mid tracking-wide pb-1">
                   <span>배송비</span>
                   <span>{remaining > 0 ? "₩3,000" : "무료"}</span>
                 </div>
                 <Link
                   href="/checkout"
                   onClick={() => setCartOpen(false)}
-                  className="block w-full h-12 bg-brand-fill text-brand-black text-[12px] tracking-[0.25em]
+                  className="block w-full h-12 bg-brand-fill text-brand-black text-[14px] tracking-[0.25em]
                     flex items-center justify-center hover:bg-brand-gray-mid transition-colors"
                 >
                   결제하기
@@ -159,8 +159,8 @@ function CartItemRow({
       {/* 정보 */}
       <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
         <div>
-          <p className="text-[12px] tracking-widest truncate">{item.product.name}</p>
-          <p className="text-[13px] text-brand-gray-mid mt-0.5 truncate">
+          <p className="text-[14px] tracking-widest truncate">{item.product.name}</p>
+          <p className="text-[15px] text-brand-gray-mid mt-0.5 truncate">
             {item.product.description}
           </p>
           {variantLabel && (
@@ -171,7 +171,7 @@ function CartItemRow({
                   style={{ backgroundColor: colorHex }}
                 />
               )}
-              <span className="text-[12px] text-brand-gray-mid">{variantLabel}</span>
+              <span className="text-[14px] text-brand-gray-mid">{variantLabel}</span>
             </div>
           )}
         </div>

@@ -32,7 +32,7 @@ export default function AccountSidebar() {
               key={href}
               href={href}
               className={[
-                "shrink-0 text-[12px] tracking-widest px-4 lg:px-0 py-3 lg:py-3.5 border-b-2 lg:border-b-0 lg:border-l-[2px] transition-colors whitespace-nowrap",
+                "shrink-0 text-[14px] tracking-widest px-4 lg:px-0 py-3 lg:py-3.5 border-b-2 lg:border-b-0 lg:border-l-[2px] transition-colors whitespace-nowrap",
                 active
                   ? "border-brand-black text-brand-black"
                   : "border-transparent text-brand-gray-mid hover:text-brand-black",
@@ -47,7 +47,7 @@ export default function AccountSidebar() {
       {/* 데스크톱 로그아웃 */}
       <button
         onClick={handleSignOut}
-        className="hidden lg:block text-[12px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors mt-6 px-0 py-2"
+        className="hidden lg:block text-[14px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors mt-6 px-0 py-2"
       >
         로그아웃
       </button>

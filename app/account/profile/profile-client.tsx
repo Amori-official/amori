@@ -57,11 +57,11 @@ export default function ProfileClient(initial: Props) {
 
   return (
     <div id="account-profile" className="p-6 sm:p-8 space-y-8">
-      <h2 className="text-[12px] tracking-[0.3em] border-b border-brand-border pb-4">회원 정보 수정</h2>
+      <h2 className="text-[14px] tracking-[0.3em] border-b border-brand-border pb-4">회원 정보 수정</h2>
 
       {/* 기본 정보 */}
       <form onSubmit={handleProfileSave} className="space-y-4 max-w-sm">
-        <h3 className="text-[12px] tracking-widest text-brand-gray-mid">기본 정보</h3>
+        <h3 className="text-[14px] tracking-widest text-brand-gray-mid">기본 정보</h3>
 
         <FormField label="이메일">
           <input
@@ -104,7 +104,7 @@ export default function ProfileClient(initial: Props) {
         <button
           type="submit"
           disabled={profileLoading}
-          className="h-10 px-6 bg-brand-fill text-brand-black text-[12px] tracking-widest hover:bg-brand-fill-hover transition-colors disabled:opacity-50"
+          className="h-10 px-6 bg-brand-fill text-brand-black text-[14px] tracking-widest hover:bg-brand-fill-hover transition-colors disabled:opacity-50"
         >
           {profileLoading ? "저장 중..." : "저장"}
         </button>
@@ -112,7 +112,7 @@ export default function ProfileClient(initial: Props) {
 
       {/* 비밀번호 변경 */}
       <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm pt-4 border-t border-brand-border">
-        <h3 className="text-[12px] tracking-widest text-brand-gray-mid">비밀번호 변경</h3>
+        <h3 className="text-[14px] tracking-widest text-brand-gray-mid">비밀번호 변경</h3>
 
         <FormField label="새 비밀번호">
           <input
@@ -138,7 +138,7 @@ export default function ProfileClient(initial: Props) {
         <button
           type="submit"
           disabled={pwLoading || !newPassword}
-          className="h-10 px-6 border border-brand-black text-brand-black text-[12px] tracking-widest hover:bg-brand-fill hover:text-brand-black transition-colors disabled:opacity-40"
+          className="h-10 px-6 border border-brand-black text-brand-black text-[14px] tracking-widest hover:bg-brand-fill hover:text-brand-black transition-colors disabled:opacity-40"
         >
           {pwLoading ? "변경 중..." : "비밀번호 변경"}
         </button>
@@ -150,7 +150,7 @@ export default function ProfileClient(initial: Props) {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[12px] tracking-widest">{label}</label>
+      <label className="text-[14px] tracking-widest">{label}</label>
       {children}
     </div>
   );

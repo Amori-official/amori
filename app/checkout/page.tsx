@@ -166,14 +166,14 @@ export default function CheckoutPage() {
 
       <div className="pt-[60px] min-h-screen bg-brand-gray-light">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-          <h1 className="text-[12px] tracking-[0.3em] mb-8">CHECKOUT</h1>
+          <h1 className="text-[14px] tracking-[0.3em] mb-8">CHECKOUT</h1>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
             {/* ── 왼쪽: 폼 영역 ──────────────────────────────── */}
             <div className="space-y-4">
               {/* 배송지 */}
               <div id="checkout-form" className="bg-white p-6 space-y-4">
-                <h2 className="text-[12px] tracking-[0.25em] pb-1 border-b border-brand-border">
+                <h2 className="text-[14px] tracking-[0.25em] pb-1 border-b border-brand-border">
                   배송지
                 </h2>
 
@@ -207,7 +207,7 @@ export default function CheckoutPage() {
                     <button
                       type="button"
                       onClick={handleAddressSearch}
-                      className="shrink-0 px-4 h-11 border border-brand-border text-[12px] tracking-widest
+                      className="shrink-0 px-4 h-11 border border-brand-border text-[14px] tracking-widest
                         hover:bg-brand-gray-light transition-colors whitespace-nowrap"
                     >
                       주소 찾기
@@ -233,7 +233,7 @@ export default function CheckoutPage() {
 
               {/* 선물 포장 */}
               <div id="checkout-options" className="bg-white p-6 space-y-3">
-                <h2 className="text-[12px] tracking-[0.25em] pb-1 border-b border-brand-border">
+                <h2 className="text-[14px] tracking-[0.25em] pb-1 border-b border-brand-border">
                   선물 포장
                 </h2>
 
@@ -264,7 +264,7 @@ export default function CheckoutPage() {
 
               {/* 결제 수단 */}
               <div id="checkout-payment" className="bg-white p-6 space-y-4">
-                <h2 className="text-[12px] tracking-[0.25em] pb-1 border-b border-brand-border">
+                <h2 className="text-[14px] tracking-[0.25em] pb-1 border-b border-brand-border">
                   결제 수단
                 </h2>
 
@@ -285,7 +285,7 @@ export default function CheckoutPage() {
             {/* ── 오른쪽: 주문 요약 ────────────────────────────── */}
             <div className="space-y-4 lg:sticky lg:top-20 self-start">
               <div className="bg-white p-6 space-y-4">
-                <h2 className="text-[12px] tracking-[0.25em] pb-1 border-b border-brand-border">
+                <h2 className="text-[14px] tracking-[0.25em] pb-1 border-b border-brand-border">
                   주문 상품
                 </h2>
 
@@ -308,12 +308,12 @@ export default function CheckoutPage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[12px] tracking-widest truncate">{item.product.name}</p>
-                          <p className="text-[12px] text-brand-gray-mid mt-0.5 truncate">
+                          <p className="text-[14px] tracking-widest truncate">{item.product.name}</p>
+                          <p className="text-[14px] text-brand-gray-mid mt-0.5 truncate">
                             {variantLabel || item.product.description}
                           </p>
                           <div className="flex justify-between mt-1.5">
-                            <span className="text-[12px] text-brand-gray-mid">×{item.quantity}</span>
+                            <span className="text-[14px] text-brand-gray-mid">×{item.quantity}</span>
                             <span className="text-xs">
                               ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
                             </span>
@@ -349,14 +349,14 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={submitting || (!!TOSS_CLIENT_KEY && !tossReady)}
-                className="w-full h-12 bg-brand-fill text-brand-black text-[12px] tracking-[0.25em]
+                className="w-full h-12 bg-brand-fill text-brand-black text-[14px] tracking-[0.25em]
                   hover:bg-brand-gray-mid transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "처리 중..." : `₩${grandTotal.toLocaleString("ko-KR")} 결제하기`}
               </button>
 
               {TOSS_CLIENT_KEY && !tossReady && (
-                <p className="text-[12px] text-center text-brand-gray-mid tracking-wide">
+                <p className="text-[14px] text-center text-brand-gray-mid tracking-wide">
                   결제 수단 로딩 중...
                 </p>
               )}
@@ -372,7 +372,7 @@ export default function CheckoutPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[12px] tracking-widest">{label}</label>
+      <label className="text-[14px] tracking-widest">{label}</label>
       {children}
     </div>
   );

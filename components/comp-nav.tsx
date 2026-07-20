@@ -67,7 +67,7 @@ export default function CompNav() {
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className="text-[12px] tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors"
+                  className="text-[15px] tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -87,13 +87,13 @@ export default function CompNav() {
               <div className="hidden md:flex items-center gap-3">
                 <Link
                   href="/account"
-                  className="text-[12px] tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors"
+                  className="text-[15px] tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors"
                 >
                   {displayName ?? "MY PAGE"}
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="text-[12px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors"
+                  className="text-[15px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors"
                 >
                   LOGOUT
                 </button>
@@ -114,7 +114,7 @@ export default function CompNav() {
             >
               <ShoppingBag size={17} strokeWidth={1.5} />
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-brand-fill text-brand-black text-[9px] w-4 h-4 flex items-center justify-center rounded-full leading-none">
+                <span className="absolute -top-1.5 -right-1.5 bg-brand-fill text-brand-black text-[11px] w-4 h-4 flex items-center justify-center rounded-full leading-none">
                   {cartCount}
                 </span>
               )}
@@ -176,14 +176,14 @@ export default function CompNav() {
                 <>
                   <Link
                     href="/account"
-                    className="text-[12px] tracking-widest text-brand-gray-mid"
+                    className="text-[15px] tracking-widest text-brand-gray-mid"
                     onClick={() => setMobileOpen(false)}
                   >
                     {displayName ?? "MY PAGE"}
                   </Link>
                   <button
                     onClick={() => { handleSignOut(); setMobileOpen(false); }}
-                    className="text-[12px] tracking-widest text-brand-gray-mid"
+                    className="text-[15px] tracking-widest text-brand-gray-mid"
                   >
                     LOGOUT
                   </button>
@@ -191,14 +191,14 @@ export default function CompNav() {
               ) : (
                 <button
                   onClick={() => { setAuthModalOpen(true, "login"); setMobileOpen(false); }}
-                  className="text-[12px] tracking-widest text-brand-gray-mid"
+                  className="text-[15px] tracking-widest text-brand-gray-mid"
                 >
                   LOGIN
                 </button>
               )}
               <button
                 onClick={() => { setCartOpen(true); setMobileOpen(false); }}
-                className="text-[12px] tracking-widest text-brand-gray-mid"
+                className="text-[15px] tracking-widest text-brand-gray-mid"
               >
                 CART {cartCount > 0 && `(${cartCount})`}
               </button>

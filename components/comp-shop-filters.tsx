@@ -46,7 +46,7 @@ export default function CompShopFilters({ category = "all", sort = "new" }: Prop
             key={cat.value}
             onClick={() => update("category", cat.value)}
             className={[
-              "text-[12px] tracking-widest px-4 py-2 transition-all shrink-0",
+              "text-[14px] tracking-widest px-4 py-2 transition-all shrink-0",
               category === cat.value
                 ? "font-bold text-brand-black"
                 : "font-normal text-brand-gray-mid hover:font-bold hover:text-brand-black",
@@ -61,7 +61,7 @@ export default function CompShopFilters({ category = "all", sort = "new" }: Prop
       <select
         value={sort}
         onChange={(e) => update("sort", e.target.value)}
-        className="text-[12px] tracking-widest border border-brand-border px-3 py-2 bg-white text-brand-black
+        className="text-[14px] tracking-widest border border-brand-border px-3 py-2 bg-white text-brand-black
           focus:outline-none focus:border-brand-black cursor-pointer shrink-0 self-start sm:self-auto"
       >
         {SORTS.map((s) => (

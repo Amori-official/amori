@@ -91,7 +91,7 @@ function CompleteContent() {
         <p className="text-sm text-red-500 tracking-wide">{error}</p>
         <Link
           href="/checkout"
-          className="text-[12px] tracking-widest underline hover:text-brand-gray-mid"
+          className="text-[14px] tracking-widest underline hover:text-brand-gray-mid"
         >
           결제 다시 시도
         </Link>
@@ -102,7 +102,7 @@ function CompleteContent() {
   return (
     <div className="pt-[60px] min-h-screen flex flex-col items-center justify-center gap-8 px-4 text-center">
       <div className="space-y-2">
-        <p className="text-[12px] tracking-[0.4em] text-brand-gray-mid">ORDER CONFIRMED</p>
+        <p className="text-[14px] tracking-[0.4em] text-brand-gray-mid">ORDER CONFIRMED</p>
         <h1 className="text-3xl font-light tracking-[0.15em]">감사합니다</h1>
         <p className="text-sm text-brand-gray-mid tracking-wide mt-2 leading-relaxed">
           주문이 정상적으로 완료되었습니다.
@@ -120,14 +120,14 @@ function CompleteContent() {
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
           href="/shop"
-          className="px-8 h-11 border border-brand-black text-brand-black text-[12px] tracking-widest
+          className="px-8 h-11 border border-brand-black text-brand-black text-[14px] tracking-widest
             flex items-center justify-center hover:bg-brand-fill hover:text-brand-black transition-colors"
         >
           쇼핑 계속하기
         </Link>
         <Link
           href="/account"
-          className="px-8 h-11 bg-brand-fill text-brand-black text-[12px] tracking-widest
+          className="px-8 h-11 bg-brand-fill text-brand-black text-[14px] tracking-widest
             flex items-center justify-center hover:bg-brand-gray-mid transition-colors"
         >
           주문 내역 보기

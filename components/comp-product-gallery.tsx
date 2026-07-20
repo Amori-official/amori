@@ -47,10 +47,10 @@ export default function CompProductGallery({ product, primaryImage, primaryImage
 
   const emptyState = (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-      <span className="text-[12px] tracking-[0.3em] text-brand-gray-mid">
+      <span className="text-[14px] tracking-[0.3em] text-brand-gray-mid">
         {product.category.toUpperCase()}
       </span>
-      <span className="text-[12px] tracking-widest text-brand-border">
+      <span className="text-[14px] tracking-widest text-brand-border">
         {product.name}
       </span>
     </div>

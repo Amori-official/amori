@@ -19,7 +19,7 @@ export default function WishlistPage() {
 
   return (
     <div id="account-wishlist" className="p-6 sm:p-8">
-      <h2 className="text-[12px] tracking-[0.3em] mb-6 border-b border-brand-border pb-4">
+      <h2 className="text-[14px] tracking-[0.3em] mb-6 border-b border-brand-border pb-4">
         위시리스트 ({displayItems.length})
       </h2>
 
@@ -28,7 +28,7 @@ export default function WishlistPage() {
           <p className="text-brand-gray-mid text-sm tracking-wide">위시리스트가 비어있습니다.</p>
           <Link
             href="/shop"
-            className="text-[12px] tracking-widest underline hover:text-brand-gray-mid transition-colors"
+            className="text-[14px] tracking-widest underline hover:text-brand-gray-mid transition-colors"
           >
             쇼핑 계속하기
           </Link>
@@ -40,12 +40,12 @@ export default function WishlistPage() {
               <Link href={`/shop/${product.slug}`} className="block">
                 <div className="aspect-[3/4] bg-brand-gray-light relative overflow-hidden mb-2">
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[12px] tracking-widest text-brand-gray-mid">
+                    <span className="text-[14px] tracking-widest text-brand-gray-mid">
                       {product.name}
                     </span>
                   </div>
                 </div>
-                <p className="text-[12px] tracking-widest">{product.name}</p>
+                <p className="text-[14px] tracking-widest">{product.name}</p>
                 <p className="text-xs text-brand-gray-mid mt-0.5 truncate">{product.description}</p>
                 <p className="text-sm mt-1">
                   {product.sizes && product.sizes.length > 0
@@ -61,7 +61,7 @@ export default function WishlistPage() {
                     setCartOpen(true);
                     showToast(`${product.name}이(가) 장바구니에 담겼습니다.`);
                   }}
-                  className="flex-1 h-8 bg-brand-fill text-brand-black text-[9px] tracking-widest hover:bg-brand-fill-hover transition-colors"
+                  className="flex-1 h-8 bg-brand-fill text-brand-black text-[11px] tracking-widest hover:bg-brand-fill-hover transition-colors"
                 >
                   장바구니 담기
                 </button>

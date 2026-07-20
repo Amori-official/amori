@@ -23,8 +23,8 @@ export default function SectionReviews() {
           transition={{ duration: 0.5 }}
           className="flex items-baseline justify-between pb-4"
         >
-          <p className="text-[12px] tracking-widest">CUSTOMER REVIEWS</p>
-          <span className="text-[12px] text-brand-gray-mid">★★★★★ 4.9</span>
+          <p className="text-[14px] tracking-widest">CUSTOMER REVIEWS</p>
+          <span className="text-[14px] text-brand-gray-mid">★★★★★ 4.9</span>
         </motion.div>
 
         {/* 3열 후기 */}
@@ -42,8 +42,8 @@ export default function SectionReviews() {
               </p>
               <p className="text-sm tracking-wide leading-8 mb-7">{r.text}</p>
               <div className="border-t border-brand-border pt-4">
-                <p className="text-[12px] tracking-widest">{r.name}</p>
-                <p className="text-[12px] text-brand-gray-mid mt-0.5">
+                <p className="text-[14px] tracking-widest">{r.name}</p>
+                <p className="text-[14px] text-brand-gray-mid mt-0.5">
                   {r.product}
                 </p>
               </div>

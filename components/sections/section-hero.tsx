@@ -36,7 +36,7 @@ export default function SectionHero() {
           <div className="flex flex-col gap-8 mix-blend-multiply items-end text-right">
             <motion.p
               {...fadeUp(0.1)}
-              className="text-[12px] tracking-widest text-brand-black"
+              className="text-[14px] tracking-widest text-brand-black"
             >
               SS 2025 COLLECTION ·
             </motion.p>
@@ -63,7 +63,7 @@ export default function SectionHero() {
             <motion.div {...fadeUp(0.5)} className="flex">
               <Link
                 href="/shop"
-                className="bg-brand-fill text-brand-black px-8 py-3.5 text-[12px] tracking-widest hover:opacity-70 transition-opacity"
+                className="bg-brand-fill text-brand-black px-8 py-3.5 text-[14px] tracking-widest hover:opacity-70 transition-opacity"
               >
                 SHOP NOW
               </Link>
@@ -77,7 +77,7 @@ export default function SectionHero() {
           animate={{ y: [0, 7, 0] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
         >
-          <span className="text-[12px] tracking-widest text-brand-black opacity-60">
+          <span className="text-[14px] tracking-widest text-brand-black opacity-60">
             ↓ SCROLL
           </span>
         </motion.div>
