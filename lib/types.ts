@@ -9,6 +9,17 @@ export interface ProductSize {
   price: number;
 }
 
+/** DB product_variants 행 1개를 그대로 반영한 원본 variant. colors/sizes는 이 배열에서 파생된 뷰일 뿐, 실제 주문 시 variant_id 결정은 반드시 이 배열을 근거로 한다 */
+export interface ProductVariant {
+  id: string;
+  colorName?: string;
+  colorHex?: string;
+  optionName?: string;
+  imageUrl?: string;
+  priceOverride?: number;
+  isActive: boolean;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -23,6 +34,8 @@ export interface Product {
   colors?: ProductColor[];
   /** 사이즈별로 가격이 다른 상품에만 사용 (예: FLOWER POUCH S/L). 없으면 기존처럼 단일 가격(price)만 사용 */
   sizes?: ProductSize[];
+  /** DB product_variants 원본 목록. 장바구니 담기/주문 시 실제 variant UUID를 결정하는 유일한 근거 */
+  variants?: ProductVariant[];
   category: string;
   stock: number;
   isComingSoon?: boolean;

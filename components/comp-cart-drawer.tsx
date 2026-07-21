@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUIStore } from "@/store/ui";
 import { useCartStore, type CartItem } from "@/store/cart";
+import { isCartItemOrderable } from "@/lib/resolve-variant";
 
 const FREE_SHIPPING = 50000;
 
@@ -141,6 +142,7 @@ function CartItemRow({
 }) {
   const colorHex = item.product.colors?.find((c) => c.name === item.selectedColor)?.hex;
   const variantLabel = [item.selectedSize, item.selectedColor].filter(Boolean).join(" · ");
+  const orderable = isCartItemOrderable(item);
 
   return (
     <li className="flex gap-3">
@@ -172,6 +174,20 @@ function CartItemRow({
                 />
               )}
               <span className="text-[14px] text-brand-gray-mid">{variantLabel}</span>
+            </div>
+          )}
+          {!orderable && (
+            <div className="mt-1.5 flex flex-col items-start gap-0.5">
+              <p className="text-[13px] text-red-500 tracking-wide">
+                상품 정보가 변경되었습니다. 해당 상품을 삭제하고 상품 페이지에서 다시 담아주세요.
+              </p>
+              <Link
+                href={`/shop/${item.product.slug}`}
+                onClick={() => useUIStore.getState().setCartOpen(false)}
+                className="text-[13px] text-brand-gray-mid underline hover:text-brand-black transition-colors"
+              >
+                상품 상세로 이동
+              </Link>
             </div>
           )}
         </div>

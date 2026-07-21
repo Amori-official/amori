@@ -6,6 +6,7 @@ import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
 import { useAuthStore } from "@/store/auth";
 import { useWishlistStore } from "@/store/wishlist";
+import { resolveVariant, isSplitAxisProduct } from "@/lib/resolve-variant";
 import type { Product } from "@/lib/types";
 
 interface Props {
@@ -38,25 +39,43 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
   const { toggle: toggleWishlist, has: inWishlist } = useWishlistStore();
   const router = useRouter();
 
-  const isSoldOut = product.stock === 0;
+  // 색상/사이즈 조합에 실제로 대응하는 DB variant. 옵션 없는 상품은 항상 null.
+  const hasVariants = (product.variants?.length ?? 0) > 0;
+  const resolvedVariant = resolveVariant(product.variants, selectedColor, selectedSize);
+  // 색상 전용 variant와 사이즈 전용 variant만 있고 조합형 variant가 없는 상품은
+  // 하나의 variant_id로 색상+사이즈를 동시에 표현할 수 없어 주문 시 한쪽이 유실된다.
+  // DB에 조합형 variant가 정비될 때까지 이 상품은 담기/구매 자체를 차단한다.
+  const isSplitAxis = isSplitAxisProduct(product.variants);
+  // variant가 있는 상품은 "선택 조합이 존재하지 않음" 또는 "품절/판매중지"를 기준으로 판단하고,
+  // variant가 없는 상품은 기존과 동일하게 레거시 stock 필드를 기준으로 판단한다.
+  const isSoldOut = hasVariants ? !resolvedVariant || !resolvedVariant.isActive : product.stock === 0;
+  const isBlocked = isSplitAxis || isSoldOut;
 
   const displayPrice = selectedSize
     ? (product.sizes?.find((s) => s.name === selectedSize)?.price ?? product.price)
     : product.price;
 
   const stockLabel = () => {
+    if (isSplitAxis) {
+      return { text: "상품 옵션을 정비 중입니다. 잠시 후 다시 이용해 주세요.", color: "text-amber-600" };
+    }
+    if (hasVariants && !resolvedVariant) {
+      return { text: "선택하신 옵션 조합은 판매하지 않습니다", color: "text-red-400" };
+    }
     if (isSoldOut) return { text: "품절", color: "text-red-400" };
-    if (product.stock <= 5) return { text: `${product.stock}개 남음`, color: "text-amber-500" };
+    if (!hasVariants && product.stock <= 5) return { text: `${product.stock}개 남음`, color: "text-amber-500" };
     return { text: "재고 있음", color: "text-green-600" };
   };
 
   const handleAddToCart = () => {
+    if (isBlocked) return;
     add(product, qty, selectedColor, selectedSize);
     setCartOpen(true);
     showToast(`${product.name}이(가) 장바구니에 담겼습니다.`);
   };
 
   const handleBuyNow = () => {
+    if (isBlocked) return;
     if (!user) {
       setAuthModalOpen(true, "login");
       return;
@@ -156,7 +175,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
       <p className={`text-xs tracking-wide ${stockInfo.color}`}>{stockInfo.text}</p>
 
       {/* 수량 */}
-      {!isSoldOut && (
+      {!isBlocked && (
         <div className="flex items-center gap-0 border border-brand-border w-fit">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -178,15 +197,15 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
       <div className="flex flex-col sm:flex-row gap-2 pt-2">
         <button
           onClick={handleAddToCart}
-          disabled={isSoldOut}
+          disabled={isBlocked}
           className="flex-1 h-12 border border-brand-border-soft text-brand-black text-[14px] tracking-[0.2em]
             hover:bg-brand-fill hover:text-brand-black transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isSoldOut ? "품절" : "장바구니 담기"}
+          {isBlocked ? "품절" : "장바구니 담기"}
         </button>
         <button
           onClick={handleBuyNow}
-          disabled={isSoldOut}
+          disabled={isBlocked}
           className="flex-1 h-12 bg-brand-fill text-brand-black text-[14px] tracking-[0.2em]
             hover:bg-brand-gray-mid transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >

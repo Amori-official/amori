@@ -2,7 +2,7 @@
 
 import { mockProducts, mockReviews } from "@/lib/mock-data";
 import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
-import type { Product, Review } from "@/lib/types";
+import type { Product, ProductVariant, Review } from "@/lib/types";
 
 const IS_CONFIGURED = isSupabaseConfigured();
 
@@ -12,6 +12,7 @@ const IS_CONFIGURED = isSupabaseConfigured();
 const PRODUCT_SELECT = "*, product_variants(*), product_images(*)";
 
 interface VariantRow {
+  id: string;
   color_name: string | null;
   color_hex: string | null;
   option_name: string | null;
@@ -71,6 +72,18 @@ function mapRow(row: Record<string, unknown>): Product {
       price: v.price_override ?? price,
     }));
 
+  // colors/sizes는 렌더링용 파생 뷰일 뿐, 실제 variant_id 결정(장바구니/주문)은
+  // 이 원본 목록을 기준으로 색상+사이즈 조합을 정확히 매칭해서 이루어져야 한다.
+  const productVariants: ProductVariant[] = variants.map((v) => ({
+    id: v.id,
+    ...(v.color_name ? { colorName: v.color_name } : {}),
+    ...(v.color_hex ? { colorHex: v.color_hex } : {}),
+    ...(v.option_name ? { optionName: v.option_name } : {}),
+    ...(v.image_url ? { imageUrl: v.image_url } : {}),
+    ...(v.price_override !== null ? { priceOverride: v.price_override } : {}),
+    isActive: v.is_active,
+  }));
+
   return {
     id: String(row.id),
     slug: String(row.slug),
@@ -83,6 +96,7 @@ function mapRow(row: Record<string, unknown>): Product {
     images: gallery.map((i) => i.image_url),
     colors: colors.length > 0 ? colors : undefined,
     sizes: sizes.length > 0 ? sizes : undefined,
+    variants: productVariants.length > 0 ? productVariants : undefined,
     category: String(row.category ?? ""),
     stock: Number(row.stock ?? 0),
     isComingSoon: Boolean(row.is_coming_soon),
