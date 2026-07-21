@@ -3,6 +3,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
+
+const NOT_CONFIGURED_ERROR = "현재 로그인을 사용할 수 없습니다. 잠시 후 다시 시도해주세요.";
+const GENERIC_AUTH_ERROR = "요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.";
 
 function createActionClient() {
   const cookieStore = cookies();
@@ -27,6 +31,8 @@ function createActionClient() {
 }
 
 // ── 에러 메시지 한국어 변환 ───────────────────────────────────
+// 매핑되지 않은 원문(Supabase 내부 오류 등)은 절대 그대로 노출하지 않고
+// 안전한 일반 메시지로 대체한다. 원문은 서버 로그로만 남긴다.
 function toKoreanError(msg: string): string {
   if (msg.includes("User already registered") || msg.includes("already been registered"))
     return "이미 가입된 이메일 주소입니다.";
@@ -38,7 +44,8 @@ function toKoreanError(msg: string): string {
     return "비밀번호는 6자 이상이어야 합니다.";
   if (msg.includes("rate limit"))
     return "잠시 후 다시 시도해주세요.";
-  return msg;
+  logSupabaseError("auth (미매핑 오류)", msg);
+  return GENERIC_AUTH_ERROR;
 }
 
 // ── 회원가입 ─────────────────────────────────────────────────
@@ -48,23 +55,30 @@ export async function signUp(data: {
   password: string;
   marketingAgreed: boolean;
 }): Promise<{ error?: string; success?: boolean }> {
-  const supabase = createActionClient();
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED_ERROR };
 
-  const { error } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
-    options: {
-      data: {
-        name: data.name,
-        marketing_agreed: data.marketingAgreed,
+  try {
+    const supabase = createActionClient();
+
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          name: data.name,
+          marketing_agreed: data.marketingAgreed,
+        },
       },
-    },
-  });
+    });
 
-  if (error) return { error: toKoreanError(error.message) };
+    if (error) return { error: toKoreanError(error.message) };
 
-  revalidatePath("/", "layout");
-  return { success: true };
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error) {
+    logSupabaseError("signUp", error);
+    return { error: GENERIC_AUTH_ERROR };
+  }
 }
 
 // ── 로그인 ───────────────────────────────────────────────────
@@ -72,24 +86,37 @@ export async function signIn(data: {
   email: string;
   password: string;
 }): Promise<{ error?: string; success?: boolean }> {
-  const supabase = createActionClient();
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED_ERROR };
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: data.email,
-    password: data.password,
-  });
+  try {
+    const supabase = createActionClient();
 
-  if (error) return { error: toKoreanError(error.message) };
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
 
-  revalidatePath("/", "layout");
-  return { success: true };
+    if (error) return { error: toKoreanError(error.message) };
+
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch (error) {
+    logSupabaseError("signIn", error);
+    return { error: GENERIC_AUTH_ERROR };
+  }
 }
 
 // ── 로그아웃 ─────────────────────────────────────────────────
 export async function signOut(): Promise<void> {
-  const supabase = createActionClient();
-  await supabase.auth.signOut();
-  revalidatePath("/", "layout");
+  if (!isSupabaseConfigured()) return;
+
+  try {
+    const supabase = createActionClient();
+    await supabase.auth.signOut();
+    revalidatePath("/", "layout");
+  } catch (error) {
+    logSupabaseError("signOut", error);
+  }
 }
 
 // ── 카카오 OAuth — URL 반환 (클라이언트에서 redirect) ─────────
@@ -97,16 +124,23 @@ export async function getKakaoOAuthUrl(): Promise<{
   url?: string;
   error?: string;
 }> {
-  const supabase = createActionClient();
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED_ERROR };
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "kakao",
-    options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-      skipBrowserRedirect: true,
-    },
-  });
+  try {
+    const supabase = createActionClient();
 
-  if (error) return { error: error.message };
-  return { url: data.url };
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        skipBrowserRedirect: true,
+      },
+    });
+
+    if (error) return { error: toKoreanError(error.message) };
+    return { url: data.url };
+  } catch (error) {
+    logSupabaseError("getKakaoOAuthUrl", error);
+    return { error: GENERIC_AUTH_ERROR };
+  }
 }
