@@ -57,20 +57,37 @@ function mapRow(row: Record<string, unknown>): Product {
 
   const price = Number(row.price);
 
-  const colors = variants
-    .filter((v) => v.color_name)
-    .map((v) => ({
-      name: v.color_name as string,
-      hex: v.color_hex as string,
-      ...(v.image_url ? { image: v.image_url } : {}),
-    }));
+  // colors/sizes는 활성 variant에서만 파생한다 — 비활성 처리된 행(예: 색상+
+  // 사이즈 조합형 정비 후 남겨둔 split-axis 레거시 행)이 선택지에 다시
+  // 노출되면 안 된다. 색상 전용/사이즈 전용 행뿐 아니라 색상+사이즈를 모두
+  // 가진 조합형 행도 각각 colors/sizes 파생에 기여해야 하므로 서로를
+  // 배제하는 조건은 두지 않고, 같은 이름은 처음 등장한 활성 행의 값을
+  // 대표값으로 삼아 한 번만 남긴다(Map은 삽입 순서를 보존하므로 노출 순서는
+  // 기존 display_order 정렬을 그대로 따른다).
+  const activeVariants = variants.filter((v) => v.is_active);
 
-  const sizes = variants
-    .filter((v) => v.option_name && !v.color_name)
-    .map((v) => ({
-      name: v.option_name as string,
-      price: v.price_override ?? price,
-    }));
+  const colorMap = new Map<string, { name: string; hex: string; image?: string }>();
+  for (const v of activeVariants) {
+    if (v.color_name && !colorMap.has(v.color_name)) {
+      colorMap.set(v.color_name, {
+        name: v.color_name,
+        hex: v.color_hex as string,
+        ...(v.image_url ? { image: v.image_url } : {}),
+      });
+    }
+  }
+  const colors = Array.from(colorMap.values());
+
+  const sizeMap = new Map<string, { name: string; price: number }>();
+  for (const v of activeVariants) {
+    if (v.option_name && !sizeMap.has(v.option_name)) {
+      sizeMap.set(v.option_name, {
+        name: v.option_name,
+        price: v.price_override ?? price,
+      });
+    }
+  }
+  const sizes = Array.from(sizeMap.values());
 
   // colors/sizes는 렌더링용 파생 뷰일 뿐, 실제 variant_id 결정(장바구니/주문)은
   // 이 원본 목록을 기준으로 색상+사이즈 조합을 정확히 매칭해서 이루어져야 한다.
