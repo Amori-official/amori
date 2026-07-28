@@ -1,48 +1,72 @@
 "use server";
 
-import { mockOrders } from "@/lib/mock-data";
 import type { Order, ShippingAddress } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
 const IS_CONFIGURED = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").startsWith("http");
 
+/**
+ * 신 스키마의 3개 상태(order_status/payment_status/fulfillment_status)를
+ * UI가 사용하는 단일 표시 상태로 파생한다. 우선순위: 취소 > 배송완료 > 배송중 >
+ * 결제완료 > 그 외(결제 대기).
+ */
+function deriveOrderStatus(
+  orderStatus: string,
+  paymentStatus: string,
+  fulfillmentStatus: string
+): Order["status"] {
+  if (orderStatus === "cancelled") return "cancelled";
+  if (fulfillmentStatus === "delivered") return "delivered";
+  if (fulfillmentStatus === "preparing" || fulfillmentStatus === "shipped") return "shipped";
+  if (paymentStatus === "paid") return "paid";
+  return "pending";
+}
+
 // ── 주문 내역 ──────────────────────────────────────────────
 export async function getOrders(): Promise<Order[]> {
-  if (IS_CONFIGURED) {
-    try {
-      const { createServerSideClient } = await import("@/lib/supabase-server");
-      const supabase = createServerSideClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+  if (!IS_CONFIGURED) return [];
 
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, order_items(*)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
 
-      if (error || !data) return [];
+    // 본인 주문만 조회된다(orders RLS: auth.uid() = user_id).
+    const { data, error } = await supabase
+      .from("orders")
+      .select(
+        "id, order_number, total_amount, order_status, payment_status, fulfillment_status, shipping_address, created_at, order_items(*)"
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-      return data.map((o) => ({
-        id: String(o.id),
-        userId: String(o.user_id),
-        items: Array.isArray(o.order_items)
-          ? o.order_items.map((i: Record<string, unknown>) => ({
-              productId: String(i.product_id),
-              productName: String(i.product_name),
-              quantity: Number(i.quantity),
-              price: Number(i.price),
-            }))
-          : [],
-        totalAmount: Number(o.total_amount),
-        status: o.status as Order["status"],
-        shippingAddress: o.shipping_address as ShippingAddress,
-        createdAt: String(o.created_at),
-      }));
-    } catch {}
+    if (error || !data) return [];
+
+    return data.map((o) => ({
+      // 표시용 주문번호는 사람이 읽는 order_number(ORD…)를 사용한다(완료 페이지와 일치).
+      id: String(o.order_number ?? o.id),
+      userId: String(user.id),
+      items: Array.isArray(o.order_items)
+        ? o.order_items.map((i: Record<string, unknown>) => ({
+            productId: String(i.product_id),
+            productName: String(i.product_name),
+            quantity: Number(i.quantity),
+            price: Number(i.price),
+          }))
+        : [],
+      totalAmount: Number(o.total_amount),
+      status: deriveOrderStatus(
+        String(o.order_status ?? ""),
+        String(o.payment_status ?? ""),
+        String(o.fulfillment_status ?? "")
+      ),
+      shippingAddress: o.shipping_address as ShippingAddress,
+      createdAt: String(o.created_at),
+    }));
+  } catch {
+    return [];
   }
-
-  return mockOrders as Order[];
 }
 
 // ── 프로필 수정 ────────────────────────────────────────────

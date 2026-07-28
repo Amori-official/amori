@@ -483,26 +483,8 @@ export const CARD_DEFAULT_IMAGE: Record<string, string> = {
   "hand-towel": "/products/handtowel0.png",
 };
 
-export const mockOrders = [
-  {
-    id: "ord-20250415-001",
-    userId: "mock-user",
-    items: [
-      { productId: "1", productName: "GAUZE BIB", quantity: 2, price: 16000 },
-      { productId: "2", productName: "GAUZE SCARF BIB", quantity: 1, price: 13000 },
-    ],
-    totalAmount: 45000,
-    status: "delivered" as const,
-    shippingAddress: {
-      name: "홍길동",
-      phone: "010-1234-5678",
-      zipCode: "06234",
-      address: "서울 강남구 테헤란로 123",
-      addressDetail: "101동 202호",
-    },
-    createdAt: "2025-04-15T10:30:00Z",
-  },
-];
+// 주문 내역은 실제 DB(orders 테이블)에서 조회한다 — app/actions/account.ts의 getOrders() 참고.
+// (구 mockOrders는 4단계에서 제거됨)
 
 // 실제 고객 리뷰가 아직 없어 전부 비워둠 — 실제 구매 리뷰가 쌓이면 여기에 추가
 export const mockReviews: Review[] = [];
