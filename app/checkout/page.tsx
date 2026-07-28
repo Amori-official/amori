@@ -6,9 +6,9 @@ import Link from "next/link";
 import Script from "next/script";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart";
-import { useUIStore } from "@/store/ui";
 import { useAuthStore } from "@/store/auth";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
+import { createOrderSecure } from "@/app/actions/create-order";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
 const FREE_SHIPPING = 50000;
@@ -71,17 +71,21 @@ export default function CheckoutPage() {
   const [tossReady, setTossReady] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const widgetsRef = useRef<any>(null);
+  // 주문 생성 성공 후 clear()로 카트를 비우면 items.length가 0이 되는데,
+  // 이때 아래 "빈 장바구니 → /shop" 가드가 발동해 완료 페이지 대신 /shop으로
+  // 튕기는 경쟁이 발생한다. 주문 완료 중임을 이 ref로 표시해 가드를 건너뛴다.
+  const orderPlacedRef = useRef(false);
 
   const { items, total, clear } = useCartStore();
-  const { setAuthModalOpen, showToast } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
 
   useEffect(() => setMounted(true), []);
 
-  // 빈 장바구니 처리 (로그인 여부와 무관 — 비회원 주문 지원)
+  // 빈 장바구니 처리 (로그인 여부와 무관 — 비회원 주문 지원).
+  // 단, 주문 완료로 인해 비워진 경우는 제외한다(완료 페이지로 이동 중).
   useEffect(() => {
-    if (mounted && items.length === 0) {
+    if (mounted && items.length === 0 && !orderPlacedRef.current) {
       router.push("/shop");
     }
   }, [mounted, items.length, router]);
@@ -231,8 +235,37 @@ export default function CheckoutPage() {
       return;
     }
 
-    // 16-4A: 폼 검증까지만 수행. createOrderSecure() 연결은 16-4C에서 진행한다.
-    showToast("입력 확인이 완료되었습니다. 주문 생성 연동은 다음 단계에서 진행됩니다.");
+    // 16-4C: 결제 연동 전 단계 — 주문을 서버(create_order RPC)에 생성한다.
+    // 가격/배송비/상품정보는 전부 서버가 DB에서 재계산하므로 여기서는
+    // items(productId/variantId/quantity)와 주문자·배송지 정보만 전달한다.
+    setSubmitting(true);
+    try {
+      const result = await createOrderSecure({
+        items: items.map((i) => ({
+          productId: i.product.id,
+          variantId: i.variantId,
+          quantity: i.quantity,
+        })),
+        buyerName,
+        buyerEmail,
+        buyerPhone,
+        recipientName,
+        recipientPhone,
+        postalCode,
+        addressLine1,
+        addressLine2: addressLine2 || null,
+        deliveryRequest: deliveryRequest || null,
+      });
+
+      orderPlacedRef.current = true;
+      clear();
+      router.push(`/checkout/complete?order=${encodeURIComponent(result.orderNumber)}`);
+    } catch (err) {
+      setSubmitting(false);
+      setFormError(
+        err instanceof Error ? err.message : "주문을 생성하지 못했습니다. 다시 시도해주세요."
+      );
+    }
   };
 
   if (!mounted) return null;
@@ -323,13 +356,14 @@ export default function CheckoutPage() {
 
                 <Field label="주소 (필수)">
                   <div className="flex gap-2">
-                    <Input
-                      placeholder="우편번호"
-                      value={postalCode}
-                      onChange={setPostalCode}
-                      className="w-28 shrink-0"
-                      readOnly
-                    />
+                    <div className="w-28 shrink-0">
+                      <Input
+                        placeholder="우편번호"
+                        value={postalCode}
+                        onChange={setPostalCode}
+                        readOnly
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={handleAddressSearch}
