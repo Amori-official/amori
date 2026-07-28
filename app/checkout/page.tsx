@@ -135,10 +135,12 @@ export default function CheckoutPage() {
     const amount = cartTotal >= FREE_SHIPPING ? cartTotal : cartTotal + SHIPPING_FEE;
 
     import("@tosspayments/tosspayments-sdk")
-      .then(async ({ loadTossPayments }) => {
+      .then(async ({ loadTossPayments, ANONYMOUS }) => {
         if (cancelled) return;
         const tossPayments = await loadTossPayments(clientKey);
-        const widgets = tossPayments.widgets({ customerKey: user?.id ?? "ANONYMOUS" });
+        // 비회원은 반드시 SDK의 ANONYMOUS 상수(실제 값 '@@ANONYMOUS')를 써야 한다.
+        // 문자열 "ANONYMOUS"를 넘기면 InvalidCustomerKeyError로 위젯 초기화가 실패한다.
+        const widgets = tossPayments.widgets({ customerKey: user?.id ?? ANONYMOUS });
         await widgets.setAmount({ currency: "KRW", value: amount });
         await Promise.all([
           widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
@@ -149,7 +151,11 @@ export default function CheckoutPage() {
           setTossReady(true);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("[toss] 결제 위젯 초기화 실패:", err);
+        setFormError("결제 수단을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+      });
 
     return () => { cancelled = true; };
   }, [mounted, user, items.length, total]);
@@ -186,61 +192,20 @@ export default function CheckoutPage() {
     }
     setFormError(null);
 
-    if (PAYMENT_INTEGRATION_ENABLED) {
-      // 기존 TossPayments 결제 요청 로직 (레거시, 삭제하지 않음).
-      // 이번 단계(16-4A~D)에서는 PAYMENT_INTEGRATION_ENABLED가 항상 false이므로
-      // 이 분기에는 도달하지 않는다.
-      if (!widgetsRef.current) {
-        alert("결제 수단을 선택해주세요.");
-        return;
-      }
-
-      setSubmitting(true);
-      const cartTotal = total();
-      const amount = cartTotal >= FREE_SHIPPING ? cartTotal : cartTotal + SHIPPING_FEE;
-      const orderId = `amori-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-      sessionStorage.setItem(
-        "pending-address",
-        JSON.stringify({
-          name: recipientName,
-          phone: recipientPhone,
-          zipCode: postalCode,
-          address: addressLine1,
-          addressDetail: addressLine2,
-        })
-      );
-      sessionStorage.setItem("pending-gift", JSON.stringify({ giftWrapping, giftMessage }));
-      sessionStorage.setItem(
-        "pending-items",
-        JSON.stringify(items.map((i) => ({ productId: i.product.id, name: i.product.name, qty: i.quantity, price: i.unitPrice })))
-      );
-
-      try {
-        await widgetsRef.current.requestPayment({
-          orderId,
-          orderName:
-            items.length === 1
-              ? items[0].product.name
-              : `${items[0].product.name} 외 ${items.length - 1}건`,
-          successUrl: `${window.location.origin}/checkout/complete`,
-          failUrl: `${window.location.origin}/checkout/fail`,
-          customerEmail: buyerEmail,
-          customerName: recipientName,
-          customerMobilePhone: recipientPhone.replace(/-/g, ""),
-        });
-      } catch {
-        setSubmitting(false);
-      }
+    // 결제창을 켠 경우, 결제창이 준비돼 있어야 진행한다.
+    if (PAYMENT_INTEGRATION_ENABLED && !widgetsRef.current) {
+      setFormError("결제 수단을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
       return;
     }
 
-    // 16-4C: 결제 연동 전 단계 — 주문을 서버(create_order RPC)에 생성한다.
-    // 가격/배송비/상품정보는 전부 서버가 DB에서 재계산하므로 여기서는
-    // items(productId/variantId/quantity)와 주문자·배송지 정보만 전달한다.
     setSubmitting(true);
+
+    // ① 먼저 서버에 pending 주문을 생성한다. 가격/배송비/상품정보는 전부 서버가
+    //    DB에서 재계산하므로 여기서는 items(productId/variantId/quantity)와
+    //    주문자·배송지 정보만 전달한다.
+    let order;
     try {
-      const result = await createOrderSecure({
+      order = await createOrderSecure({
         items: items.map((i) => ({
           productId: i.product.id,
           variantId: i.variantId,
@@ -256,15 +221,45 @@ export default function CheckoutPage() {
         addressLine2: addressLine2 || null,
         deliveryRequest: deliveryRequest || null,
       });
-
-      orderPlacedRef.current = true;
-      clear();
-      router.push(`/checkout/complete?order=${encodeURIComponent(result.orderNumber)}`);
     } catch (err) {
       setSubmitting(false);
       setFormError(
         err instanceof Error ? err.message : "주문을 생성하지 못했습니다. 다시 시도해주세요."
       );
+      return;
+    }
+
+    // ② 결제 비활성(로컬 기본): 주문만 생성하고 완료 페이지로 이동한다.
+    if (!PAYMENT_INTEGRATION_ENABLED) {
+      orderPlacedRef.current = true;
+      clear();
+      router.push(`/checkout/complete?order=${encodeURIComponent(order.orderNumber)}`);
+      return;
+    }
+
+    // ③ 결제 활성: Toss 결제창을 호출한다. orderId는 서버가 발급한 주문번호,
+    //    금액은 서버가 계산한 총액을 사용한다(클라이언트 추정치와 다를 수 있으므로
+    //    결제창 금액을 서버 총액으로 맞춘 뒤 결제를 요청한다).
+    //    카트 비우기·완료 처리는 결제 성공 후 /checkout/complete에서 수행한다.
+    try {
+      await widgetsRef.current.setAmount({ currency: "KRW", value: order.totalAmount });
+      await widgetsRef.current.requestPayment({
+        orderId: order.orderNumber,
+        orderName:
+          items.length === 1
+            ? items[0].product.name
+            : `${items[0].product.name} 외 ${items.length - 1}건`,
+        successUrl: `${window.location.origin}/checkout/complete`,
+        failUrl: `${window.location.origin}/checkout/fail`,
+        customerEmail: buyerEmail,
+        customerName: recipientName,
+        customerMobilePhone: recipientPhone.replace(/-/g, ""),
+      });
+      // requestPayment 성공 시 페이지가 Toss로 리다이렉트되므로 이후 코드는 실행되지 않는다.
+    } catch {
+      // 사용자가 결제창을 닫거나 실패한 경우 — 방금 만든 주문은 pending으로 남는다.
+      setSubmitting(false);
+      setFormError("결제가 취소되었습니다. 다시 시도해주세요.");
     }
   };
 
