@@ -83,7 +83,7 @@ export default function TermsPage() {
         이용약관
       </h1>
       <p className="text-xs text-brand-gray-mid tracking-wide mb-12">
-        상호명: 아모리 | 대표자: 양은옥 | 사업자등록번호: 54321-02-174 | 통신판매업신고: 2026-부천원미-0519
+        상호명: 아모리 | 대표자: 양은옥 | 사업자등록번호: 543-21-02174 | 통신판매업신고: 2026-부천원미-0519
       </p>
 
       <div className="flex flex-col gap-10">

@@ -101,7 +101,7 @@ export default function CompFooter() {
         {/* 사업자 정보 */}
         <div className="pt-8 text-[14px] text-brand-gray-mid tracking-wide leading-7">
           <p>
-            상호명: 아모리 | 대표자: 양은옥 | 사업자등록번호: 54321-02-174
+            상호명: 아모리 | 대표자: 양은옥 | 사업자등록번호: 543-21-02174
           </p>
           <p>
             통신판매업신고: 2026-부천원미-0519 | 주소: 경기도 부천시 원미구 도약로 56 (진달래마을) 2202동 602호
