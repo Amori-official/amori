@@ -134,6 +134,9 @@ export async function getKakaoOAuthUrl(): Promise<{
       options: {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
         skipBrowserRedirect: true,
+        // 카카오 이메일(account_email)은 비즈앱 전환 전까지 사용할 수 없어, 요청에 포함되면
+        // KOE205("설정하지 않은 동의 항목: account_email")가 발생한다. 닉네임만 요청한다.
+        scopes: "profile_nickname",
       },
     });
 
