@@ -17,6 +17,11 @@ import { signIn, signUp, getKakaoOAuthUrl } from "@/app/actions/auth";
 const EMPTY_LOGIN = { email: "", password: "" };
 const EMPTY_SIGNUP = { name: "", email: "", password: "", marketingAgreed: false };
 
+// 카카오 로그인은 Supabase가 account_email 스코프를 강제하는데, 카카오 이메일 동의항목은
+// 비즈앱 전환 + '추가 기능 신청' 검수를 통과해야 사용할 수 있어 현재 KOE205로 실패한다.
+// 검수 통과 전까지 버튼을 숨긴다(코드/핸들러는 유지 — 승인 후 true로만 바꾸면 복원).
+const KAKAO_LOGIN_ENABLED = false;
+
 export default function CompAuthModal() {
   const { authModalOpen, authTab, setAuthModalOpen, showToast } = useUIStore();
 
@@ -147,9 +152,12 @@ export default function CompAuthModal() {
               {loading ? "처리 중..." : "LOGIN"}
             </Button>
 
-            <Divider />
-
-            <KakaoButton onClick={handleKakao} disabled={loading} />
+            {KAKAO_LOGIN_ENABLED && (
+              <>
+                <Divider />
+                <KakaoButton onClick={handleKakao} disabled={loading} />
+              </>
+            )}
 
             <p className="text-center text-[14px] text-brand-gray-mid tracking-wide pt-1">
               계정이 없으신가요?{" "}
@@ -231,9 +239,12 @@ export default function CompAuthModal() {
               {loading ? "처리 중..." : "CREATE ACCOUNT"}
             </Button>
 
-            <Divider />
-
-            <KakaoButton onClick={handleKakao} disabled={loading} />
+            {KAKAO_LOGIN_ENABLED && (
+              <>
+                <Divider />
+                <KakaoButton onClick={handleKakao} disabled={loading} />
+              </>
+            )}
 
             <p className="text-center text-[14px] text-brand-gray-mid tracking-wide pt-1">
               이미 계정이 있으신가요?{" "}
