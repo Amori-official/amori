@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +31,15 @@ export default function CompAuthModal() {
   const [signupForm, setSignupForm] = useState(EMPTY_SIGNUP);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => { setTab(authTab); }, [authTab]);
+
+  // 비회원 구매: 로그인 없이 바로 체크아웃으로 이동한다(게스트 체크아웃 지원).
+  const handleGuestCheckout = () => {
+    handleOpenChange(false);
+    router.push("/checkout");
+  };
 
   const handleOpenChange = (open: boolean) => {
     setAuthModalOpen(open);
@@ -151,6 +159,17 @@ export default function CompAuthModal() {
             >
               {loading ? "처리 중..." : "LOGIN"}
             </Button>
+
+            <button
+              type="button"
+              onClick={handleGuestCheckout}
+              className="rounded-none border border-brand-border h-11 text-[14px] tracking-widest text-brand-black hover:bg-brand-gray-light transition-colors"
+            >
+              비회원으로 구매하기
+            </button>
+            <p className="text-center text-[13px] text-brand-gray-mid tracking-wide -mt-2">
+              회원가입 없이 바로 주문할 수 있어요.
+            </p>
 
             {KAKAO_LOGIN_ENABLED && (
               <>
