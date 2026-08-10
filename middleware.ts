@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase-config";
 
 // 비회원 주문을 지원하므로 /checkout은 로그인 필수 보호 대상에서 제외한다 (16-4A).
-const PROTECTED_PATHS = ["/account"];
+// /admin은 로그인 필수(여기서) + 관리자 권한 확인(app/admin/layout.tsx의 is_admin())로 이중 보호.
+const PROTECTED_PATHS = ["/account", "/admin"];
 
 export async function middleware(request: NextRequest) {
   // Supabase 미설정 시 패스스루 (mock fallback 유지)
