@@ -196,3 +196,63 @@ export async function deleteAddress(id: string): Promise<{ error?: string }> {
     return { error: "배송지 삭제에 실패했습니다." };
   }
 }
+
+// ── 보유 쿠폰 ──────────────────────────────────────────────
+export interface UserCoupon {
+  id: string;
+  code: string;
+  name: string;
+  discountLabel: string;
+  minOrderAmount: number;
+  status: "active" | "used" | "expired";
+  expiresAt: string | null;
+}
+
+export async function getUserCoupons(): Promise<UserCoupon[]> {
+  if (!IS_CONFIGURED) return [];
+
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from("user_coupons")
+      .select(
+        "id, status, expires_at, coupons(code, name, discount_type, discount_value, min_order_amount)"
+      )
+      .eq("user_id", user.id)
+      .order("issued_at", { ascending: false });
+
+    if (error || !data) return [];
+
+    const now = Date.now();
+    return data.map((uc) => {
+      // to-one 조인이지만 Supabase 타입은 배열로 추론될 수 있어 방어적으로 처리.
+      const raw = uc.coupons as unknown;
+      const c = ((Array.isArray(raw) ? raw[0] : raw) ?? {}) as Record<string, unknown>;
+      const expiresAt = uc.expires_at ? String(uc.expires_at) : null;
+      const expired = expiresAt ? new Date(expiresAt).getTime() < now : false;
+      const status: UserCoupon["status"] =
+        uc.status === "used" ? "used" : expired ? "expired" : "active";
+      const discountLabel =
+        c.discount_type === "percent"
+          ? `${Number(c.discount_value)}% 할인`
+          : `${Number(c.discount_value).toLocaleString("ko-KR")}원 할인`;
+      return {
+        id: String(uc.id),
+        code: String(c.code ?? ""),
+        name: String(c.name ?? ""),
+        discountLabel,
+        minOrderAmount: Number(c.min_order_amount ?? 0),
+        status,
+        expiresAt,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
