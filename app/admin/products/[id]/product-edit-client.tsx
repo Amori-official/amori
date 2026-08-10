@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { uploadProductImage } from "@/lib/upload-image";
 import {
   updateProduct,
   updateVariant,
@@ -195,8 +196,8 @@ export default function ProductEditClient({ product }: { product: AdminProductDe
 
       {/* 이미지 · 연관상품 */}
       <Section title="이미지 · 연관 상품">
-        <Field label="이미지 URL (한 줄에 하나 · 3단계에서 업로드 기능 추가 예정)">
-          <Textarea value={form.images.join("\n")} onChange={(v) => set("images", v.split("\n"))} rows={4} placeholder="/products/example1.png" />
+        <Field label="상품 이미지 (파일 업로드 또는 URL) · 첫 번째가 대표 이미지">
+          <ImageManager images={form.images} onChange={(imgs) => set("images", imgs)} />
         </Field>
         <Field label="연관 상품 슬러그 (한 줄에 하나)">
           <Textarea value={form.relatedProductSlugs.join("\n")} onChange={(v) => set("relatedProductSlugs", v.split("\n"))} rows={2} placeholder="hand-towel" />
@@ -325,7 +326,12 @@ function VariantFields({ value, onChange }: { value: VariantInput; onChange: (v:
       <Mini label="노출순서"><Input type="number" value={String(value.displayOrder)} onChange={(x) => u({ displayOrder: Number(x) })} /></Mini>
       <Mini label="옵션가격(선택)"><Input type="number" value={value.priceOverride == null ? "" : String(value.priceOverride)} onChange={(x) => u({ priceOverride: x === "" ? null : Number(x) })} placeholder="기본가와 다를 때만" /></Mini>
       <Mini label="SKU"><Input value={value.sku} onChange={(x) => u({ sku: x })} /></Mini>
-      <Mini label="옵션 이미지 URL"><Input value={value.imageUrl} onChange={(x) => u({ imageUrl: x })} /></Mini>
+      <Mini label="옵션 이미지 (URL 또는 업로드)">
+        <div className="flex items-center gap-1.5">
+          <Input value={value.imageUrl} onChange={(x) => u({ imageUrl: x })} />
+          <UploadButton label="업로드" onUploaded={(urls) => urls[0] && u({ imageUrl: urls[0] })} />
+        </div>
+      </Mini>
       <Mini label="판매">
         <label className="flex items-center gap-2 h-11">
           <input type="checkbox" checked={value.isActive} onChange={(e) => u({ isActive: e.target.checked })} className="w-4 h-4 accent-brand-black" />
@@ -404,6 +410,138 @@ function Textarea({
       onChange={(e) => onChange(e.target.value)}
       className="w-full border border-brand-border p-3 text-sm resize-y focus:outline-none focus:border-brand-black"
     />
+  );
+}
+
+// 파일 업로드 버튼 (Supabase Storage)
+function UploadButton({
+  onUploaded,
+  label = "이미지 업로드",
+  multiple = false,
+}: {
+  onUploaded: (urls: string[]) => void;
+  label?: string;
+  multiple?: boolean;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const onFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    setErr(null);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      const res = await uploadProductImage(file);
+      if (res.error) {
+        setErr(res.error);
+        break;
+      }
+      if (res.url) urls.push(res.url);
+    }
+    setBusy(false);
+    if (ref.current) ref.current.value = "";
+    if (urls.length) onUploaded(urls);
+  };
+
+  return (
+    <span className="inline-flex flex-col gap-1">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => ref.current?.click()}
+        className="px-3 h-9 border border-brand-black text-[12px] tracking-widest hover:bg-brand-gray-light transition-colors disabled:opacity-50"
+      >
+        {busy ? "업로드 중..." : label}
+      </button>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        multiple={multiple}
+        onChange={(e) => onFiles(e.target.files)}
+        className="hidden"
+      />
+      {err && <span className="text-[11px] text-red-500">{err}</span>}
+    </span>
+  );
+}
+
+// 상품 이미지 관리 (썸네일 + 업로드 + URL 추가 + 순서/삭제)
+function ImageManager({
+  images,
+  onChange,
+}: {
+  images: string[];
+  onChange: (imgs: string[]) => void;
+}) {
+  const [url, setUrl] = useState("");
+  const clean = images.filter((x) => x.trim());
+
+  return (
+    <div className="space-y-3">
+      {clean.length > 0 && (
+        <ul className="flex flex-wrap gap-3">
+          {clean.map((src, i) => (
+            <li key={`${src}-${i}`} className="w-24">
+              <div className="w-24 h-24 bg-brand-gray-light border border-brand-border overflow-hidden relative">
+                {/* 관리용 미리보기 — next/image 대신 img 사용 */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={src} alt={`이미지 ${i + 1}`} className="w-full h-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute top-0 left-0 bg-brand-black text-white text-[10px] px-1.5 py-0.5">대표</span>
+                )}
+              </div>
+              <div className="flex justify-between mt-1">
+                {i !== 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => onChange([clean[i], ...clean.filter((_, idx) => idx !== i)])}
+                    className="text-[11px] text-brand-gray-mid underline"
+                  >
+                    대표로
+                  </button>
+                ) : (
+                  <span />
+                )}
+                <button
+                  type="button"
+                  onClick={() => onChange(clean.filter((_, idx) => idx !== i))}
+                  className="text-[11px] text-red-500 underline"
+                >
+                  삭제
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <UploadButton multiple onUploaded={(urls) => onChange([...clean, ...urls])} />
+        <span className="text-[12px] text-brand-gray-mid">또는 URL 직접 추가:</span>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="/products/example.png"
+          className="h-9 border border-brand-border px-2 text-sm w-56 focus:outline-none focus:border-brand-black"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            if (url.trim()) {
+              onChange([...clean, url.trim()]);
+              setUrl("");
+            }
+          }}
+          className="px-3 h-9 border border-brand-border text-[12px] tracking-widest hover:bg-brand-gray-light"
+        >
+          추가
+        </button>
+      </div>
+    </div>
   );
 }
 

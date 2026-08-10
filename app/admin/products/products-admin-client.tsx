@@ -40,10 +40,16 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
   return (
     <div className="p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[14px] tracking-[0.3em]">상품 관리</h2>
-        <span className="text-[13px] text-brand-gray-mid tracking-wide">
-          총 {products.length}개 상품
-        </span>
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-[14px] tracking-[0.3em]">상품 관리</h2>
+          <span className="text-[13px] text-brand-gray-mid tracking-wide">총 {products.length}개</span>
+        </div>
+        <Link
+          href="/admin/products/new"
+          className="px-4 h-9 flex items-center bg-brand-black text-white text-[13px] tracking-widest hover:bg-brand-gray-mid transition-colors"
+        >
+          + 새 상품 등록
+        </Link>
       </div>
 
       {error && (

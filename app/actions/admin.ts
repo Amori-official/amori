@@ -495,3 +495,48 @@ export async function deleteVariant(id: string): Promise<{ error?: string }> {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
+
+// ── 상품 신규 생성 (3단계) ──────────────────────────────
+const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export async function createProduct(input: {
+  name: string;
+  nameKo: string;
+  slug: string;
+  category: string;
+  price: number;
+}): Promise<{ id?: string; error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const name = input.name.trim();
+    const slug = input.slug.trim().toLowerCase();
+    if (!name) return { error: "상품명은 필수입니다." };
+    if (!SLUG_REGEX.test(slug)) return { error: "슬러그는 영문 소문자·숫자·하이픈만 사용하세요 (예: hand-towel)." };
+    if (!Number.isFinite(input.price) || input.price < 0) return { error: "가격이 올바르지 않습니다." };
+
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        name,
+        name_ko: input.nameKo.trim() || null,
+        slug,
+        category: input.category.trim() || null,
+        price: Math.round(input.price),
+        is_published: false, // 등록 직후엔 미게시 — 상세 편집 후 게시
+      })
+      .select("id")
+      .single();
+
+    if (error || !data) {
+      logSupabaseError("createProduct", error);
+      if (error?.code === "23505") return { error: "이미 사용 중인 슬러그입니다." };
+      return { error: "상품 생성에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    return { id: String(data.id) };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
