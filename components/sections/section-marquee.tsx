@@ -3,12 +3,19 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useUIStore } from "@/store/ui";
 
-const items = [
+type MarqueeItem = {
+  label: string;
+  href?: string;
+  external?: boolean;
+  action?: "signup"; // 회원가입 모달 열기
+};
+
+const items: MarqueeItem[] = [
   {
     label: "회원 가입 시, 5% 할인 쿠폰 증정",
-    href: "/auth/signup",
-    external: false,
+    action: "signup",
   },
   {
     label: "카카오톡 채널 추가 시, 3,000원 할인 쿠폰 증정",
@@ -22,6 +29,7 @@ const cls =
 
 export default function SectionMarquee() {
   const [index, setIndex] = useState(0);
+  const setAuthModalOpen = useUIStore((s) => s.setAuthModalOpen);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -46,7 +54,11 @@ export default function SectionMarquee() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
           >
-            {item.external ? (
+            {item.action === "signup" ? (
+              <button type="button" onClick={() => setAuthModalOpen(true, "signup")} className={cls}>
+                {item.label}
+              </button>
+            ) : item.external ? (
               <a
                 href={item.href}
                 target="_blank"
@@ -56,7 +68,7 @@ export default function SectionMarquee() {
                 {item.label}
               </a>
             ) : (
-              <Link href={item.href} className={cls}>
+              <Link href={item.href!} className={cls}>
                 {item.label}
               </Link>
             )}

@@ -11,7 +11,7 @@ const NAV = [
   { href: "/account/coupons", label: "보유 쿠폰" },
 ];
 
-export default function AccountSidebar() {
+export default function AccountSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -44,10 +44,20 @@ export default function AccountSidebar() {
         })}
       </nav>
 
+      {/* 관리자 전용 링크 */}
+      {isAdmin && (
+        <Link
+          href="/admin"
+          className="hidden lg:block text-[14px] tracking-widest text-brand-black underline underline-offset-4 hover:text-brand-gray-mid transition-colors mt-6 px-0 py-2"
+        >
+          관리자 페이지 →
+        </Link>
+      )}
+
       {/* 데스크톱 로그아웃 */}
       <button
         onClick={handleSignOut}
-        className="hidden lg:block text-[14px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors mt-6 px-0 py-2"
+        className="hidden lg:block text-[14px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors mt-2 px-0 py-2"
       >
         로그아웃
       </button>
