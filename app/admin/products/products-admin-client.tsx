@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   setProductPublished,
@@ -73,18 +74,26 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => togglePublished(p)}
-                  disabled={pending && busyId === p.id}
-                  className={`shrink-0 px-4 h-9 text-[13px] tracking-widest transition-colors disabled:opacity-50 ${
-                    p.isPublished
-                      ? "border border-brand-border text-brand-gray-mid hover:border-brand-black hover:text-brand-black"
-                      : "bg-brand-black text-white hover:bg-brand-gray-mid"
-                  }`}
-                >
-                  {p.isPublished ? "게시 내리기" : "게시하기"}
-                </button>
+                <div className="shrink-0 flex items-center gap-2">
+                  <Link
+                    href={`/admin/products/${p.id}`}
+                    className="px-4 h-9 flex items-center border border-brand-border text-[13px] tracking-widest text-brand-black hover:bg-brand-gray-light transition-colors"
+                  >
+                    수정
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => togglePublished(p)}
+                    disabled={pending && busyId === p.id}
+                    className={`px-4 h-9 text-[13px] tracking-widest transition-colors disabled:opacity-50 ${
+                      p.isPublished
+                        ? "border border-brand-border text-brand-gray-mid hover:border-brand-black hover:text-brand-black"
+                        : "bg-brand-black text-white hover:bg-brand-gray-mid"
+                    }`}
+                  >
+                    {p.isPublished ? "게시 내리기" : "게시하기"}
+                  </button>
+                </div>
               </div>
 
               {/* 옵션(변형) 품절 토글 */}

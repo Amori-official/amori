@@ -239,3 +239,259 @@ export async function updateOrderStatus(
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
+
+// ── 상품 상세 편집 (2단계) ──────────────────────────────
+export interface Feature {
+  label: string;
+  body: string;
+}
+export interface AccordionItem {
+  title: string;
+  content: string;
+}
+export interface AdminVariantDetail {
+  id: string;
+  colorName: string;
+  colorHex: string;
+  optionName: string;
+  sku: string;
+  imageUrl: string;
+  priceOverride: number | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+export interface AdminProductDetail {
+  id: string;
+  slug: string;
+  name: string;
+  nameKo: string;
+  category: string;
+  price: number;
+  tagline: string;
+  shortDescription: string;
+  description: string;
+  detailIntro: string;
+  brandStory: string;
+  material: string;
+  sizeGuide: string;
+  careInstructions: string;
+  hardwareInfo: string;
+  certificationNumber: string;
+  certificationText: string;
+  colorSectionTitle: string;
+  colorDescription: string;
+  imageAltSubject: string;
+  seoTitle: string;
+  seoDescription: string;
+  saleStatus: string;
+  isPublished: boolean;
+  images: string[];
+  relatedProductSlugs: string[];
+  features: Feature[];
+  accordionItems: AccordionItem[];
+  variants: AdminVariantDetail[];
+}
+
+const s = (v: unknown): string => (v == null ? "" : String(v));
+const arr = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
+
+export async function getAdminProductDetail(id: string): Promise<AdminProductDetail | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { data, error } = await supabase
+      .from("products")
+      .select("*, product_variants(*)")
+      .eq("id", id)
+      .single();
+    if (error || !data) {
+      logSupabaseError("getAdminProductDetail", error);
+      return null;
+    }
+    const d = data as Record<string, unknown>;
+    const rawFeatures = Array.isArray(d.features) ? (d.features as Record<string, unknown>[]) : [];
+    const rawAccordion = Array.isArray(d.accordion_items) ? (d.accordion_items as Record<string, unknown>[]) : [];
+    return {
+      id: s(d.id),
+      slug: s(d.slug),
+      name: s(d.name),
+      nameKo: s(d.name_ko),
+      category: s(d.category),
+      price: Number(d.price ?? 0),
+      tagline: s(d.tagline),
+      shortDescription: s(d.short_description),
+      description: s(d.description),
+      detailIntro: s(d.detail_intro),
+      brandStory: s(d.brand_story),
+      material: s(d.material),
+      sizeGuide: s(d.size_guide),
+      careInstructions: s(d.care_instructions),
+      hardwareInfo: s(d.hardware_info),
+      certificationNumber: s(d.certification_number),
+      certificationText: s(d.certification_text),
+      colorSectionTitle: s(d.color_section_title),
+      colorDescription: s(d.color_description),
+      imageAltSubject: s(d.image_alt_subject),
+      seoTitle: s(d.seo_title),
+      seoDescription: s(d.seo_description),
+      saleStatus: s(d.sale_status) || "active",
+      isPublished: Boolean(d.is_published),
+      images: arr(d.images),
+      relatedProductSlugs: arr(d.related_product_slugs),
+      features: rawFeatures.map((f) => ({ label: s(f.label), body: s(f.body) })),
+      accordionItems: rawAccordion.map((a) => ({ title: s(a.title), content: s(a.content) })),
+      variants: (Array.isArray(d.product_variants) ? (d.product_variants as Record<string, unknown>[]) : [])
+        .slice()
+        .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
+        .map((v) => ({
+          id: s(v.id),
+          colorName: s(v.color_name),
+          colorHex: s(v.color_hex),
+          optionName: s(v.option_name),
+          sku: s(v.sku),
+          imageUrl: s(v.image_url),
+          priceOverride: v.price_override == null ? null : Number(v.price_override),
+          isActive: Boolean(v.is_active),
+          displayOrder: Number(v.display_order ?? 0),
+        })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export type ProductUpdateInput = Omit<AdminProductDetail, "id" | "variants">;
+
+export async function updateProduct(
+  id: string,
+  input: ProductUpdateInput
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    if (!input.name.trim()) return { error: "상품명은 필수입니다." };
+    if (!input.slug.trim()) return { error: "슬러그(URL)는 필수입니다." };
+    if (!Number.isFinite(input.price) || input.price < 0) return { error: "가격이 올바르지 않습니다." };
+
+    const update = {
+      slug: input.slug.trim(),
+      name: input.name.trim(),
+      name_ko: input.nameKo || null,
+      category: input.category || null,
+      price: Math.round(input.price),
+      tagline: input.tagline || null,
+      short_description: input.shortDescription || null,
+      description: input.description || null,
+      detail_intro: input.detailIntro || null,
+      brand_story: input.brandStory || null,
+      material: input.material || null,
+      size_guide: input.sizeGuide || null,
+      care_instructions: input.careInstructions || null,
+      hardware_info: input.hardwareInfo || null,
+      certification_number: input.certificationNumber || null,
+      certification_text: input.certificationText || null,
+      color_section_title: input.colorSectionTitle || null,
+      color_description: input.colorDescription || null,
+      image_alt_subject: input.imageAltSubject || null,
+      seo_title: input.seoTitle || null,
+      seo_description: input.seoDescription || null,
+      sale_status: input.saleStatus || "active",
+      is_published: input.isPublished,
+      images: input.images.filter((x) => x.trim()),
+      related_product_slugs: input.relatedProductSlugs.filter((x) => x.trim()),
+      features: input.features.filter((f) => f.label.trim() || f.body.trim()),
+      accordion_items: input.accordionItems.filter((a) => a.title.trim() || a.content.trim()),
+    };
+
+    const { error } = await supabase.from("products").update(update).eq("id", id);
+    if (error) {
+      logSupabaseError("updateProduct", error);
+      return { error: "상품 저장에 실패했습니다. (슬러그 중복 여부 확인)" };
+    }
+    revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/${id}`);
+    revalidatePath("/shop");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export interface VariantInput {
+  colorName: string;
+  colorHex: string;
+  optionName: string;
+  sku: string;
+  imageUrl: string;
+  priceOverride: number | null;
+  isActive: boolean;
+  displayOrder: number;
+}
+
+function variantRow(v: VariantInput) {
+  return {
+    color_name: v.colorName || null,
+    color_hex: v.colorHex || null,
+    option_name: v.optionName || null,
+    sku: v.sku || null,
+    image_url: v.imageUrl || null,
+    price_override: v.priceOverride == null || Number.isNaN(v.priceOverride) ? null : Math.round(v.priceOverride),
+    is_active: v.isActive,
+    display_order: Math.round(v.displayOrder) || 0,
+  };
+}
+
+export async function updateVariant(id: string, input: VariantInput): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.from("product_variants").update(variantRow(input)).eq("id", id);
+    if (error) {
+      logSupabaseError("updateVariant", error);
+      return { error: "옵션 저장에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export async function createVariant(
+  productId: string,
+  input: VariantInput
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase
+      .from("product_variants")
+      .insert({ product_id: productId, ...variantRow(input) });
+    if (error) {
+      logSupabaseError("createVariant", error);
+      return { error: "옵션 추가에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export async function deleteVariant(id: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.from("product_variants").delete().eq("id", id);
+    if (error) {
+      logSupabaseError("deleteVariant", error);
+      return { error: "옵션 삭제에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
