@@ -9,9 +9,12 @@ import {
   updateVariant,
   createVariant,
   deleteVariant,
+  addProductImage,
+  deleteProductImage,
   type AdminProductDetail,
   type ProductUpdateInput,
   type AdminVariantDetail,
+  type AdminProductImage,
   type VariantInput,
   type Feature,
   type AccordionItem,
@@ -194,15 +197,19 @@ export default function ProductEditClient({ product }: { product: AdminProductDe
         />
       </Section>
 
-      {/* 이미지 · 연관상품 */}
-      <Section title="이미지 · 연관 상품">
-        <Field label="상품 이미지 (파일 업로드 또는 URL) · 첫 번째가 대표 이미지">
-          <ImageManager images={form.images} onChange={(imgs) => set("images", imgs)} />
-        </Field>
+      {/* 연관상품 (상품 필드 — 저장 버튼으로 저장) */}
+      <Section title="연관 상품">
         <Field label="연관 상품 슬러그 (한 줄에 하나)">
           <Textarea value={form.relatedProductSlugs.join("\n")} onChange={(v) => set("relatedProductSlugs", v.split("\n"))} rows={2} placeholder="hand-towel" />
         </Field>
       </Section>
+
+      {/* 상품 이미지 (product_images 테이블 — 업로드 즉시 반영) */}
+      <ProductImagesManager
+        productId={product.id}
+        images={product.productImages}
+        onDone={() => router.refresh()}
+      />
 
       {/* SEO */}
       <Section title="SEO">
@@ -468,80 +475,94 @@ function UploadButton({
   );
 }
 
-// 상품 이미지 관리 (썸네일 + 업로드 + URL 추가 + 순서/삭제)
-function ImageManager({
+// 상품 이미지 관리 (product_images 테이블 · role별 · 업로드 즉시 반영)
+const IMAGE_ROLE_META: { role: string; label: string; single: boolean }[] = [
+  { role: "hero", label: "대표 이미지 (목록 썸네일·상세 메인)", single: true },
+  { role: "gallery", label: "갤러리 (상세 상단 캐러셀)", single: false },
+  { role: "detail", label: "상세 이미지 (본문)", single: false },
+  { role: "story", label: "스토리 이미지", single: true },
+  { role: "material_detail", label: "소재 상세 이미지", single: true },
+  { role: "color_section", label: "컬러 섹션 이미지", single: true },
+];
+
+function ProductImagesManager({
+  productId,
   images,
-  onChange,
+  onDone,
 }: {
-  images: string[];
-  onChange: (imgs: string[]) => void;
+  productId: string;
+  images: AdminProductImage[];
+  onDone: () => void;
 }) {
-  const [url, setUrl] = useState("");
-  const clean = images.filter((x) => x.trim());
+  const [pending, startTransition] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const run = (fn: () => Promise<{ error?: string }>) => {
+    setMsg(null);
+    startTransition(async () => {
+      const res = await fn();
+      if (res.error) setMsg(res.error);
+      else onDone();
+    });
+  };
 
   return (
-    <div className="space-y-3">
-      {clean.length > 0 && (
-        <ul className="flex flex-wrap gap-3">
-          {clean.map((src, i) => (
-            <li key={`${src}-${i}`} className="w-24">
-              <div className="w-24 h-24 bg-brand-gray-light border border-brand-border overflow-hidden relative">
-                {/* 관리용 미리보기 — next/image 대신 img 사용 */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={`이미지 ${i + 1}`} className="w-full h-full object-cover" />
-                {i === 0 && (
-                  <span className="absolute top-0 left-0 bg-brand-black text-white text-[10px] px-1.5 py-0.5">대표</span>
-                )}
+    <Section title="상품 이미지">
+      {msg && <p className="text-[13px] text-red-500 mb-2">{msg}</p>}
+      <p className="text-[12px] text-brand-gray-mid mb-3">
+        업로드하면 <b>즉시 저장·반영</b>됩니다(별도 저장 불필요). <b>대표 이미지</b>가 목록 썸네일과 상세 상단에 쓰입니다.
+      </p>
+      <div className="space-y-4">
+        {IMAGE_ROLE_META.map((meta) => {
+          const imgs = images.filter((i) => i.role === meta.role);
+          return (
+            <div key={meta.role} className="border border-brand-border p-3">
+              <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                <p className="text-[13px] tracking-wide">
+                  {meta.label} <span className="text-brand-gray-mid">{meta.single ? "· 1장" : `· ${imgs.length}장`}</span>
+                </p>
+                <UploadButton
+                  label={imgs.length && meta.single ? "교체 업로드" : "업로드"}
+                  multiple={!meta.single}
+                  onUploaded={(urls) =>
+                    run(async () => {
+                      let last: { error?: string } = {};
+                      for (const u of urls) {
+                        last = await addProductImage(productId, meta.role, u);
+                        if (last.error) break;
+                      }
+                      return last;
+                    })
+                  }
+                />
               </div>
-              <div className="flex justify-between mt-1">
-                {i !== 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => onChange([clean[i], ...clean.filter((_, idx) => idx !== i)])}
-                    className="text-[11px] text-brand-gray-mid underline"
-                  >
-                    대표로
-                  </button>
-                ) : (
-                  <span />
-                )}
-                <button
-                  type="button"
-                  onClick={() => onChange(clean.filter((_, idx) => idx !== i))}
-                  className="text-[11px] text-red-500 underline"
-                >
-                  삭제
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <div className="flex items-center gap-2 flex-wrap">
-        <UploadButton multiple onUploaded={(urls) => onChange([...clean, ...urls])} />
-        <span className="text-[12px] text-brand-gray-mid">또는 URL 직접 추가:</span>
-        <input
-          type="text"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="/products/example.png"
-          className="h-9 border border-brand-border px-2 text-sm w-56 focus:outline-none focus:border-brand-black"
-        />
-        <button
-          type="button"
-          onClick={() => {
-            if (url.trim()) {
-              onChange([...clean, url.trim()]);
-              setUrl("");
-            }
-          }}
-          className="px-3 h-9 border border-brand-border text-[12px] tracking-widest hover:bg-brand-gray-light"
-        >
-          추가
-        </button>
+              {imgs.length > 0 ? (
+                <ul className="flex flex-wrap gap-3">
+                  {imgs.map((img) => (
+                    <li key={img.id} className="w-20">
+                      <div className="w-20 h-20 bg-brand-gray-light border border-brand-border overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => run(() => deleteProductImage(img.id))}
+                        className="text-[11px] text-red-500 underline mt-1 disabled:opacity-50"
+                      >
+                        삭제
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[12px] text-brand-gray-mid">없음</p>
+              )}
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </Section>
   );
 }
 

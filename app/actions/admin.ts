@@ -260,6 +260,13 @@ export interface AdminVariantDetail {
   isActive: boolean;
   displayOrder: number;
 }
+export interface AdminProductImage {
+  id: string;
+  role: string;
+  imageUrl: string;
+  altText: string;
+  displayOrder: number;
+}
 export interface AdminProductDetail {
   id: string;
   slug: string;
@@ -289,6 +296,7 @@ export interface AdminProductDetail {
   relatedProductSlugs: string[];
   features: Feature[];
   accordionItems: AccordionItem[];
+  productImages: AdminProductImage[];
   variants: AdminVariantDetail[];
 }
 
@@ -302,7 +310,7 @@ export async function getAdminProductDetail(id: string): Promise<AdminProductDet
     await requireAdmin(supabase);
     const { data, error } = await supabase
       .from("products")
-      .select("*, product_variants(*)")
+      .select("*, product_variants(*), product_images(*)")
       .eq("id", id)
       .single();
     if (error || !data) {
@@ -341,6 +349,16 @@ export async function getAdminProductDetail(id: string): Promise<AdminProductDet
       relatedProductSlugs: arr(d.related_product_slugs),
       features: rawFeatures.map((f) => ({ label: s(f.label), body: s(f.body) })),
       accordionItems: rawAccordion.map((a) => ({ title: s(a.title), content: s(a.content) })),
+      productImages: (Array.isArray(d.product_images) ? (d.product_images as Record<string, unknown>[]) : [])
+        .slice()
+        .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
+        .map((img) => ({
+          id: s(img.id),
+          role: s(img.role),
+          imageUrl: s(img.image_url),
+          altText: s(img.alt_text),
+          displayOrder: Number(img.display_order ?? 0),
+        })),
       variants: (Array.isArray(d.product_variants) ? (d.product_variants as Record<string, unknown>[]) : [])
         .slice()
         .sort((a, b) => Number(a.display_order ?? 0) - Number(b.display_order ?? 0))
@@ -361,7 +379,7 @@ export async function getAdminProductDetail(id: string): Promise<AdminProductDet
   }
 }
 
-export type ProductUpdateInput = Omit<AdminProductDetail, "id" | "variants">;
+export type ProductUpdateInput = Omit<AdminProductDetail, "id" | "variants" | "productImages">;
 
 export async function updateProduct(
   id: string,
@@ -490,6 +508,91 @@ export async function deleteVariant(id: string): Promise<{ error?: string }> {
       return { error: "옵션 삭제에 실패했습니다." };
     }
     revalidatePath("/admin/products");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// ── 상품 이미지 (product_images 테이블 · role별) ─────────
+const IMAGE_ROLES = ["hero", "gallery", "detail", "story", "material_detail", "color_section"];
+// hero/story/material_detail/color_section은 상품당 1장(교체), gallery/detail은 여러 장.
+const SINGLE_ROLES = new Set(["hero", "story", "material_detail", "color_section"]);
+
+export async function addProductImage(
+  productId: string,
+  role: string,
+  imageUrl: string,
+  altText = ""
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    if (!IMAGE_ROLES.includes(role)) return { error: "잘못된 이미지 역할입니다." };
+    if (!imageUrl.trim()) return { error: "이미지 URL이 비어 있습니다." };
+
+    if (SINGLE_ROLES.has(role)) {
+      // 이미 있으면 교체(update), 없으면 삽입
+      const { data: existing } = await supabase
+        .from("product_images")
+        .select("id")
+        .eq("product_id", productId)
+        .eq("role", role)
+        .maybeSingle();
+      if (existing) {
+        const { error } = await supabase
+          .from("product_images")
+          .update({ image_url: imageUrl.trim(), alt_text: altText || null })
+          .eq("id", existing.id);
+        if (error) {
+          logSupabaseError("addProductImage(update)", error);
+          return { error: "이미지 저장에 실패했습니다." };
+        }
+        revalidatePath(`/admin/products/${productId}`);
+        revalidatePath("/shop");
+        return {};
+      }
+    }
+
+    // 다음 display_order 계산
+    const { data: rows } = await supabase
+      .from("product_images")
+      .select("display_order")
+      .eq("product_id", productId)
+      .eq("role", role)
+      .order("display_order", { ascending: false })
+      .limit(1);
+    const nextOrder = rows && rows[0] ? Number(rows[0].display_order) + 1 : 0;
+
+    const { error } = await supabase.from("product_images").insert({
+      product_id: productId,
+      role,
+      image_url: imageUrl.trim(),
+      alt_text: altText || null,
+      display_order: nextOrder,
+    });
+    if (error) {
+      logSupabaseError("addProductImage(insert)", error);
+      return { error: "이미지 추가에 실패했습니다." };
+    }
+    revalidatePath(`/admin/products/${productId}`);
+    revalidatePath("/shop");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export async function deleteProductImage(id: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.from("product_images").delete().eq("id", id);
+    if (error) {
+      logSupabaseError("deleteProductImage", error);
+      return { error: "이미지 삭제에 실패했습니다." };
+    }
+    revalidatePath("/shop");
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
