@@ -33,6 +33,7 @@ export interface CreateOrderInput {
   addressLine1: string;
   addressLine2: string | null;
   deliveryRequest: string | null;
+  userCouponId: string | null;
 }
 
 const ALLOWED_TOP_LEVEL_KEYS = new Set([
@@ -46,6 +47,7 @@ const ALLOWED_TOP_LEVEL_KEYS = new Set([
   "addressLine1",
   "addressLine2",
   "deliveryRequest",
+  "userCouponId",
 ]);
 
 const ALLOWED_ITEM_KEYS = new Set(["productId", "variantId", "quantity"]);
@@ -146,5 +148,9 @@ export function parseCreateOrderInput(raw: unknown): CreateOrderInput {
     addressLine1: requireText(raw.addressLine1, 255, "배송지 주소"),
     addressLine2: optionalText(raw.addressLine2, 255, "배송지 상세주소"),
     deliveryRequest: optionalText(raw.deliveryRequest, 500, "배송 요청사항"),
+    userCouponId:
+      raw.userCouponId === undefined || raw.userCouponId === null
+        ? null
+        : requireUuid(raw.userCouponId, "쿠폰 정보"),
   };
 }

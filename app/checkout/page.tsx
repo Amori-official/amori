@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/cart";
 import { useAuthStore } from "@/store/auth";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { createOrderSecure } from "@/app/actions/create-order";
+import { getUserCoupons, type UserCoupon } from "@/app/actions/account";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
 const FREE_SHIPPING = 50000;
@@ -30,6 +31,20 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function isPlausiblePhone(value: string): boolean {
   const digits = value.replace(/\D/g, "");
   return digits.length >= 9 && digits.length <= 11;
+}
+
+// 쿠폰 할인 추정(표시용). 서버(create_order RPC)가 동일 규칙으로 최종 계산·검증한다.
+function computeCouponDiscount(coupon: UserCoupon | null, subtotal: number): number {
+  if (!coupon) return 0;
+  if (subtotal < coupon.minOrderAmount) return 0;
+  let d =
+    coupon.discountType === "percent"
+      ? Math.floor((subtotal * coupon.discountValue) / 100)
+      : Math.min(coupon.discountValue, subtotal);
+  if (coupon.maxDiscountAmount != null && d > coupon.maxDiscountAmount) d = coupon.maxDiscountAmount;
+  if (d < 0) d = 0;
+  if (d > subtotal) d = subtotal;
+  return d;
 }
 
 declare global {
@@ -66,6 +81,10 @@ export default function CheckoutPage() {
   const [giftWrapping, setGiftWrapping] = useState(false);
   const [giftMessage, setGiftMessage] = useState("");
 
+  // 쿠폰 (로그인 사용자만)
+  const [coupons, setCoupons] = useState<UserCoupon[]>([]);
+  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
+
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [tossReady, setTossReady] = useState(false);
@@ -89,6 +108,24 @@ export default function CheckoutPage() {
       router.push("/shop");
     }
   }, [mounted, items.length, router]);
+
+  // 로그인 사용자의 사용 가능한 쿠폰을 불러온다(비회원은 쿠폰 없음).
+  useEffect(() => {
+    if (!mounted || !user) {
+      setCoupons([]);
+      setSelectedCouponId(null);
+      return;
+    }
+    let cancelled = false;
+    getUserCoupons()
+      .then((list) => {
+        if (!cancelled) setCoupons(list.filter((c) => c.status === "active"));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, user]);
 
   // "주문자 정보와 동일" 체크 상태에서는 buyer 정보가 바뀔 때마다 recipient에 실시간 반영한다.
   useEffect(() => {
@@ -220,6 +257,7 @@ export default function CheckoutPage() {
         addressLine1,
         addressLine2: addressLine2 || null,
         deliveryRequest: deliveryRequest || null,
+        userCouponId: selectedCouponId,
       });
     } catch (err) {
       setSubmitting(false);
@@ -266,8 +304,11 @@ export default function CheckoutPage() {
   if (!mounted) return null;
 
   const cartTotal = total();
-  const shipping = cartTotal >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
-  const grandTotal = cartTotal + shipping;
+  const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
+  const couponDiscount = computeCouponDiscount(selectedCoupon, cartTotal);
+  // 배송비 무료 기준은 할인 적용 후 금액 기준(create_order RPC와 동일).
+  const shipping = cartTotal - couponDiscount >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
+  const grandTotal = cartTotal - couponDiscount + shipping;
 
   return (
     <>
@@ -515,11 +556,41 @@ export default function CheckoutPage() {
                   })}
                 </ul>
 
+                {user && coupons.length > 0 && (
+                  <div className="border-t border-brand-border pt-3">
+                    <label className="text-xs tracking-wide text-brand-gray-mid block mb-1.5">
+                      쿠폰
+                    </label>
+                    <select
+                      value={selectedCouponId ?? ""}
+                      onChange={(e) => setSelectedCouponId(e.target.value || null)}
+                      className="w-full h-10 border border-brand-border px-2 text-sm focus:outline-none focus:border-brand-black"
+                    >
+                      <option value="">쿠폰 미적용</option>
+                      {coupons.map((c) => {
+                        const eligible = cartTotal >= c.minOrderAmount;
+                        return (
+                          <option key={c.id} value={c.id} disabled={!eligible}>
+                            {c.discountLabel} · {c.name}
+                            {!eligible ? ` (${c.minOrderAmount.toLocaleString("ko-KR")}원 이상)` : ""}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+
                 <div className="border-t border-brand-border pt-3 space-y-2 text-xs">
                   <div className="flex justify-between text-brand-gray-mid">
                     <span className="tracking-wide">상품 합계</span>
                     <span>₩{cartTotal.toLocaleString("ko-KR")}</span>
                   </div>
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between text-brand-black">
+                      <span className="tracking-wide">쿠폰 할인</span>
+                      <span>-₩{couponDiscount.toLocaleString("ko-KR")}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-brand-gray-mid">
                     <span className="tracking-wide">배송비</span>
                     <span>{shipping === 0 ? "무료" : `₩${shipping.toLocaleString("ko-KR")}`}</span>

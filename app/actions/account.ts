@@ -203,6 +203,9 @@ export interface UserCoupon {
   code: string;
   name: string;
   discountLabel: string;
+  discountType: string; // 'percent' | 'amount'
+  discountValue: number;
+  maxDiscountAmount: number | null;
   minOrderAmount: number;
   status: "active" | "used" | "expired";
   expiresAt: string | null;
@@ -222,7 +225,7 @@ export async function getUserCoupons(): Promise<UserCoupon[]> {
     const { data, error } = await supabase
       .from("user_coupons")
       .select(
-        "id, status, expires_at, coupons(code, name, discount_type, discount_value, min_order_amount)"
+        "id, status, expires_at, coupons(code, name, discount_type, discount_value, min_order_amount, max_discount_amount)"
       )
       .eq("user_id", user.id)
       .order("issued_at", { ascending: false });
@@ -247,6 +250,9 @@ export async function getUserCoupons(): Promise<UserCoupon[]> {
         code: String(c.code ?? ""),
         name: String(c.name ?? ""),
         discountLabel,
+        discountType: String(c.discount_type ?? "percent"),
+        discountValue: Number(c.discount_value ?? 0),
+        maxDiscountAmount: c.max_discount_amount == null ? null : Number(c.max_discount_amount),
         minOrderAmount: Number(c.min_order_amount ?? 0),
         status,
         expiresAt,

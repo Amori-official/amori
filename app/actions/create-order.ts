@@ -69,6 +69,7 @@ export async function createOrderSecure(raw: unknown): Promise<CreateOrderResult
     p_address_line1: input.addressLine1,
     p_address_line2: input.addressLine2,
     p_delivery_request: input.deliveryRequest,
+    p_user_coupon_id: input.userCouponId,
   });
 
   if (error || !data) {
