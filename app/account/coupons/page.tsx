@@ -1,4 +1,5 @@
 import { getUserCoupons } from "@/app/actions/account";
+import CouponRedeemForm from "./coupon-redeem-form";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ export default async function CouponsPage() {
       <h2 className="text-[14px] tracking-[0.3em] mb-6 border-b border-brand-border pb-4">
         보유 쿠폰
       </h2>
+
+      <CouponRedeemForm />
 
       {coupons.length === 0 ? (
         <div className="py-16 text-center text-brand-gray-mid text-sm tracking-wide">

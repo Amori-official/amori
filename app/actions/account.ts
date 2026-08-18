@@ -270,6 +270,39 @@ export async function getCheckoutPrefill(): Promise<CheckoutPrefill | null> {
   }
 }
 
+// ── 쿠폰 코드 등록 ────────────────────────────────────────
+export async function redeemCouponByCode(
+  code: string
+): Promise<{ error?: string; name?: string }> {
+  if (!IS_CONFIGURED) return { error: "쿠폰 기능을 사용할 수 없습니다." };
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: "로그인 후 이용해주세요." };
+
+    const { data, error } = await supabase.rpc("redeem_coupon", { p_code: code });
+    if (error) {
+      const msg = error.message || "";
+      // RPC의 raise exception 메시지를 사용자에게 그대로 전달(한국어 안내 문구).
+      const known = [
+        "로그인 후 이용해주세요.",
+        "쿠폰 코드를 입력해주세요.",
+        "유효하지 않은 쿠폰 코드입니다.",
+        "이미 등록된 쿠폰입니다.",
+      ].find((k) => msg.includes(k));
+      return { error: known ?? "쿠폰 등록에 실패했습니다." };
+    }
+    revalidatePath("/account/coupons");
+    const name = (data as { name?: string } | null)?.name;
+    return { name: name ?? "쿠폰" };
+  } catch {
+    return { error: "쿠폰 등록에 실패했습니다." };
+  }
+}
+
 export async function getUserCoupons(): Promise<UserCoupon[]> {
   if (!IS_CONFIGURED) return [];
 
