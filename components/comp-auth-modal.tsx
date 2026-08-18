@@ -30,6 +30,7 @@ export default function CompAuthModal() {
   const [loginForm, setLoginForm] = useState(EMPTY_LOGIN);
   const [signupForm, setSignupForm] = useState(EMPTY_SIGNUP);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -45,6 +46,7 @@ export default function CompAuthModal() {
     setAuthModalOpen(open);
     if (!open) {
       setError(null);
+      setNotice(null);
       setLoginForm(EMPTY_LOGIN);
       setSignupForm(EMPTY_SIGNUP);
     }
@@ -53,6 +55,7 @@ export default function CompAuthModal() {
   const switchTab = (t: "login" | "signup") => {
     setTab(t);
     setError(null);
+    setNotice(null);
   };
 
   // ── 로그인 ─────────────────────────────────────────────────
@@ -79,8 +82,12 @@ export default function CompAuthModal() {
     const result = await signUp(signupForm);
     setLoading(false);
     if (result.error) { setError(result.error); return; }
-    handleOpenChange(false);
-    showToast("가입을 환영해요! 쿠폰이 발급됐어요 🎉", 5000);
+    // 이메일 인증(A) 유지: 가입 즉시 로그인은 불가하므로, 로그인 탭으로 전환하고
+    // 인증 안내를 명확히 보여준다.
+    setSignupForm(EMPTY_SIGNUP);
+    setError(null);
+    setTab("login");
+    setNotice("가입 확인 이메일을 보냈어요. 메일의 링크로 인증을 완료한 뒤 로그인해주세요. (가입 축하 쿠폰이 지급됐어요 🎉)");
   };
 
   // ── 카카오 OAuth ────────────────────────────────────────────
@@ -124,6 +131,13 @@ export default function CompAuthModal() {
         {/* 에러 메시지 */}
         {error && (
           <p className="mx-8 mt-5 text-xs text-red-500 tracking-wide">{error}</p>
+        )}
+
+        {/* 가입 후 이메일 인증 안내 (로그인 탭에서 노출) */}
+        {notice && tab === "login" && (
+          <p className="mx-8 mt-5 text-[13px] text-green-700 tracking-wide leading-6 border border-green-200 bg-green-50 px-3 py-2.5">
+            {notice}
+          </p>
         )}
 
         {/* ── 로그인 폼 ───────────────────────────────────────── */}
