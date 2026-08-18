@@ -9,7 +9,12 @@ import { useCartStore } from "@/store/cart";
 import { useAuthStore } from "@/store/auth";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { createOrderSecure } from "@/app/actions/create-order";
-import { getUserCoupons, type UserCoupon } from "@/app/actions/account";
+import {
+  getUserCoupons,
+  getCheckoutPrefill,
+  type UserCoupon,
+  type CheckoutPrefill,
+} from "@/app/actions/account";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
 const FREE_SHIPPING = 50000;
@@ -85,6 +90,9 @@ export default function CheckoutPage() {
   const [coupons, setCoupons] = useState<UserCoupon[]>([]);
   const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
 
+  // 회원 정보 자동입력 (로그인 사용자)
+  const [prefill, setPrefill] = useState<CheckoutPrefill | null>(null);
+
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [tossReady, setTossReady] = useState(false);
@@ -114,6 +122,7 @@ export default function CheckoutPage() {
     if (!mounted || !user) {
       setCoupons([]);
       setSelectedCouponId(null);
+      setPrefill(null);
       return;
     }
     let cancelled = false;
@@ -122,10 +131,31 @@ export default function CheckoutPage() {
         if (!cancelled) setCoupons(list.filter((c) => c.status === "active"));
       })
       .catch(() => {});
+    getCheckoutPrefill()
+      .then((p) => {
+        if (!cancelled) setPrefill(p);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [mounted, user]);
+
+  // 회원 정보로 주문자·배송지 자동 채우기
+  const applyPrefill = () => {
+    if (!prefill) return;
+    setBuyerName(prefill.name);
+    setBuyerEmail(prefill.email);
+    setBuyerPhone(prefill.phone);
+    if (prefill.address) {
+      setSameAsBuyer(false);
+      setRecipientName(prefill.address.name);
+      setRecipientPhone(prefill.address.phone);
+      setPostalCode(prefill.address.zip);
+      setAddressLine1(prefill.address.address);
+      setAddressLine2(prefill.address.addressDetail);
+    }
+  };
 
   // "주문자 정보와 동일" 체크 상태에서는 buyer 정보가 바뀔 때마다 recipient에 실시간 반영한다.
   useEffect(() => {
@@ -332,9 +362,18 @@ export default function CheckoutPage() {
             <div className="space-y-4">
               {/* 주문자 정보 */}
               <div id="checkout-buyer" className="bg-white p-6 space-y-4">
-                <h2 className="text-[14px] tracking-[0.25em] pb-1 border-b border-brand-border">
-                  주문자 정보
-                </h2>
+                <div className="flex items-center justify-between border-b border-brand-border pb-1">
+                  <h2 className="text-[14px] tracking-[0.25em]">주문자 정보</h2>
+                  {user && prefill && (
+                    <button
+                      type="button"
+                      onClick={applyPrefill}
+                      className="text-[12px] tracking-widest text-brand-black border border-brand-border px-3 h-8 hover:bg-brand-gray-light transition-colors"
+                    >
+                      회원 정보로 자동 입력
+                    </button>
+                  )}
+                </div>
 
                 <Field label="이름 (필수)">
                   <Input placeholder="홍길동" value={buyerName} onChange={setBuyerName} required />

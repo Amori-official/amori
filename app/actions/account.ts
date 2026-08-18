@@ -211,6 +211,65 @@ export interface UserCoupon {
   expiresAt: string | null;
 }
 
+// ── 체크아웃 자동입력(회원 기본정보 + 기본 배송지) ──────────
+export interface CheckoutPrefill {
+  name: string;
+  email: string;
+  phone: string;
+  address: {
+    name: string;
+    phone: string;
+    zip: string;
+    address: string;
+    addressDetail: string;
+  } | null;
+}
+
+export async function getCheckoutPrefill(): Promise<CheckoutPrefill | null> {
+  if (!IS_CONFIGURED) return null;
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("name, phone")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const { data: addr } = await supabase
+      .from("addresses")
+      .select("name, phone, zip_code, address, address_detail, is_default")
+      .eq("user_id", user.id)
+      .order("is_default", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const pName = String(profile?.name ?? "");
+    const pPhone = String(profile?.phone ?? "");
+    return {
+      name: pName,
+      email: String(user.email ?? ""),
+      phone: pPhone,
+      address: addr
+        ? {
+            name: String(addr.name ?? pName),
+            phone: String(addr.phone ?? pPhone),
+            zip: String(addr.zip_code ?? ""),
+            address: String(addr.address ?? ""),
+            addressDetail: String(addr.address_detail ?? ""),
+          }
+        : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getUserCoupons(): Promise<UserCoupon[]> {
   if (!IS_CONFIGURED) return [];
 
