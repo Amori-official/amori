@@ -16,7 +16,28 @@ import { useUIStore } from "@/store/ui";
 import { signIn, signUp, getKakaoOAuthUrl } from "@/app/actions/auth";
 
 const EMPTY_LOGIN = { email: "", password: "" };
-const EMPTY_SIGNUP = { name: "", email: "", password: "", marketingAgreed: false };
+const EMPTY_SIGNUP = {
+  name: "",
+  email: "",
+  password: "",
+  passwordConfirm: "",
+  phone: "",
+  zip: "",
+  address: "",
+  addressDetail: "",
+  birthday: "",
+  marketingAgreed: false,
+};
+
+// 다음 우편번호 검색 (동적 로드)
+type DaumNS = {
+  Postcode: new (o: {
+    oncomplete: (d: { address: string; zonecode: string }) => void;
+  }) => { open: () => void };
+};
+function getDaum(): DaumNS | undefined {
+  return (window as unknown as { daum?: DaumNS }).daum;
+}
 
 // 카카오 로그인은 Supabase가 account_email 스코프를 강제하는데, 카카오 이메일 동의항목은
 // 비즈앱 전환 + '추가 기능 신청' 검수를 통과해야 사용할 수 있어 현재 KOE205로 실패한다.
@@ -71,6 +92,30 @@ export default function CompAuthModal() {
   };
 
   // ── 회원가입 ───────────────────────────────────────────────
+  const openSignupPostcode = () => {
+    const open = () => {
+      const daum = getDaum();
+      if (!daum) return;
+      new daum.Postcode({
+        oncomplete: (data) => {
+          setSignupForm((f) => ({ ...f, zip: data.zonecode, address: data.address, addressDetail: "" }));
+        },
+      }).open();
+    };
+    if (getDaum()) return open();
+    const id = "daum-postcode-script";
+    const existing = document.getElementById(id);
+    if (existing) {
+      existing.addEventListener("load", open, { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = id;
+    script.src = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+    script.onload = open;
+    document.body.appendChild(script);
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -78,8 +123,30 @@ export default function CompAuthModal() {
       setError("비밀번호는 6자 이상이어야 합니다.");
       return;
     }
+    if (signupForm.password !== signupForm.passwordConfirm) {
+      setError("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+    if (!signupForm.phone.trim()) {
+      setError("핸드폰 번호를 입력해주세요.");
+      return;
+    }
+    if (!signupForm.zip.trim() || !signupForm.address.trim()) {
+      setError("주소를 입력해주세요.");
+      return;
+    }
     setLoading(true);
-    const result = await signUp(signupForm);
+    const result = await signUp({
+      name: signupForm.name,
+      email: signupForm.email,
+      password: signupForm.password,
+      phone: signupForm.phone,
+      birthday: signupForm.birthday || undefined,
+      addressZip: signupForm.zip || undefined,
+      addressLine1: signupForm.address || undefined,
+      addressLine2: signupForm.addressDetail || undefined,
+      marketingAgreed: signupForm.marketingAgreed,
+    });
     setLoading(false);
     if (result.error) { setError(result.error); return; }
     // 이메일 인증(A) 유지: 가입 즉시 로그인은 불가하므로, 로그인 탭으로 전환하고
@@ -207,7 +274,7 @@ export default function CompAuthModal() {
 
         {/* ── 회원가입 폼 ─────────────────────────────────────── */}
         {tab === "signup" && (
-          <form onSubmit={handleSignup} className="flex flex-col gap-4 px-8 pb-8 pt-6">
+          <form onSubmit={handleSignup} className="flex flex-col gap-4 px-8 pb-8 pt-6 max-h-[62vh] overflow-y-auto">
             <div className="flex flex-col gap-1.5">
               <Label className="text-[14px] tracking-widest">NAME</Label>
               <Input
@@ -242,6 +309,71 @@ export default function CompAuthModal() {
                 className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
               />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[14px] tracking-widest">PASSWORD 확인</Label>
+              <Input
+                type="password"
+                placeholder="비밀번호 재입력"
+                required
+                value={signupForm.passwordConfirm}
+                onChange={(e) => setSignupForm((f) => ({ ...f, passwordConfirm: e.target.value }))}
+                className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[14px] tracking-widest">핸드폰 번호</Label>
+              <Input
+                type="tel"
+                placeholder="010-0000-0000"
+                required
+                value={signupForm.phone}
+                onChange={(e) => setSignupForm((f) => ({ ...f, phone: e.target.value }))}
+                className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[14px] tracking-widest">주소</Label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="우편번호"
+                  readOnly
+                  value={signupForm.zip}
+                  className="rounded-none border-brand-border text-sm h-11 w-28 shrink-0 bg-brand-gray-light read-only:text-brand-gray-mid focus-visible:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={openSignupPostcode}
+                  className="shrink-0 px-4 h-11 border border-brand-border text-[13px] tracking-widest hover:bg-brand-gray-light transition-colors whitespace-nowrap"
+                >
+                  주소 찾기
+                </button>
+              </div>
+              <Input
+                type="text"
+                placeholder="기본 주소"
+                readOnly
+                value={signupForm.address}
+                className="rounded-none border-brand-border text-sm h-11 bg-brand-gray-light read-only:text-brand-gray-mid focus-visible:ring-0"
+              />
+              <Input
+                type="text"
+                placeholder="상세 주소 (동/호수 등)"
+                value={signupForm.addressDetail}
+                onChange={(e) => setSignupForm((f) => ({ ...f, addressDetail: e.target.value }))}
+                className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[14px] tracking-widest">생일 (선택)</Label>
+              <Input
+                type="date"
+                value={signupForm.birthday}
+                onChange={(e) => setSignupForm((f) => ({ ...f, birthday: e.target.value }))}
+                className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
+              />
+              <p className="text-[12px] text-brand-gray-mid">생일에 맞춰 생일 쿠폰을 보내드려요.</p>
+            </div>
 
             <div className="flex items-start gap-2.5 pt-1">
               <Checkbox
@@ -259,7 +391,7 @@ export default function CompAuthModal() {
                 마케팅 수신 동의 (선택)
                 <br />
                 <span className="text-[14px]">
-                  신제품 출시 및 프로모션 정보를 받아봅니다.
+                  동의하시면 <b className="text-brand-black">1,000원 할인 쿠폰</b>을 즉시 드려요. (신제품·프로모션 소식 발송)
                 </span>
               </label>
             </div>

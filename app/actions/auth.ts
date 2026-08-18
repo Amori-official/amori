@@ -53,6 +53,11 @@ export async function signUp(data: {
   name: string;
   email: string;
   password: string;
+  phone: string;
+  birthday?: string;
+  addressZip?: string;
+  addressLine1?: string;
+  addressLine2?: string;
   marketingAgreed: boolean;
 }): Promise<{ error?: string; success?: boolean }> {
   if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED_ERROR };
@@ -66,7 +71,12 @@ export async function signUp(data: {
       options: {
         data: {
           name: data.name,
+          phone: data.phone,
+          birthday: data.birthday || null,
           marketing_agreed: data.marketingAgreed,
+          address_zip: data.addressZip || null,
+          address_line1: data.addressLine1 || null,
+          address_line2: data.addressLine2 || null,
         },
       },
     });
