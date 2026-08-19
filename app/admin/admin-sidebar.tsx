@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/admin/products", label: "상품 관리" },
   { href: "/admin/orders", label: "주문 관리" },
+  { href: "/admin/coupons", label: "쿠폰 관리" },
 ];
 
 export default function AdminSidebar() {

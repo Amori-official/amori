@@ -35,7 +35,7 @@ export default function CouponRedeemForm() {
         <input
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="쿠폰 코드 입력 (예: AMORIKKO)"
+          placeholder="쿠폰 코드 입력"
           className="flex-1 h-11 border border-brand-border px-3 text-sm focus:outline-none focus:border-brand-black"
         />
         <button

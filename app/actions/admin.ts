@@ -643,3 +643,139 @@ export async function createProduct(input: {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
+
+// ── 쿠폰 관리 (C3) ──────────────────────────────────────
+export interface AdminCoupon {
+  id: string;
+  code: string;
+  name: string;
+  discountType: string; // 'percent' | 'amount'
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount: number | null;
+  validDays: number | null;
+  isActive: boolean;
+  codeRedeemable: boolean;
+  issuedCount: number;
+}
+
+export interface CouponInput {
+  code: string;
+  name: string;
+  discountType: string;
+  discountValue: number;
+  minOrderAmount: number;
+  maxDiscountAmount: number | null;
+  validDays: number | null;
+  isActive: boolean;
+  codeRedeemable: boolean;
+}
+
+const COUPON_CODE_REGEX = /^[A-Z0-9]{2,40}$/;
+
+function validateCoupon(input: CouponInput): string | null {
+  if (!COUPON_CODE_REGEX.test(input.code)) return "코드는 영문 대문자·숫자 2~40자여야 합니다.";
+  if (!input.name.trim()) return "쿠폰 이름은 필수입니다.";
+  if (input.discountType !== "percent" && input.discountType !== "amount") return "할인 방식이 올바르지 않습니다.";
+  if (!Number.isFinite(input.discountValue) || input.discountValue < 0) return "할인값이 올바르지 않습니다.";
+  if (input.discountType === "percent" && input.discountValue > 100) return "정률 할인은 100%를 넘을 수 없습니다.";
+  if (!Number.isFinite(input.minOrderAmount) || input.minOrderAmount < 0) return "최소 주문금액이 올바르지 않습니다.";
+  if (input.maxDiscountAmount != null && (!Number.isFinite(input.maxDiscountAmount) || input.maxDiscountAmount < 0))
+    return "최대 할인액이 올바르지 않습니다.";
+  if (input.validDays != null && (!Number.isInteger(input.validDays) || input.validDays < 0))
+    return "유효일수가 올바르지 않습니다.";
+  return null;
+}
+
+function couponRow(input: CouponInput) {
+  return {
+    code: input.code.trim().toUpperCase(),
+    name: input.name.trim(),
+    discount_type: input.discountType,
+    discount_value: Math.round(input.discountValue),
+    min_order_amount: Math.round(input.minOrderAmount),
+    max_discount_amount: input.maxDiscountAmount == null ? null : Math.round(input.maxDiscountAmount),
+    valid_days: input.validDays == null ? null : Math.round(input.validDays),
+    is_active: input.isActive,
+    code_redeemable: input.codeRedeemable,
+  };
+}
+
+export async function getAdminCoupons(): Promise<AdminCoupon[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error || !data) {
+      logSupabaseError("getAdminCoupons", error);
+      return [];
+    }
+
+    const result: AdminCoupon[] = [];
+    for (const c of data) {
+      const { count } = await supabase
+        .from("user_coupons")
+        .select("*", { count: "exact", head: true })
+        .eq("coupon_id", c.id);
+      result.push({
+        id: String(c.id),
+        code: String(c.code),
+        name: String(c.name),
+        discountType: String(c.discount_type),
+        discountValue: Number(c.discount_value),
+        minOrderAmount: Number(c.min_order_amount ?? 0),
+        maxDiscountAmount: c.max_discount_amount == null ? null : Number(c.max_discount_amount),
+        validDays: c.valid_days == null ? null : Number(c.valid_days),
+        isActive: Boolean(c.is_active),
+        codeRedeemable: Boolean(c.code_redeemable),
+        issuedCount: count ?? 0,
+      });
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+
+export async function createCoupon(input: CouponInput): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const err = validateCoupon(input);
+    if (err) return { error: err };
+    const { error } = await supabase.from("coupons").insert(couponRow(input));
+    if (error) {
+      logSupabaseError("createCoupon", error);
+      if (error.code === "23505") return { error: "이미 사용 중인 코드입니다." };
+      return { error: "쿠폰 생성에 실패했습니다." };
+    }
+    revalidatePath("/admin/coupons");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export async function updateCoupon(id: string, input: CouponInput): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const err = validateCoupon(input);
+    if (err) return { error: err };
+    const { error } = await supabase.from("coupons").update(couponRow(input)).eq("id", id);
+    if (error) {
+      logSupabaseError("updateCoupon", error);
+      if (error.code === "23505") return { error: "이미 사용 중인 코드입니다." };
+      return { error: "쿠폰 저장에 실패했습니다." };
+    }
+    revalidatePath("/admin/coupons");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
