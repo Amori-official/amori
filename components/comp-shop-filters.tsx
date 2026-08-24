@@ -20,10 +20,16 @@ const SORTS = [
 interface Props {
   category?: string;
   sort?: string;
+  availableCategories?: string[];
 }
 
-export default function CompShopFilters({ category = "all", sort = "new" }: Props) {
+export default function CompShopFilters({ category = "all", sort = "new", availableCategories }: Props) {
   const router = useRouter();
+
+  // 상품이 있는 카테고리만 노출한다("all"은 항상). availableCategories가 없으면 전체 표시.
+  const visibleCategories = availableCategories
+    ? CATEGORIES.filter((c) => c.value === "all" || availableCategories.includes(c.value))
+    : CATEGORIES;
 
   const update = (key: "category" | "sort", value: string) => {
     const params = new URLSearchParams();
@@ -41,7 +47,7 @@ export default function CompShopFilters({ category = "all", sort = "new" }: Prop
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 pb-5 border-b border-brand-border">
       {/* 카테고리 탭 */}
       <div className="flex gap-0 overflow-x-auto">
-        {CATEGORIES.map((cat) => (
+        {visibleCategories.map((cat) => (
           <button
             key={cat.value}
             onClick={() => update("category", cat.value)}

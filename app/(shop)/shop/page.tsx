@@ -21,9 +21,19 @@ export default async function ShopPage({
   const sort =
     typeof searchParams.sort === "string" ? searchParams.sort : undefined;
 
-  const allProducts = await getProducts({ category, sort });
-  const products = allProducts.filter((p) => !p.isComingSoon);
-  const comingSoon = allProducts.filter((p) => p.isComingSoon);
+  // 전체 게시 상품을 먼저 불러와 "상품이 있는 카테고리"만 탭에 노출한다
+  // (빈 카테고리 숨김 — 카드사 심사 요구사항).
+  const everything = await getProducts({ sort });
+  const availableCategories = Array.from(
+    new Set(everything.map((p) => p.category).filter((c): c is string => !!c))
+  );
+
+  const inCategory =
+    category && category !== "all"
+      ? everything.filter((p) => p.category === category)
+      : everything;
+  const products = inCategory.filter((p) => !p.isComingSoon);
+  const comingSoon = inCategory.filter((p) => p.isComingSoon);
 
   return (
     <div className="pt-[60px] min-h-screen">
@@ -37,7 +47,7 @@ export default async function ShopPage({
         </div>
 
         <Suspense fallback={null}>
-          <CompShopFilters category={category} sort={sort} />
+          <CompShopFilters category={category} sort={sort} availableCategories={availableCategories} />
         </Suspense>
       </section>
 
