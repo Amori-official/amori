@@ -70,6 +70,123 @@ async function requireAdmin(supabase: SupabaseClient): Promise<void> {
   }
 }
 
+// ── 대시보드 (Phase 1) ──────────────────────────────────
+export interface DashboardStats {
+  totalSales: number;
+  todaySales: number;
+  totalOrders: number;
+  todayOrders: number;
+  unfulfilledCount: number;
+  memberCount: number;
+  todayMemberCount: number;
+  publishedCount: number;
+  unpublishedCount: number;
+  recentOrders: {
+    id: string;
+    orderNumber: string;
+    buyerName: string;
+    totalAmount: number;
+    paymentStatus: string;
+    fulfillmentStatus: string;
+    createdAt: string;
+  }[];
+}
+
+// KST(UTC+9) 기준 "오늘 0시"의 UTC ISO 문자열.
+function kstTodayStartISO(): string {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 3600 * 1000);
+  const startUtcMs = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) - 9 * 3600 * 1000;
+  return new Date(startUtcMs).toISOString();
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const empty: DashboardStats = {
+    totalSales: 0,
+    todaySales: 0,
+    totalOrders: 0,
+    todayOrders: 0,
+    unfulfilledCount: 0,
+    memberCount: 0,
+    todayMemberCount: 0,
+    publishedCount: 0,
+    unpublishedCount: 0,
+    recentOrders: [],
+  };
+  if (!isSupabaseConfigured()) return empty;
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const todayStart = kstTodayStartISO();
+
+    // 매출(결제완료 주문의 total_amount 합) — 소규모 카탈로그 가정, JS 합산
+    const { data: paid } = await supabase
+      .from("orders")
+      .select("total_amount, created_at")
+      .eq("payment_status", "paid");
+    const paidRows = paid ?? [];
+    const totalSales = paidRows.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+    const todaySales = paidRows
+      .filter((o) => String(o.created_at) >= todayStart)
+      .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+
+    const head = { count: "exact" as const, head: true };
+    const [
+      totalOrdersRes,
+      todayOrdersRes,
+      unfulfilledRes,
+      memberRes,
+      todayMemberRes,
+      publishedRes,
+      unpublishedRes,
+    ] = await Promise.all([
+      supabase.from("orders").select("*", head),
+      supabase.from("orders").select("*", head).gte("created_at", todayStart),
+      supabase.from("orders").select("*", head).eq("payment_status", "paid").eq("fulfillment_status", "unfulfilled"),
+      supabase.from("profiles").select("*", head),
+      supabase.from("profiles").select("*", head).gte("created_at", todayStart),
+      supabase.from("products").select("*", head).eq("is_published", true),
+      supabase.from("products").select("*", head).eq("is_published", false),
+    ]);
+    const totalOrders = totalOrdersRes.count ?? 0;
+    const todayOrders = todayOrdersRes.count ?? 0;
+    const unfulfilledCount = unfulfilledRes.count ?? 0;
+    const memberCount = memberRes.count ?? 0;
+    const todayMemberCount = todayMemberRes.count ?? 0;
+    const publishedCount = publishedRes.count ?? 0;
+    const unpublishedCount = unpublishedRes.count ?? 0;
+
+    const { data: recent } = await supabase
+      .from("orders")
+      .select("id, order_number, buyer_name, total_amount, payment_status, fulfillment_status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    return {
+      totalSales,
+      todaySales,
+      totalOrders,
+      todayOrders,
+      unfulfilledCount,
+      memberCount,
+      todayMemberCount,
+      publishedCount,
+      unpublishedCount,
+      recentOrders: (recent ?? []).map((o) => ({
+        id: String(o.id),
+        orderNumber: String(o.order_number ?? o.id),
+        buyerName: String(o.buyer_name ?? "-"),
+        totalAmount: Number(o.total_amount ?? 0),
+        paymentStatus: String(o.payment_status ?? "ready"),
+        fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
+        createdAt: String(o.created_at),
+      })),
+    };
+  } catch {
+    return empty;
+  }
+}
+
 // ── 상품 ────────────────────────────────────────────────
 export async function getAdminProducts(): Promise<AdminProduct[]> {
   if (!isSupabaseConfigured()) return [];

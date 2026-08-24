@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
+  { href: "/admin", label: "대시보드", exact: true },
   { href: "/admin/products", label: "상품 관리" },
   { href: "/admin/orders", label: "주문 관리" },
   { href: "/admin/coupons", label: "쿠폰 관리" },
@@ -15,7 +16,7 @@ export default function AdminSidebar() {
     <nav className="bg-white p-2 lg:p-3">
       <ul className="flex lg:flex-col gap-1">
         {NAV.map((item) => {
-          const active = pathname.startsWith(item.href);
+          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           return (
             <li key={item.href}>
               <Link
