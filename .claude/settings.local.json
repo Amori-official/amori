@@ -149,7 +149,8 @@
       "Bash(open -e /Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/013_signup_profile_expansion.sql)",
       "Bash(open -e /Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/014_coupon_code_redeem.sql)",
       "Bash(open -e /Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/015_rename_kakao_coupon.sql)",
-      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/016_order_tracking.sql\")"
+      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/016_order_tracking.sql\")",
+      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/017_admin_members.sql\")"
     ]
   }
 }

@@ -524,6 +524,130 @@ export async function cancelOrder(id: string): Promise<{ error?: string }> {
   }
 }
 
+// ── 회원 관리 (P1-C) ────────────────────────────────────
+export interface AdminMember {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  marketingAgreed: boolean;
+  role: string;
+  createdAt: string;
+  orderCount: number;
+  totalSpent: number;
+}
+
+export async function getAdminMembers(q?: string): Promise<AdminMember[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { data, error } = await supabase.rpc("admin_list_members", {
+      p_q: q?.trim() || null,
+    });
+    if (error) {
+      logSupabaseError("getAdminMembers", error);
+      return [];
+    }
+    return (Array.isArray(data) ? data : []).map((m: Record<string, unknown>) => ({
+      id: s(m.id),
+      email: s(m.email),
+      name: s(m.name),
+      phone: s(m.phone),
+      marketingAgreed: !!m.marketing_agreed,
+      role: s(m.role) || "user",
+      createdAt: s(m.created_at),
+      orderCount: Number(m.order_count ?? 0),
+      totalSpent: Number(m.total_spent ?? 0),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export interface AdminMemberDetail {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  birthday: string;
+  marketingAgreed: boolean;
+  role: string;
+  createdAt: string;
+  orders: {
+    id: string;
+    orderNumber: string;
+    totalAmount: number;
+    paymentStatus: string;
+    fulfillmentStatus: string;
+    createdAt: string;
+  }[];
+  coupons: {
+    id: string;
+    name: string;
+    status: string;
+    expiresAt: string | null;
+  }[];
+}
+
+export async function getAdminMemberDetail(id: string): Promise<AdminMemberDetail | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const { data: rows, error } = await supabase.rpc("admin_get_member", { p_id: id });
+    const m = (Array.isArray(rows) ? rows[0] : rows) as Record<string, unknown> | undefined;
+    if (error || !m) {
+      logSupabaseError("getAdminMemberDetail", error);
+      return null;
+    }
+
+    const { data: orderRows } = await supabase
+      .from("orders")
+      .select("id, order_number, total_amount, payment_status, fulfillment_status, created_at")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false });
+
+    const { data: couponRows } = await supabase
+      .from("user_coupons")
+      .select("id, status, expires_at, coupons(name)")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false });
+
+    return {
+      id: s(m.id),
+      email: s(m.email),
+      name: s(m.name),
+      phone: s(m.phone),
+      birthday: s(m.birthday),
+      marketingAgreed: !!m.marketing_agreed,
+      role: s(m.role) || "user",
+      createdAt: s(m.created_at),
+      orders: (Array.isArray(orderRows) ? orderRows : []).map((o: Record<string, unknown>) => ({
+        id: s(o.id),
+        orderNumber: s(o.order_number),
+        totalAmount: Number(o.total_amount ?? 0),
+        paymentStatus: s(o.payment_status) || "ready",
+        fulfillmentStatus: s(o.fulfillment_status) || "unfulfilled",
+        createdAt: s(o.created_at),
+      })),
+      coupons: (Array.isArray(couponRows) ? couponRows : []).map((c: Record<string, unknown>) => {
+        const raw = c.coupons as unknown;
+        const co = (Array.isArray(raw) ? raw[0] : raw) as { name?: string } | undefined;
+        return {
+          id: s(c.id),
+          name: co?.name ?? "쿠폰",
+          status: s(c.status) || "active",
+          expiresAt: c.expires_at ? s(c.expires_at) : null,
+        };
+      }),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ── 상품 상세 편집 (2단계) ──────────────────────────────
 export interface Feature {
   label: string;
