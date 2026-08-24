@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateOrderStatus, type AdminOrder } from "@/app/actions/admin";
 
@@ -22,6 +23,8 @@ const FULFILLMENT_OPTIONS = [
   { value: "returned", label: "반품" },
 ];
 
+const FULFILLMENT_FILTERS = [{ value: "", label: "전체 배송상태" }, ...FULFILLMENT_OPTIONS];
+
 const ORDER_STATUS_OPTIONS = [
   { value: "pending", label: "대기" },
   { value: "confirmed", label: "확정" },
@@ -29,11 +32,28 @@ const ORDER_STATUS_OPTIONS = [
   { value: "cancelled", label: "취소" },
 ];
 
-export default function OrdersAdminClient({ orders }: { orders: AdminOrder[] }) {
+export default function OrdersAdminClient({
+  orders,
+  initialQuery = "",
+  initialFulfillment = "",
+}: {
+  orders: AdminOrder[];
+  initialQuery?: string;
+  initialFulfillment?: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState(initialQuery);
+
+  const applyFilters = (nextQ: string, nextFulfillment: string) => {
+    const params = new URLSearchParams();
+    if (nextQ.trim()) params.set("q", nextQ.trim());
+    if (nextFulfillment) params.set("fulfillment", nextFulfillment);
+    const qs = params.toString();
+    router.push(`/admin/orders${qs ? `?${qs}` : ""}`);
+  };
 
   const change = (
     orderId: string,
@@ -58,6 +78,52 @@ export default function OrdersAdminClient({ orders }: { orders: AdminOrder[] }) 
         </span>
       </div>
 
+      {/* 검색 · 필터 */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-5">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            applyFilters(q, initialFulfillment);
+          }}
+          className="flex gap-2 flex-1"
+        >
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="주문번호 · 주문자 · 받는분 검색"
+            className="h-10 flex-1 border border-brand-border px-3 text-[13px] tracking-wide focus:outline-none focus:border-brand-black"
+          />
+          <button
+            type="submit"
+            className="h-10 px-4 bg-brand-black text-white text-[13px] tracking-widest shrink-0"
+          >
+            검색
+          </button>
+        </form>
+        <select
+          value={initialFulfillment}
+          onChange={(e) => applyFilters(q, e.target.value)}
+          className="h-10 border border-brand-border px-3 text-[13px] tracking-wide bg-white focus:outline-none focus:border-brand-black"
+        >
+          {FULFILLMENT_FILTERS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        {(initialQuery || initialFulfillment) && (
+          <button
+            onClick={() => {
+              setQ("");
+              router.push("/admin/orders");
+            }}
+            className="h-10 px-4 border border-brand-border text-[13px] tracking-wide text-brand-gray-mid shrink-0 hover:text-brand-black"
+          >
+            초기화
+          </button>
+        )}
+      </div>
+
       {error && (
         <p className="mb-4 text-[13px] text-red-500 tracking-wide border border-red-200 bg-red-50 px-3 py-2">
           {error}
@@ -66,7 +132,7 @@ export default function OrdersAdminClient({ orders }: { orders: AdminOrder[] }) 
 
       {orders.length === 0 ? (
         <div className="py-20 text-center text-brand-gray-mid text-sm tracking-wide">
-          주문이 없습니다.
+          {initialQuery || initialFulfillment ? "조건에 맞는 주문이 없습니다." : "주문이 없습니다."}
         </div>
       ) : (
         <ul className="space-y-3">
@@ -78,7 +144,12 @@ export default function OrdersAdminClient({ orders }: { orders: AdminOrder[] }) 
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-medium tracking-widest">{o.orderNumber}</p>
+                      <Link
+                        href={`/admin/orders/${o.id}`}
+                        className="text-sm font-medium tracking-widest underline decoration-brand-border underline-offset-4 hover:decoration-brand-black"
+                      >
+                        {o.orderNumber}
+                      </Link>
                       <span className={`text-[12px] px-2 py-0.5 rounded-full ${pay.color}`}>
                         {pay.label}
                       </span>

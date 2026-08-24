@@ -278,18 +278,34 @@ export async function setVariantActive(
 }
 
 // ── 주문 ────────────────────────────────────────────────
-export async function getAdminOrders(): Promise<AdminOrder[]> {
+export async function getAdminOrders(filters?: {
+  fulfillment?: string;
+  q?: string;
+}): Promise<AdminOrder[]> {
   if (!isSupabaseConfigured()) return [];
   try {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("orders")
       .select(
         "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, created_at, order_items(product_name, quantity, price)"
-      )
-      .order("created_at", { ascending: false });
+      );
+
+    if (filters?.fulfillment && FULFILLMENT_VALUES.includes(filters.fulfillment)) {
+      query = query.eq("fulfillment_status", filters.fulfillment);
+    }
+    const q = filters?.q?.trim();
+    if (q) {
+      // 주문번호·주문자·받는분 부분 검색 (특수문자는 제거해 or 필터 안전하게)
+      const safe = q.replace(/[%,()]/g, "");
+      query = query.or(
+        `order_number.ilike.%${safe}%,buyer_name.ilike.%${safe}%,recipient_name.ilike.%${safe}%`
+      );
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error || !data) {
       logSupabaseError("getAdminOrders", error);
@@ -351,6 +367,157 @@ export async function updateOrderStatus(
       return { error: "주문 상태 변경에 실패했습니다." };
     }
     revalidatePath("/admin/orders");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// ── 주문 상세 · 송장 · 취소 (P1-B) ──────────────────────
+export interface AdminOrderDetail {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  recipientName: string;
+  recipientPhone: string;
+  postalCode: string;
+  addressLine1: string;
+  addressLine2: string;
+  shippingRequest: string;
+  subtotalAmount: number;
+  discountAmount: number;
+  shippingFee: number;
+  totalAmount: number;
+  orderStatus: string;
+  paymentStatus: string;
+  fulfillmentStatus: string;
+  courier: string;
+  trackingNumber: string;
+  couponName: string | null;
+  items: { productName: string; variantLabel: string; quantity: number; price: number }[];
+}
+
+export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*, order_items(product_name, variant_label, quantity, price)")
+      .eq("id", id)
+      .single();
+    if (error || !data) {
+      logSupabaseError("getAdminOrderDetail", error);
+      return null;
+    }
+    const d = data as Record<string, unknown>;
+
+    // 사용된 쿠폰 이름(있으면)
+    let couponName: string | null = null;
+    const { data: uc } = await supabase
+      .from("user_coupons")
+      .select("coupons(name)")
+      .eq("used_order_id", id)
+      .maybeSingle();
+    if (uc) {
+      const raw = (uc as { coupons?: unknown }).coupons as unknown;
+      const c = (Array.isArray(raw) ? raw[0] : raw) as { name?: string } | undefined;
+      couponName = c?.name ?? null;
+    }
+
+    return {
+      id: s(d.id),
+      orderNumber: s(d.order_number),
+      createdAt: s(d.created_at),
+      buyerName: s(d.buyer_name),
+      buyerEmail: s(d.buyer_email),
+      buyerPhone: s(d.buyer_phone),
+      recipientName: s(d.recipient_name),
+      recipientPhone: s(d.recipient_phone),
+      postalCode: s(d.postal_code),
+      addressLine1: s(d.address_line1),
+      addressLine2: s(d.address_line2),
+      shippingRequest: s(d.shipping_request),
+      subtotalAmount: Number(d.subtotal_amount ?? 0),
+      discountAmount: Number(d.discount_amount ?? 0),
+      shippingFee: Number(d.shipping_fee ?? 0),
+      totalAmount: Number(d.total_amount ?? 0),
+      orderStatus: s(d.order_status) || "pending",
+      paymentStatus: s(d.payment_status) || "ready",
+      fulfillmentStatus: s(d.fulfillment_status) || "unfulfilled",
+      courier: s(d.courier),
+      trackingNumber: s(d.tracking_number),
+      couponName,
+      items: (Array.isArray(d.order_items) ? (d.order_items as Record<string, unknown>[]) : []).map((i) => ({
+        productName: s(i.product_name),
+        variantLabel: s(i.variant_label),
+        quantity: Number(i.quantity ?? 0),
+        price: Number(i.price ?? 0),
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function setOrderTracking(
+  id: string,
+  courier: string,
+  trackingNumber: string
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const update: Record<string, string | null> = {
+      courier: courier.trim() || null,
+      tracking_number: trackingNumber.trim() || null,
+    };
+    // 송장 입력 시 배송중으로 자동 전환(아직 미처리/준비 상태였다면)
+    const hasTracking = !!courier.trim() && !!trackingNumber.trim();
+    const { data: cur } = await supabase.from("orders").select("fulfillment_status").eq("id", id).single();
+    if (hasTracking && cur && ["unfulfilled", "preparing"].includes(String(cur.fulfillment_status))) {
+      update.fulfillment_status = "shipped";
+    }
+    const { error } = await supabase.from("orders").update(update).eq("id", id);
+    if (error) {
+      logSupabaseError("setOrderTracking", error);
+      return { error: "송장 저장에 실패했습니다." };
+    }
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${id}`);
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export async function cancelOrder(id: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    // 주문 취소(상태만 — 실제 결제 취소/환불은 PG 연동 후 별도 처리 필요).
+    const { error } = await supabase
+      .from("orders")
+      .update({ order_status: "cancelled", payment_status: "cancelled" })
+      .eq("id", id);
+    if (error) {
+      logSupabaseError("cancelOrder", error);
+      return { error: "주문 취소에 실패했습니다." };
+    }
+
+    // 사용된 쿠폰 복원(있으면 다시 사용 가능하도록).
+    await supabase
+      .from("user_coupons")
+      .update({ status: "active", used_at: null, used_order_id: null })
+      .eq("used_order_id", id);
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${id}`);
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
