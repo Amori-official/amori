@@ -4,6 +4,8 @@ export const metadata: Metadata = {
   title: "CARE",
 };
 
+const KAKAO_CHANNEL_URL = "http://pf.kakao.com/_dDmTX/chat";
+
 interface Item {
   text: string;
   subs?: string[];
@@ -94,7 +96,7 @@ const sections: Section[] = [
       },
       {
         text: "접수 방법",
-        subs: ["카카오톡 채널로 사진과 함께 편하게 말씀해 주시면, 최대한 빠르고 친절하게 도와드릴게요. 😊"],
+        subs: ["아래 카카오톡 채널로 사진과 함께 편하게 말씀해 주시면, 최대한 빠르고 친절하게 도와드릴게요. 😊"],
       },
     ],
   },
@@ -113,27 +115,20 @@ export default function CarePage() {
       <div className="flex flex-col gap-12">
         {sections.map((section) => (
           <section key={section.title} className="flex flex-col gap-4">
-            <h2 className="text-[15px] font-bold tracking-widest text-brand-black">{section.title}</h2>
+            <BracketHeading>{section.title}</BracketHeading>
             {section.intro && (
               <p className="text-sm text-brand-gray-mid tracking-wide leading-7">{section.intro}</p>
             )}
             <ol className="flex flex-col gap-4">
-              {section.items.map((item, i) => (
-                <li key={i} className="flex flex-col gap-2">
-                  <p className="text-sm text-brand-black tracking-wide leading-7 flex gap-2">
-                    <span className="text-brand-gray-mid shrink-0">{i + 1}.</span>
-                    <span>{item.text}</span>
+              {section.items.map((item, idx) => (
+                <li key={idx} className="flex flex-col gap-2">
+                  <p className="text-sm tracking-wide text-brand-black leading-7">
+                    {idx + 1}. {item.text}
                   </p>
                   {item.subs && item.subs.length > 0 && (
-                    <ul className="flex flex-col gap-1.5 pl-6">
-                      {item.subs.map((sub, j) => (
-                        <li
-                          key={j}
-                          className="text-sm text-brand-gray-mid tracking-wide leading-7 flex gap-2"
-                        >
-                          <span className="shrink-0">–</span>
-                          <span>{sub}</span>
-                        </li>
+                    <ul className="flex flex-col gap-1.5 pl-3">
+                      {item.subs.map((sub) => (
+                        <DashItem key={sub}>{sub}</DashItem>
                       ))}
                     </ul>
                   )}
@@ -142,7 +137,31 @@ export default function CarePage() {
             </ol>
           </section>
         ))}
+
+        {/* 카카오톡 채널 바로가기 */}
+        <a
+          href={KAKAO_CHANNEL_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 h-12 px-6 border border-brand-black
+            text-sm tracking-widest text-brand-black hover:bg-brand-black hover:text-white transition-colors w-fit"
+        >
+          카카오톡 채널로 문의하기 →
+        </a>
       </div>
     </div>
+  );
+}
+
+function BracketHeading({ children }: { children: string }) {
+  return <p className="text-[14px] tracking-widest text-brand-black">[ {children} ]</p>;
+}
+
+function DashItem({ children }: { children: string }) {
+  return (
+    <li className="flex gap-2 text-sm text-brand-gray-mid tracking-wide leading-7">
+      <span className="shrink-0">-</span>
+      <span>{children}</span>
+    </li>
   );
 }
