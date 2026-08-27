@@ -9,13 +9,15 @@ import type { Product } from "@/lib/types";
 interface Props {
   product: Product;
   initialColor?: string;
+  /** 선물포장 애드온용 GIFT BOX 상품(없으면 체크박스 미노출) */
+  giftBox?: Product | null;
 }
 
 // 상단 갤러리 + 구매 정보 히어로. comp-product-gallery/comp-product-info를 그대로 쓰되,
 // 선택한 컬러에 맞춰 대표 이미지가 바뀌도록 두 컴포넌트 사이에서 selectedColor를 중개한다.
 // SIZE/SAFETY CERTIFICATION/CARE 아코디언은 상품 데이터(sizeGuide/certificationNumber/careInstructions)가
 // 있을 때만 노출되며, 인증번호가 없는 상품은 SAFETY CERTIFICATION 자체가 렌더링되지 않는다.
-export default function ProductDetailHero({ product, initialColor }: Props) {
+export default function ProductDetailHero({ product, initialColor, giftBox }: Props) {
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     initialColor ?? product.colors?.[0]?.name
   );
@@ -43,6 +45,7 @@ export default function ProductDetailHero({ product, initialColor }: Props) {
       <CompProductInfo
         product={product}
         initialColor={initialColor}
+        giftBox={giftBox}
         tagline={product.tagline}
         belowTagline={
           hasAccordion && (

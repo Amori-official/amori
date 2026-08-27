@@ -240,6 +240,15 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return mockProducts.find((p) => p.slug === slug) ?? null;
 }
 
+// 선물포장 애드온용 GIFT BOX 상품. 상세페이지에서 "기프트박스 포장 추가" 체크 시
+// 별도 장바구니 라인으로 담기 위해 사용한다. 미시드/미게시/판매중지면 null → 체크박스 미노출.
+export async function getGiftBoxAddon(): Promise<Product | null> {
+  const p = await getProductBySlug("gift-box");
+  if (!p) return null;
+  if (p.isComingSoon || p.stock === 0) return null;
+  return p;
+}
+
 export async function getProductReviews(productId: string): Promise<Review[]> {
   if (IS_CONFIGURED) {
     try {

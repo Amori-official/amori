@@ -12,6 +12,8 @@ import type { Product } from "@/lib/types";
 interface Props {
   product: Product;
   initialColor?: string;
+  /** 선물포장 애드온용 GIFT BOX 상품(없으면 체크박스 미노출) */
+  giftBox?: Product | null;
   /** 상품명 아래에 노출할 한 줄 소개 */
   tagline?: string;
   /** 한 줄 소개 바로 아래에 삽입할 콘텐츠 (예: SIZE/SAFETY/CARE 아코디언) */
@@ -20,8 +22,9 @@ interface Props {
   onColorChange?: (colorName: string) => void;
 }
 
-export default function CompProductInfo({ product, initialColor, tagline, belowTagline, onColorChange }: Props) {
+export default function CompProductInfo({ product, initialColor, giftBox, tagline, belowTagline, onColorChange }: Props) {
   const [qty, setQty] = useState(1);
+  const [giftWrap, setGiftWrap] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     initialColor ?? product.colors?.[0]?.name
   );
@@ -67,11 +70,21 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
     return { text: "재고 있음", color: "text-green-600" };
   };
 
+  // 선물포장 애드온: 체크 시 GIFT BOX를 별도 라인으로 1개 담는다(옵션 없음 → variantId null).
+  const addGiftWrapIfChecked = () => {
+    if (giftWrap && giftBox) add(giftBox, 1);
+  };
+
   const handleAddToCart = () => {
     if (isBlocked) return;
     add(product, qty, selectedColor, selectedSize);
+    addGiftWrapIfChecked();
     setCartOpen(true);
-    showToast(`${product.name}이(가) 장바구니에 담겼습니다.`);
+    showToast(
+      giftWrap && giftBox
+        ? `${product.name} · 기프트박스 포장이 장바구니에 담겼습니다.`
+        : `${product.name}이(가) 장바구니에 담겼습니다.`
+    );
   };
 
   const handleBuyNow = () => {
@@ -81,6 +94,7 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
       return;
     }
     add(product, qty, selectedColor, selectedSize);
+    addGiftWrapIfChecked();
     router.push("/checkout?direct=true");
   };
 
@@ -191,6 +205,26 @@ export default function CompProductInfo({ product, initialColor, tagline, belowT
             +
           </button>
         </div>
+      )}
+
+      {/* 선물포장 애드온 */}
+      {giftBox && !isBlocked && (
+        <label className="flex items-start gap-2.5 border border-brand-border px-3.5 py-3 cursor-pointer hover:border-brand-gray-mid transition-colors">
+          <input
+            type="checkbox"
+            checked={giftWrap}
+            onChange={(e) => setGiftWrap(e.target.checked)}
+            className="mt-0.5 accent-brand-black w-4 h-4 shrink-0"
+          />
+          <span className="flex-1 text-[13px] tracking-wide leading-relaxed">
+            <span className="text-brand-black">🎁 기프트박스 포장 추가</span>
+            <span className="text-brand-gray-mid"> (+₩{giftBox.price.toLocaleString("ko-KR")})</span>
+            <br />
+            <span className="text-[12px] text-brand-gray-mid">
+              화이트 박스 · 티슈페이퍼 · 카드 · 쇼핑백으로 정성껏 포장해 드립니다.
+            </span>
+          </span>
+        </label>
       )}
 
       {/* CTA 버튼 */}

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProductBySlug, getProductReviews } from "@/app/actions/products";
+import { getProductBySlug, getProductReviews, getGiftBoxAddon } from "@/app/actions/products";
 import ProductDetailHero from "./product-detail-hero";
 import ProductDetailSections from "./product-detail-sections";
 import type { Product } from "@/lib/types";
@@ -44,6 +44,9 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   if (!product) notFound();
 
   const productReviews = await getProductReviews(product.id);
+
+  // 선물포장 애드온: 자기 자신(GIFT BOX)에는 노출하지 않는다.
+  const giftBox = product.slug === "gift-box" ? null : await getGiftBoxAddon();
 
   const relatedProducts = product.relatedProductSlugs?.length
     ? (
@@ -95,7 +98,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
           <span className="text-brand-black">{product.name}</span>
         </nav>
 
-        <ProductDetailHero product={product} initialColor={searchParams.color} />
+        <ProductDetailHero product={product} initialColor={searchParams.color} giftBox={giftBox} />
 
         <ProductDetailSections
           product={product}
