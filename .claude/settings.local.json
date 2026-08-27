@@ -151,7 +151,8 @@
       "Bash(open -e /Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/015_rename_kakao_coupon.sql)",
       "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/016_order_tracking.sql\")",
       "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/017_admin_members.sql\")",
-      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/018_seed_gift_box.sql\")"
+      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/018_seed_gift_box.sql\")",
+      "Bash(osascript -e 'tell application \"TextEdit\" *)"
     ]
   }
 }

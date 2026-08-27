@@ -89,12 +89,14 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
 
   const handleBuyNow = () => {
     if (isBlocked) return;
+    // 먼저 장바구니에 담는다 — 비회원이 모달에서 "비회원으로 구매하기"를 눌러
+    // /checkout으로 이동할 때 장바구니가 비어 /shop으로 튕기던 문제를 방지한다.
+    add(product, qty, selectedColor, selectedSize);
+    addGiftWrapIfChecked();
     if (!user) {
       setAuthModalOpen(true, "login");
       return;
     }
-    add(product, qty, selectedColor, selectedSize);
-    addGiftWrapIfChecked();
     router.push("/checkout?direct=true");
   };
 

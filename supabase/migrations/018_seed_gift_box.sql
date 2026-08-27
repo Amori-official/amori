@@ -72,18 +72,22 @@ Amori 기프트 박스는 따로 포장할 필요 없이 받는 분께 그대로
   INSERT INTO public.product_images (product_id, role, image_url, alt_text, layout, width, height, display_order) VALUES
     -- 대표(hero)
     (v_product_id, 'hero',    '/products/gift1.png',  '아모리 기프트 박스와 쇼핑백', NULL, NULL, NULL, 0),
-    -- 상단 갤러리 캐러셀
-    (v_product_id, 'gallery', '/products/gift1.png',  '아모리 기프트 박스와 쇼핑백', NULL, NULL, NULL, 0),
-    (v_product_id, 'gallery', '/products/gift2.png',  '기프트 박스와 쇼핑백 플랫레이', NULL, NULL, NULL, 1),
-    (v_product_id, 'gallery', '/products/gift4.png',  '열린 기프트 박스와 카드, 쇼핑백', NULL, NULL, NULL, 2),
-    (v_product_id, 'gallery', '/products/gift10.png', '기프트 박스에 담긴 아모리 빕 선물 구성(연출)', NULL, NULL, NULL, 3),
-    (v_product_id, 'gallery', '/products/gift7.png',  '아모리 쇼핑백 디테일', NULL, NULL, NULL, 4),
+    -- 상단 갤러리 캐러셀 (hero=gift1과 중복되지 않도록 gift1 제외)
+    (v_product_id, 'gallery', '/products/gift2.png',  '기프트 박스와 쇼핑백 플랫레이', NULL, NULL, NULL, 0),
+    (v_product_id, 'gallery', '/products/gift4.png',  '열린 기프트 박스와 카드, 쇼핑백', NULL, NULL, NULL, 1),
+    (v_product_id, 'gallery', '/products/gift10.png', '기프트 박스에 담긴 아모리 빕 선물 구성(연출)', NULL, NULL, NULL, 2),
+    (v_product_id, 'gallery', '/products/gift7.png',  '아모리 쇼핑백 디테일', NULL, NULL, NULL, 3),
     -- 전체 폭 배너(material_detail)
     (v_product_id, 'material_detail', '/products/gift11.png', '아모리 기프트 박스 연출 컷', NULL, 2000, 1333, 0),
-    -- Details 섹션 (layout: full / grid / grid / left / right)
-    (v_product_id, 'detail', '/products/gift3.png', '기프트 박스와 쇼핑백',            'full',  2000, 1333, 0),
-    (v_product_id, 'detail', '/products/gift5.png', '기프트 박스 디테일 1',           'grid',  2000, 1333, 1),
-    (v_product_id, 'detail', '/products/gift6.png', '기프트 박스 디테일 2',           'grid',  2000, 1333, 2),
-    (v_product_id, 'detail', '/products/gift8.png', '기프트 박스 포장 연출 1',        'left',  2000, 1333, 3),
-    (v_product_id, 'detail', '/products/gift9.png', '기프트 박스 포장 연출 2',        'right', 1877, 1252, 4);
+    -- Details 섹션 — 썸네일 포함 모든 컷을 본문에 배치 (full / grid·grid / grid·grid / left / right / full / grid·grid)
+    (v_product_id, 'detail', '/products/gift1.png',  '아모리 기프트 박스와 쇼핑백',       'full',  2000, 1333, 0),
+    (v_product_id, 'detail', '/products/gift2.png',  '기프트 박스와 쇼핑백 플랫레이',     'grid',  2000, 1333, 1),
+    (v_product_id, 'detail', '/products/gift3.png',  '기프트 박스와 쇼핑백',              'grid',  2000, 1333, 2),
+    (v_product_id, 'detail', '/products/gift5.png',  '기프트 박스 디테일 1',              'grid',  2000, 1333, 3),
+    (v_product_id, 'detail', '/products/gift6.png',  '기프트 박스 디테일 2',              'grid',  2000, 1333, 4),
+    (v_product_id, 'detail', '/products/gift4.png',  '열린 기프트 박스와 카드, 쇼핑백',   'left',  2000, 3000, 5),
+    (v_product_id, 'detail', '/products/gift7.png',  '아모리 쇼핑백 디테일',              'right', 2000, 1333, 6),
+    (v_product_id, 'detail', '/products/gift8.png',  '기프트 박스 포장 연출 1',           'full',  2000, 1333, 7),
+    (v_product_id, 'detail', '/products/gift10.png', '기프트 박스에 담긴 아모리 빕 선물 구성(연출)', 'grid', 1592, 1062, 8),
+    (v_product_id, 'detail', '/products/gift9.png',  '기프트 박스 포장 연출 2',           'grid',  1877, 1252, 9);
 END $$;
