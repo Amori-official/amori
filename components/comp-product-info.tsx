@@ -221,7 +221,7 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
             <span className="text-brand-gray-mid"> (+₩{giftBox.price.toLocaleString("ko-KR")})</span>
             <br />
             <span className="text-[12px] text-brand-gray-mid">
-              화이트 박스 · 티슈페이퍼 · 카드 · 쇼핑백으로 정성껏 포장해 드립니다.
+              기프트 박스와 쇼핑백에 정성껏 포장해 드립니다. 선물용 행택은 부착되며, 행택에 가격은 표기되지 않습니다.
             </span>
           </span>
         </label>
