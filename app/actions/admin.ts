@@ -126,8 +126,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .eq("payment_status", "paid");
     const paidRows = paid ?? [];
     const totalSales = paidRows.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+    // 문자열 비교는 타임존 표기(+00:00 vs Z) 차이로 자정 경계에서 어긋날 수 있어 Date로 비교한다.
+    const todayStartMs = new Date(todayStart).getTime();
     const todaySales = paidRows
-      .filter((o) => String(o.created_at) >= todayStart)
+      .filter((o) => new Date(String(o.created_at)).getTime() >= todayStartMs)
       .reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
 
     const head = { count: "exact" as const, head: true };
@@ -278,11 +280,25 @@ export async function setVariantActive(
 }
 
 // ── 주문 ────────────────────────────────────────────────
+const ORDERS_PAGE_SIZE = 50;
+
+export interface AdminOrdersResult {
+  orders: AdminOrder[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export async function getAdminOrders(filters?: {
   fulfillment?: string;
+  payment?: string;
   q?: string;
-}): Promise<AdminOrder[]> {
-  if (!isSupabaseConfigured()) return [];
+  page?: number;
+}): Promise<AdminOrdersResult> {
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = ORDERS_PAGE_SIZE;
+  const empty: AdminOrdersResult = { orders: [], total: 0, page, pageSize };
+  if (!isSupabaseConfigured()) return empty;
   try {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
@@ -290,53 +306,66 @@ export async function getAdminOrders(filters?: {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, created_at, order_items(product_name, quantity, price)"
+        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, created_at, order_items(product_name, quantity, price)",
+        { count: "exact" }
       );
 
     if (filters?.fulfillment && FULFILLMENT_VALUES.includes(filters.fulfillment)) {
       query = query.eq("fulfillment_status", filters.fulfillment);
     }
+    if (filters?.payment && PAYMENT_FILTER_VALUES.includes(filters.payment)) {
+      query = query.eq("payment_status", filters.payment);
+    }
     const q = filters?.q?.trim();
     if (q) {
-      // 주문번호·주문자·받는분 부분 검색 (특수문자는 제거해 or 필터 안전하게)
+      // 주문번호·주문자·받는분·연락처·이메일 부분 검색 (특수문자는 제거해 or 필터 안전하게)
       const safe = q.replace(/[%,()]/g, "");
       query = query.or(
-        `order_number.ilike.%${safe}%,buyer_name.ilike.%${safe}%,recipient_name.ilike.%${safe}%`
+        `order_number.ilike.%${safe}%,buyer_name.ilike.%${safe}%,recipient_name.ilike.%${safe}%,buyer_phone.ilike.%${safe}%,recipient_phone.ilike.%${safe}%,buyer_email.ilike.%${safe}%`
       );
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false });
+    const from = (page - 1) * pageSize;
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
 
     if (error || !data) {
       logSupabaseError("getAdminOrders", error);
-      return [];
+      return empty;
     }
 
-    return data.map((o) => ({
-      id: String(o.id),
-      orderNumber: String(o.order_number ?? o.id),
-      buyerName: (o.buyer_name as string | null) ?? null,
-      recipientName: (o.recipient_name as string | null) ?? null,
-      totalAmount: Number(o.total_amount),
-      orderStatus: String(o.order_status ?? "pending"),
-      paymentStatus: String(o.payment_status ?? "ready"),
-      fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
-      createdAt: String(o.created_at),
-      items: (Array.isArray(o.order_items) ? o.order_items : []).map(
-        (i: Record<string, unknown>) => ({
-          productName: String(i.product_name ?? ""),
-          quantity: Number(i.quantity ?? 0),
-          price: Number(i.price ?? 0),
-        })
-      ),
-    }));
+    return {
+      page,
+      pageSize,
+      total: count ?? data.length,
+      orders: data.map((o) => ({
+        id: String(o.id),
+        orderNumber: String(o.order_number ?? o.id),
+        buyerName: (o.buyer_name as string | null) ?? null,
+        recipientName: (o.recipient_name as string | null) ?? null,
+        totalAmount: Number(o.total_amount),
+        orderStatus: String(o.order_status ?? "pending"),
+        paymentStatus: String(o.payment_status ?? "ready"),
+        fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
+        createdAt: String(o.created_at),
+        items: (Array.isArray(o.order_items) ? o.order_items : []).map(
+          (i: Record<string, unknown>) => ({
+            productName: String(i.product_name ?? ""),
+            quantity: Number(i.quantity ?? 0),
+            price: Number(i.price ?? 0),
+          })
+        ),
+      })),
+    };
   } catch {
-    return [];
+    return empty;
   }
 }
 
 const FULFILLMENT_VALUES = ["unfulfilled", "preparing", "shipped", "delivered", "returned"];
 const ORDER_STATUS_VALUES = ["pending", "confirmed", "cancelled", "completed"];
+const PAYMENT_FILTER_VALUES = ["ready", "pending", "paid", "failed", "cancelled", "refunded", "partially_refunded"];
 
 export async function updateOrderStatus(
   orderId: string,
@@ -356,6 +385,10 @@ export async function updateOrderStatus(
     if (patch.orderStatus !== undefined) {
       if (!ORDER_STATUS_VALUES.includes(patch.orderStatus)) {
         return { error: "잘못된 주문 상태입니다." };
+      }
+      // 취소는 쿠폰 복원이 필요하므로 반드시 cancelOrder()를 거치게 한다(정합성 일원화).
+      if (patch.orderStatus === "cancelled") {
+        return { error: "주문 취소는 '주문 취소' 기능을 사용해 주세요." };
       }
       update.order_status = patch.orderStatus;
     }
@@ -500,6 +533,12 @@ export async function cancelOrder(id: string): Promise<{ error?: string }> {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
 
+    // 이미 취소된 주문은 재취소하지 않는다(쿠폰 이중 복원 방지).
+    const { data: cur } = await supabase.from("orders").select("order_status").eq("id", id).single();
+    if (cur?.order_status === "cancelled") {
+      return { error: "이미 취소된 주문입니다." };
+    }
+
     // 주문 취소(상태만 — 실제 결제 취소/환불은 PG 연동 후 별도 처리 필요).
     const { error } = await supabase
       .from("orders")
@@ -537,31 +576,55 @@ export interface AdminMember {
   totalSpent: number;
 }
 
-export async function getAdminMembers(q?: string): Promise<AdminMember[]> {
-  if (!isSupabaseConfigured()) return [];
+const MEMBERS_PAGE_SIZE = 50;
+
+export interface AdminMembersResult {
+  members: AdminMember[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function getAdminMembers(filters?: {
+  q?: string;
+  page?: number;
+}): Promise<AdminMembersResult> {
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = MEMBERS_PAGE_SIZE;
+  const empty: AdminMembersResult = { members: [], total: 0, page, pageSize };
+  if (!isSupabaseConfigured()) return empty;
   try {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
     const { data, error } = await supabase.rpc("admin_list_members", {
-      p_q: q?.trim() || null,
+      p_q: filters?.q?.trim() || null,
+      p_limit: pageSize,
+      p_offset: (page - 1) * pageSize,
     });
     if (error) {
       logSupabaseError("getAdminMembers", error);
-      return [];
+      return empty;
     }
-    return (Array.isArray(data) ? data : []).map((m: Record<string, unknown>) => ({
-      id: s(m.id),
-      email: s(m.email),
-      name: s(m.name),
-      phone: s(m.phone),
-      marketingAgreed: !!m.marketing_agreed,
-      role: s(m.role) || "user",
-      createdAt: s(m.created_at),
-      orderCount: Number(m.order_count ?? 0),
-      totalSpent: Number(m.total_spent ?? 0),
-    }));
+    const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+    const total = rows.length > 0 ? Number(rows[0].total_count ?? rows.length) : 0;
+    return {
+      page,
+      pageSize,
+      total,
+      members: rows.map((m) => ({
+        id: s(m.id),
+        email: s(m.email),
+        name: s(m.name),
+        phone: s(m.phone),
+        marketingAgreed: !!m.marketing_agreed,
+        role: s(m.role) || "user",
+        createdAt: s(m.created_at),
+        orderCount: Number(m.order_count ?? 0),
+        totalSpent: Number(m.total_spent ?? 0),
+      })),
+    };
   } catch {
-    return [];
+    return empty;
   }
 }
 

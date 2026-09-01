@@ -26,7 +26,9 @@ export default async function AdminDashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Stat label="오늘 매출" value={won(s.todaySales)} highlight />
           <Stat label="오늘 주문" value={`${s.todayOrders}건`} />
-          <Stat label="처리 대기 배송" value={`${s.unfulfilledCount}건`} accent={s.unfulfilledCount > 0} />
+          <Link href="/admin/orders?fulfillment=unfulfilled" className="block">
+            <Stat label="처리 대기 배송" value={`${s.unfulfilledCount}건`} accent={s.unfulfilledCount > 0} />
+          </Link>
           <Stat label="오늘 신규 회원" value={`${s.todayMemberCount}명`} />
         </div>
       </div>

@@ -30,11 +30,11 @@ const FULFILLMENT_OPTIONS = [
   { value: "returned", label: "반품" },
 ];
 
+// 취소는 아래 '주문 취소' 버튼(쿠폰 복원 포함)으로만 처리한다 — 드롭다운에서는 제외.
 const ORDER_STATUS_OPTIONS = [
   { value: "pending", label: "대기" },
   { value: "confirmed", label: "확정" },
   { value: "completed", label: "완료" },
-  { value: "cancelled", label: "취소" },
 ];
 
 const COURIERS = ["CJ대한통운", "우체국택배", "한진택배", "롯데택배", "로젠택배", "직접 입력"];
@@ -129,16 +129,20 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
           </label>
           <label className="text-[12px] text-brand-gray-mid tracking-wide flex items-center gap-2">
             주문
-            <select
-              value={order.orderStatus}
-              disabled={pending || cancelled}
-              onChange={(e) => run(() => updateOrderStatus(order.id, { orderStatus: e.target.value }))}
-              className="h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black disabled:opacity-50"
-            >
-              {ORDER_STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            {cancelled ? (
+              <span className="h-9 inline-flex items-center px-2 text-[13px] text-red-500">취소됨</span>
+            ) : (
+              <select
+                value={order.orderStatus}
+                disabled={pending}
+                onChange={(e) => run(() => updateOrderStatus(order.id, { orderStatus: e.target.value }))}
+                className="h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black disabled:opacity-50"
+              >
+                {ORDER_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            )}
           </label>
         </div>
       </Section>
@@ -181,6 +185,19 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
             저장
           </button>
         </div>
+        {order.trackingNumber && (
+          <a
+            href={`https://search.naver.com/search.naver?query=${encodeURIComponent(
+              `${order.courier || ""} 택배조회 ${order.trackingNumber}`.trim()
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-3 text-[13px] text-blue-600 underline underline-offset-4 hover:text-blue-700"
+          >
+            배송 조회하기 ({order.courier ? `${order.courier} ` : ""}
+            {order.trackingNumber}) →
+          </a>
+        )}
         <p className="text-[12px] text-brand-gray-mid mt-2">
           송장 번호를 저장하면 배송 상태가 자동으로 &lsquo;배송 중&rsquo;으로 변경됩니다.
         </p>

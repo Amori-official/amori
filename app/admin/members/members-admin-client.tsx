@@ -9,26 +9,38 @@ const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;
 
 export default function MembersAdminClient({
   members,
+  total,
+  page,
+  pageSize,
   initialQuery = "",
 }: {
   members: AdminMember[];
+  total: number;
+  page: number;
+  pageSize: number;
   initialQuery?: string;
 }) {
   const router = useRouter();
   const [q, setQ] = useState(initialQuery);
 
-  const search = () => {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const buildUrl = (nextQ: string, nextPage: number) => {
     const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
+    if (nextQ.trim()) params.set("q", nextQ.trim());
+    if (nextPage > 1) params.set("page", String(nextPage));
     const qs = params.toString();
-    router.push(`/admin/members${qs ? `?${qs}` : ""}`);
+    return `/admin/members${qs ? `?${qs}` : ""}`;
   };
+
+  // 검색 시 1페이지로 리셋
+  const search = () => router.push(buildUrl(q, 1));
 
   return (
     <div className="p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-[14px] tracking-[0.3em]">회원 관리</h2>
-        <span className="text-[13px] text-brand-gray-mid tracking-wide">총 {members.length}명</span>
+        <span className="text-[13px] text-brand-gray-mid tracking-wide">총 {total}명</span>
       </div>
 
       {/* 검색 */}
@@ -101,6 +113,29 @@ export default function MembersAdminClient({
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button
+            onClick={() => router.push(buildUrl(initialQuery, page - 1))}
+            disabled={page <= 1}
+            className="h-9 px-4 border border-brand-border text-[13px] tracking-wide disabled:opacity-40 hover:border-brand-black"
+          >
+            이전
+          </button>
+          <span className="text-[13px] text-brand-gray-mid">
+            {page} / {totalPages}
+          </span>
+          <button
+            onClick={() => router.push(buildUrl(initialQuery, page + 1))}
+            disabled={page >= totalPages}
+            className="h-9 px-4 border border-brand-border text-[13px] tracking-wide disabled:opacity-40 hover:border-brand-black"
+          >
+            다음
+          </button>
         </div>
       )}
     </div>
