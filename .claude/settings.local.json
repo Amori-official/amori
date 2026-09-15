@@ -153,7 +153,15 @@
       "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/017_admin_members.sql\")",
       "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/018_seed_gift_box.sql\")",
       "Bash(osascript -e 'tell application \"TextEdit\" *)",
-      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/019_admin_members_pagination.sql\")"
+      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/019_admin_members_pagination.sql\")",
+      "Bash(dig +short amori.kr A)",
+      "Bash(dig +short www.amori.kr A)",
+      "Bash(dig +short www.amori.kr CNAME)",
+      "Bash(dig +short amori.kr NS)",
+      "Bash(dig +short @8.8.8.8 amori.kr A)",
+      "Bash(dig +short @8.8.8.8 www.amori.kr A)",
+      "Bash(dig +short @8.8.8.8 www.amori.kr CNAME)",
+      "Bash(dig +short @ns.gabia.co.kr www.amori.kr)"
     ]
   }
 }
