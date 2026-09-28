@@ -13,9 +13,12 @@ const fadeUp = (delay = 0): MotionProps => ({
 
 // 히어로 배경 슬라이드 이미지들. 여기에 파일명을 추가하면 자동으로 슬라이드에 포함된다.
 // (public/ 폴더 기준 경로. 가로가 넓은 풀블리드 이미지 권장)
-const HERO_IMAGES: { src: string; alt: string }[] = [
-  { src: "/hero-cream.png", alt: "Amori" },
-  // 추가 예시: { src: "/hero-2.png", alt: "Amori" },
+// imgClassName으로 이미지별 보정(밝기/대비)을 다르게 줄 수 있다.
+const BASE_IMG = "object-cover object-center";
+const HERO_IMAGES: { src: string; alt: string; imgClassName?: string }[] = [
+  { src: "/hero-cream.png", alt: "Amori", imgClassName: `${BASE_IMG} brightness-125 contrast-90` },
+  { src: "/hero-2.webp", alt: "Amori 아기", imgClassName: BASE_IMG },
+  { src: "/hero-3.webp", alt: "Amori 거즈빕", imgClassName: BASE_IMG },
 ];
 
 const SLIDE_INTERVAL = 5000; // 5초마다 전환
@@ -52,7 +55,7 @@ export default function SectionHero() {
               src={img.src}
               alt={img.alt}
               fill
-              className="object-cover object-center brightness-125 contrast-90"
+              className={img.imgClassName ?? BASE_IMG}
               priority={i === 0}
               sizes="100vw"
             />
