@@ -184,6 +184,9 @@ export default function OrdersAdminClient({
                         {cancelled && (
                           <span className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">주문 취소됨</span>
                         )}
+                        {o.returnStatus === "requested" && (
+                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">반품 신청</span>
+                        )}
                       </div>
                       <p className="text-[13px] text-brand-gray-mid mt-1">
                         {new Date(o.createdAt).toLocaleString("ko-KR")} · 주문자 {o.buyerName ?? "-"}

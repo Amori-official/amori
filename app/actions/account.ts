@@ -36,7 +36,7 @@ export async function getOrders(): Promise<Order[]> {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, total_amount, order_status, payment_status, fulfillment_status, shipping_address, created_at, order_items(*)"
+        "id, order_number, total_amount, order_status, payment_status, fulfillment_status, return_status, shipping_address, created_at, order_items(*)"
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -46,6 +46,10 @@ export async function getOrders(): Promise<Order[]> {
     return data.map((o) => ({
       // 표시용 주문번호는 사람이 읽는 order_number(ORD…)를 사용한다(완료 페이지와 일치).
       id: String(o.order_number ?? o.id),
+      orderId: String(o.id),
+      fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
+      paymentStatus: String(o.payment_status ?? "pending"),
+      returnStatus: o.return_status ? String(o.return_status) : null,
       userId: String(user.id),
       items: Array.isArray(o.order_items)
         ? o.order_items.map((i: Record<string, unknown>) => ({
@@ -66,6 +70,72 @@ export async function getOrders(): Promise<Order[]> {
     }));
   } catch {
     return [];
+  }
+}
+
+// ── 고객 자가 취소 / 반품 (PC3) ────────────────────────────
+// 취소(배송 준비 전): Toss 환불 선 처리 → cancel_my_order RPC로 상태/쿠폰 반영.
+export async function cancelMyOrder(orderId: string): Promise<{ error?: string }> {
+  if (!IS_CONFIGURED) return { error: "사용할 수 없습니다." };
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "로그인이 필요합니다." };
+
+    const { data: order } = await supabase
+      .from("orders")
+      .select("id, payment_status, fulfillment_status, order_status")
+      .eq("id", orderId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!order) return { error: "주문을 찾을 수 없습니다." };
+    if (order.order_status === "cancelled") return { error: "이미 취소된 주문입니다." };
+    if (order.payment_status !== "paid") return { error: "취소할 수 없는 상태입니다." };
+    if (order.fulfillment_status !== "unfulfilled") {
+      return { error: "이미 배송 준비가 시작되어 직접 취소할 수 없어요. 반품 신청을 이용해 주세요." };
+    }
+
+    const { data: pay } = await supabase
+      .from("payments")
+      .select("payment_key")
+      .eq("order_id", orderId)
+      .not("payment_key", "is", null)
+      .maybeSingle();
+    if (!pay?.payment_key) return { error: "결제 정보를 찾을 수 없습니다. 고객센터로 문의해주세요." };
+
+    const { cancelTossPayment } = await import("@/lib/toss");
+    await cancelTossPayment(String(pay.payment_key), "고객 주문 취소");
+
+    const { error: rpcErr } = await supabase.rpc("cancel_my_order", { p_order_id: orderId });
+    if (rpcErr) {
+      return { error: "환불은 처리됐지만 주문 반영에 실패했습니다. 고객센터로 문의해주세요." };
+    }
+    revalidatePath("/account/orders");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "취소 처리 중 오류가 발생했습니다." };
+  }
+}
+
+// 반품 신청(배송 준비 후): 상태만 'requested'로. 실제 환불은 관리자 승인 시.
+export async function requestReturn(orderId: string, reason: string): Promise<{ error?: string }> {
+  if (!IS_CONFIGURED) return { error: "사용할 수 없습니다." };
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "로그인이 필요합니다." };
+
+    const { error } = await supabase.rpc("request_order_return", {
+      p_order_id: orderId,
+      p_reason: reason,
+    });
+    if (error) return { error: error.message || "반품 신청에 실패했습니다." };
+    revalidatePath("/account/orders");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
 

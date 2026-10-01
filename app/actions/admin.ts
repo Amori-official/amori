@@ -45,6 +45,7 @@ export interface AdminOrder {
   orderStatus: string;
   paymentStatus: string;
   fulfillmentStatus: string;
+  returnStatus: string | null;
   createdAt: string;
   items: AdminOrderItem[];
 }
@@ -306,7 +307,7 @@ export async function getAdminOrders(filters?: {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, created_at, order_items(product_name, quantity, price)",
+        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, order_items(product_name, quantity, price)",
         { count: "exact" }
       );
 
@@ -348,6 +349,7 @@ export async function getAdminOrders(filters?: {
         orderStatus: String(o.order_status ?? "pending"),
         paymentStatus: String(o.payment_status ?? "ready"),
         fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
+        returnStatus: o.return_status ? String(o.return_status) : null,
         createdAt: String(o.created_at),
         items: (Array.isArray(o.order_items) ? o.order_items : []).map(
           (i: Record<string, unknown>) => ({
@@ -430,6 +432,9 @@ export interface AdminOrderDetail {
   courier: string;
   trackingNumber: string;
   couponName: string | null;
+  returnStatus: string | null;
+  returnReason: string;
+  returnRequestedAt: string;
   items: { productName: string; variantLabel: string; quantity: number; price: number }[];
 }
 
@@ -485,6 +490,9 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
       courier: s(d.courier),
       trackingNumber: s(d.tracking_number),
       couponName,
+      returnStatus: d.return_status ? s(d.return_status) : null,
+      returnReason: s(d.return_reason),
+      returnRequestedAt: s(d.return_requested_at),
       items: (Array.isArray(d.order_items) ? (d.order_items as Record<string, unknown>[]) : []).map((i) => ({
         productName: s(i.product_name),
         variantLabel: s(i.variant_label),
@@ -555,6 +563,80 @@ export async function cancelOrder(id: string): Promise<{ error?: string }> {
       .update({ status: "active", used_at: null, used_order_id: null })
       .eq("used_order_id", id);
 
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${id}`);
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// ── 반품 승인/반려 (PC3) ────────────────────────────────
+export async function approveReturn(id: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const { data: order } = await supabase
+      .from("orders")
+      .select("return_status, order_status")
+      .eq("id", id)
+      .single();
+    if (!order) return { error: "주문을 찾을 수 없습니다." };
+    if (order.return_status !== "requested") return { error: "반품 신청 상태가 아닙니다." };
+    if (order.order_status === "cancelled") return { error: "이미 취소된 주문입니다." };
+
+    const { data: pay } = await supabase
+      .from("payments")
+      .select("payment_key")
+      .eq("order_id", id)
+      .not("payment_key", "is", null)
+      .maybeSingle();
+    if (!pay?.payment_key) return { error: "결제 정보를 찾을 수 없습니다." };
+
+    const { cancelTossPayment } = await import("@/lib/toss");
+    await cancelTossPayment(String(pay.payment_key), "반품 승인 환불");
+
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        order_status: "cancelled",
+        payment_status: "refunded",
+        fulfillment_status: "returned",
+        return_status: "approved",
+      })
+      .eq("id", id);
+    if (error) {
+      logSupabaseError("approveReturn", error);
+      return { error: "반품 승인 반영에 실패했습니다." };
+    }
+
+    // 사용된 쿠폰 복원
+    await supabase
+      .from("user_coupons")
+      .update({ status: "active", used_at: null, used_order_id: null })
+      .eq("used_order_id", id);
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${id}`);
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export async function rejectReturn(id: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase
+      .from("orders")
+      .update({ return_status: "rejected" })
+      .eq("id", id);
+    if (error) {
+      logSupabaseError("rejectReturn", error);
+      return { error: "처리에 실패했습니다." };
+    }
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${id}`);
     return {};

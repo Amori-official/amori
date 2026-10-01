@@ -7,6 +7,8 @@ import {
   updateOrderStatus,
   setOrderTracking,
   cancelOrder,
+  approveReturn,
+  rejectReturn,
   type AdminOrderDetail,
 } from "@/app/actions/admin";
 
@@ -79,6 +81,17 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
     run(() => cancelOrder(order.id), "주문을 취소했습니다.");
   };
 
+  const doApproveReturn = () => {
+    if (!confirm("반품을 승인하시겠습니까?\n토스페이먼츠로 자동 환불되고, 주문이 취소/반품 처리됩니다."))
+      return;
+    run(() => approveReturn(order.id), "반품을 승인하고 환불했습니다.");
+  };
+
+  const doRejectReturn = () => {
+    if (!confirm("반품 신청을 반려하시겠습니까?")) return;
+    run(() => rejectReturn(order.id), "반품 신청을 반려했습니다.");
+  };
+
   return (
     <div className="p-6 sm:p-8 max-w-4xl space-y-6">
       {/* 헤더 */}
@@ -109,6 +122,53 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
         <p className="text-[13px] text-blue-600 tracking-wide border border-blue-200 bg-blue-50 px-3 py-2">
           {msg}
         </p>
+      )}
+
+      {/* 반품 신청 */}
+      {order.returnStatus && (
+        <Section title="반품">
+          {order.returnStatus === "requested" ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">반품 신청됨</span>
+                {order.returnRequestedAt && (
+                  <span className="text-[12px] text-brand-gray-mid">
+                    {new Date(order.returnRequestedAt).toLocaleString("ko-KR")}
+                  </span>
+                )}
+              </div>
+              {order.returnReason && (
+                <p className="text-[13px] leading-6 border border-brand-border p-3 bg-brand-gray-light whitespace-pre-wrap">
+                  사유: {order.returnReason}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={doApproveReturn}
+                  disabled={pending}
+                  className="h-10 px-4 bg-brand-black text-white text-[13px] tracking-widest disabled:opacity-50"
+                >
+                  반품 승인 (자동 환불)
+                </button>
+                <button
+                  onClick={doRejectReturn}
+                  disabled={pending}
+                  className="h-10 px-4 border border-brand-border text-[13px] tracking-widest text-brand-gray-mid hover:text-brand-black disabled:opacity-50"
+                >
+                  반려
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[13px] text-brand-gray-mid">
+              반품 상태:{" "}
+              <span className={order.returnStatus === "approved" ? "text-brand-black" : "text-red-500"}>
+                {order.returnStatus === "approved" ? "승인 완료 (환불됨)" : "반려됨"}
+              </span>
+              {order.returnReason ? ` · 사유: ${order.returnReason}` : ""}
+            </p>
+          )}
+        </Section>
       )}
 
       {/* 상태 변경 */}

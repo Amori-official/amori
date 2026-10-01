@@ -100,10 +100,16 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  /** 실제 주문 레코드 UUID (취소/반품 액션용). id는 표시용 주문번호. */
+  orderId: string;
   userId: string;
   items: OrderItem[];
   totalAmount: number;
   status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
+  /** 원시 상태 (버튼 조건 판단용) */
+  fulfillmentStatus: string;
+  paymentStatus: string;
+  returnStatus: string | null;
   shippingAddress: ShippingAddress;
   giftWrapping?: boolean;
   giftMessage?: string;

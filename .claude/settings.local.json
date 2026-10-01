@@ -161,7 +161,8 @@
       "Bash(dig +short @8.8.8.8 amori.kr A)",
       "Bash(dig +short @8.8.8.8 www.amori.kr A)",
       "Bash(dig +short @8.8.8.8 www.amori.kr CNAME)",
-      "Bash(dig +short @ns.gabia.co.kr www.amori.kr)"
+      "Bash(dig +short @ns.gabia.co.kr www.amori.kr)",
+      "Bash(open -a TextEdit \"/Users/gayeon/Desktop/VibeCoding/Amori/supabase/migrations/020_order_returns.sql\")"
     ]
   }
 }
