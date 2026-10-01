@@ -59,13 +59,13 @@ export async function signUp(data: {
   addressLine1?: string;
   addressLine2?: string;
   marketingAgreed: boolean;
-}): Promise<{ error?: string; success?: boolean }> {
+}): Promise<{ error?: string; success?: boolean; needsConfirmation?: boolean }> {
   if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED_ERROR };
 
   try {
     const supabase = createActionClient();
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -84,7 +84,9 @@ export async function signUp(data: {
     if (error) return { error: toKoreanError(error.message) };
 
     revalidatePath("/", "layout");
-    return { success: true };
+    // 이메일 확인이 꺼져 있으면 가입 즉시 세션이 생성된다(바로 로그인됨).
+    // 켜져 있으면 세션이 없고 메일 인증이 필요하다.
+    return { success: true, needsConfirmation: !signUpData.session };
   } catch (error) {
     logSupabaseError("signUp", error);
     return { error: GENERIC_AUTH_ERROR };
@@ -118,7 +120,7 @@ export async function signIn(data: {
         .maybeSingle();
       if (profile?.deactivated_at) {
         await supabase.auth.signOut();
-        return { error: "탈퇴 처리된 계정입니다. 재가입을 원하시면 카카오톡 채널로 문의해주세요." };
+        return { error: "탈퇴 처리된 계정입니다. 같은 메일주소로 재가입은 불가합니다. 동일한 메일주소로 가입을 원한다면 카카오톡 채널로 문의주세요." };
       }
     }
 

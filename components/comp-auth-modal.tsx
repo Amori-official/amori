@@ -149,12 +149,17 @@ export default function CompAuthModal() {
     });
     setLoading(false);
     if (result.error) { setError(result.error); return; }
-    // 이메일 인증(A) 유지: 가입 즉시 로그인은 불가하므로, 로그인 탭으로 전환하고
-    // 인증 안내를 명확히 보여준다.
     setSignupForm(EMPTY_SIGNUP);
     setError(null);
-    setTab("login");
-    setNotice("가입 확인 이메일을 보냈어요. 메일의 링크로 인증을 완료한 뒤 로그인해주세요. (가입 축하 쿠폰이 지급됐어요 🎉)");
+    if (result.needsConfirmation) {
+      // 이메일 확인이 켜진 경우: 로그인 탭으로 전환하고 인증 안내.
+      setTab("login");
+      setNotice("가입 확인 이메일을 보냈어요. 메일의 링크로 인증을 완료한 뒤 로그인해주세요. (가입 축하 쿠폰이 지급됐어요 🎉)");
+    } else {
+      // 이메일 확인이 꺼진 경우: 가입 즉시 로그인 완료.
+      handleOpenChange(false);
+      showToast("회원가입이 완료되었습니다! (가입 축하 쿠폰이 지급됐어요 🎉)");
+    }
   };
 
   // ── 카카오 OAuth ────────────────────────────────────────────

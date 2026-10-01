@@ -45,7 +45,7 @@ export default function ProfileClient(initial: Props) {
   const handleWithdraw = async () => {
     if (
       !confirm(
-        "정말 탈퇴하시겠어요?\n탈퇴 후에는 로그인하실 수 없으며, 재가입을 원하시면 카카오톡 채널로 문의해주세요."
+        "정말 탈퇴하시겠어요?\n탈퇴 후에는 로그인하실 수 없으며, 같은 메일주소로 재가입은 불가합니다. 동일한 메일주소로 가입을 원한다면 카카오톡 채널로 문의주세요."
       )
     )
       return;
