@@ -1,4 +1,5 @@
 import ProfileClient from "./profile-client";
+import { getAddresses } from "@/app/actions/account";
 
 async function getUserData() {
   const IS_CONFIGURED = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").startsWith("http");
@@ -22,5 +23,7 @@ async function getUserData() {
 
 export default async function ProfilePage() {
   const userData = await getUserData();
-  return <ProfileClient {...userData} />;
+  const addresses = await getAddresses();
+  const address = addresses.find((a) => a.isDefault) ?? addresses[0] ?? null;
+  return <ProfileClient {...userData} address={address} />;
 }
