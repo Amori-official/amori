@@ -55,8 +55,14 @@ function computeCouponDiscount(coupon: UserCoupon | null, subtotal: number): num
 declare global {
   interface Window {
     daum: {
-      Postcode: new (opts: { oncomplete: (data: { address: string; zonecode: string }) => void }) => {
+      Postcode: new (opts: {
+        oncomplete: (data: { address: string; zonecode: string }) => void;
+        onclose?: () => void;
+        width?: string | number;
+        height?: string | number;
+      }) => {
         open: () => void;
+        embed: (el: HTMLElement) => void;
       };
     };
   }
@@ -76,6 +82,8 @@ export default function CheckoutPage() {
   const [postalCode, setPostalCode] = useState("");
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
+  const [postcodeOpen, setPostcodeOpen] = useState(false);
+  const postcodeRef = useRef<HTMLDivElement>(null);
   const [deliveryRequest, setDeliveryRequest] = useState("");
 
   // "주문자 정보와 동일" 체크 해제 상태에서 사용자가 직접 입력한 recipient 값을 보관.
@@ -227,17 +235,29 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, [mounted, user, items.length, total]);
 
+  // 모바일에서 팝업(.open())이 차단되거나 페이지를 리로드해 입력값이 초기화되는 문제를 피하기 위해
+  // 화면 내 오버레이에 임베드(.embed())하는 방식으로 띄운다.
   const handleAddressSearch = () => {
     if (!window.daum) return;
+    setPostcodeOpen(true);
+  };
+
+  useEffect(() => {
+    if (!postcodeOpen || !window.daum || !postcodeRef.current) return;
+    postcodeRef.current.innerHTML = "";
     new window.daum.Postcode({
       oncomplete: (data) => {
         setPostalCode(data.zonecode);
         setAddressLine1(data.address);
         setAddressLine2("");
-        document.getElementById("addressLine2")?.focus();
+        setPostcodeOpen(false);
+        setTimeout(() => document.getElementById("addressLine2")?.focus(), 0);
       },
-    }).open();
-  };
+      onclose: () => setPostcodeOpen(false),
+      width: "100%",
+      height: "100%",
+    }).embed(postcodeRef.current);
+  }, [postcodeOpen]);
 
   function validateForm(): string | null {
     if (!buyerName.trim()) return "주문자 이름을 입력해주세요.";
@@ -346,6 +366,32 @@ export default function CheckoutPage() {
         src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
         strategy="lazyOnload"
       />
+
+      {/* 주소 검색 오버레이 (모바일 안정성을 위해 임베드 방식) */}
+      {postcodeOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
+          onClick={() => setPostcodeOpen(false)}
+        >
+          <div
+            className="bg-white w-full max-w-md h-[520px] max-h-[85vh] rounded overflow-hidden flex flex-col shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 h-12 border-b border-brand-border shrink-0">
+              <span className="text-[14px] tracking-widest">주소 검색</span>
+              <button
+                type="button"
+                onClick={() => setPostcodeOpen(false)}
+                aria-label="닫기"
+                className="w-8 h-8 grid place-items-center text-brand-gray-mid hover:text-brand-black text-lg"
+              >
+                ✕
+              </button>
+            </div>
+            <div ref={postcodeRef} className="flex-1 min-h-0" />
+          </div>
+        </div>
+      )}
 
       <div className="pt-[60px] min-h-screen bg-brand-gray-light">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
