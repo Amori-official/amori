@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AdminMemberDetail } from "@/app/actions/admin";
+import DeactivateButton from "./deactivate-button";
 
 const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;
 
@@ -29,17 +30,26 @@ export default function MemberDetailClient({ member }: { member: AdminMemberDeta
         <Link href="/admin/members" className="text-[13px] text-brand-gray-mid hover:text-brand-black">
           ← 회원 목록
         </Link>
-        <div className="flex items-center gap-3 flex-wrap mt-2">
-          <h2 className="text-[15px] tracking-[0.2em] font-medium">{member.name || "(이름 없음)"}</h2>
-          {member.role === "admin" && (
-            <span className="text-[12px] px-2 py-0.5 rounded-full bg-brand-black text-white">관리자</span>
-          )}
-          {member.marketingAgreed && (
-            <span className="text-[12px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">마케팅 동의</span>
+        <div className="flex items-center justify-between gap-3 flex-wrap mt-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-[15px] tracking-[0.2em] font-medium">{member.name || "(이름 없음)"}</h2>
+            {member.role === "admin" && (
+              <span className="text-[12px] px-2 py-0.5 rounded-full bg-brand-black text-white">관리자</span>
+            )}
+            {member.marketingAgreed && (
+              <span className="text-[12px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">마케팅 동의</span>
+            )}
+            {member.deactivatedAt && (
+              <span className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">탈퇴 회원</span>
+            )}
+          </div>
+          {member.role !== "admin" && (
+            <DeactivateButton userId={member.id} deactivated={!!member.deactivatedAt} />
           )}
         </div>
         <p className="text-[13px] text-brand-gray-mid mt-1">
           가입일 {new Date(member.createdAt).toLocaleDateString("ko-KR")}
+          {member.deactivatedAt && ` · 탈퇴일 ${new Date(member.deactivatedAt).toLocaleDateString("ko-KR")}`}
         </p>
       </div>
 

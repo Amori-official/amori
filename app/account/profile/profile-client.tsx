@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { updateProfile, changePassword, upsertAddress } from "@/app/actions/account";
+import { useRouter } from "next/navigation";
+import { updateProfile, changePassword, upsertAddress, deactivateMyAccount } from "@/app/actions/account";
 import { useUIStore } from "@/store/ui";
 
 interface SavedAddress {
@@ -39,6 +40,24 @@ const getDaum = () => (window as unknown as { daum?: DaumNS }).daum;
 
 export default function ProfileClient(initial: Props) {
   const { showToast } = useUIStore();
+  const router = useRouter();
+
+  const handleWithdraw = async () => {
+    if (
+      !confirm(
+        "정말 탈퇴하시겠어요?\n탈퇴 후에는 로그인하실 수 없으며, 재가입을 원하시면 카카오톡 채널로 문의해주세요."
+      )
+    )
+      return;
+    const res = await deactivateMyAccount();
+    if (res.error) {
+      showToast(res.error);
+      return;
+    }
+    showToast("탈퇴 처리되었습니다. 그동안 이용해 주셔서 감사합니다.");
+    router.push("/");
+    router.refresh();
+  };
 
   // 기본 정보
   const [name, setName] = useState(initial.name);
@@ -318,6 +337,17 @@ export default function ProfileClient(initial: Props) {
           {pwLoading ? "변경 중..." : "비밀번호 변경"}
         </button>
       </form>
+
+      {/* 회원 탈퇴 (눈에 띄지 않게 하단 배치) */}
+      <div className="pt-6 border-t border-brand-border">
+        <button
+          type="button"
+          onClick={handleWithdraw}
+          className="text-[12px] text-brand-gray-mid underline underline-offset-4 hover:text-red-500 transition-colors"
+        >
+          회원 탈퇴
+        </button>
+      </div>
     </div>
   );
 }

@@ -139,6 +139,28 @@ export async function requestReturn(orderId: string, reason: string): Promise<{ 
   }
 }
 
+// 회원 탈퇴(소프트) — 계정 비활성화 후 로그아웃. 주문 기록은 보존된다.
+export async function deactivateMyAccount(): Promise<{ error?: string }> {
+  if (!IS_CONFIGURED) return { error: "사용할 수 없습니다." };
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "로그인이 필요합니다." };
+
+    const { error } = await supabase.rpc("set_account_deactivated", {
+      p_user_id: user.id,
+      p_deactivated: true,
+    });
+    if (error) return { error: "탈퇴 처리에 실패했습니다." };
+
+    await supabase.auth.signOut();
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
 // ── 프로필 수정 ────────────────────────────────────────────
 export async function updateProfile(data: {
   name: string;

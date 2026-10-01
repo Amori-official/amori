@@ -101,12 +101,26 @@ export async function signIn(data: {
   try {
     const supabase = createActionClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
 
     if (error) return { error: toKoreanError(error.message) };
+
+    // 탈퇴(비활성) 계정은 로그인 즉시 차단(자동 로그아웃)
+    const uid = signInData.user?.id;
+    if (uid) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("deactivated_at")
+        .eq("id", uid)
+        .maybeSingle();
+      if (profile?.deactivated_at) {
+        await supabase.auth.signOut();
+        return { error: "탈퇴 처리된 계정입니다. 재가입을 원하시면 카카오톡 채널로 문의해주세요." };
+      }
+    }
 
     revalidatePath("/", "layout");
     return { success: true };

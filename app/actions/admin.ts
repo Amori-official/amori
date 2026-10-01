@@ -719,6 +719,7 @@ export interface AdminMemberDetail {
   marketingAgreed: boolean;
   role: string;
   createdAt: string;
+  deactivatedAt: string | null;
   orders: {
     id: string;
     orderNumber: string;
@@ -766,6 +767,7 @@ export async function getAdminMemberDetail(id: string): Promise<AdminMemberDetai
       name: s(m.name),
       phone: s(m.phone),
       birthday: s(m.birthday),
+      deactivatedAt: m.deactivated_at ? s(m.deactivated_at) : null,
       marketingAgreed: !!m.marketing_agreed,
       role: s(m.role) || "user",
       createdAt: s(m.created_at),
@@ -790,6 +792,30 @@ export async function getAdminMemberDetail(id: string): Promise<AdminMemberDetai
     };
   } catch {
     return null;
+  }
+}
+
+// 관리자: 회원 소프트 탈퇴/복구 (PC5)
+export async function adminSetMemberDeactivated(
+  userId: string,
+  deactivated: boolean
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.rpc("set_account_deactivated", {
+      p_user_id: userId,
+      p_deactivated: deactivated,
+    });
+    if (error) {
+      logSupabaseError("adminSetMemberDeactivated", error);
+      return { error: "처리에 실패했습니다." };
+    }
+    revalidatePath("/admin/members");
+    revalidatePath(`/admin/members/${userId}`);
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
 
