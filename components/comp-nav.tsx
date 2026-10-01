@@ -76,24 +76,24 @@ export default function CompNav() {
           </ul>
 
           {/* 우측 아이콘 (모바일에서 센터 내비가 hidden으로 그리드에서 빠지므로 3번째 컬럼에 명시적으로 고정) */}
-          <div className="col-start-3 flex items-center justify-end gap-4">
+          <div className="col-start-3 flex items-center justify-end gap-2">
             <button
               aria-label="검색"
-              className="hidden md:block text-brand-black hover:text-brand-gray-mid transition-colors"
+              className="hidden md:grid place-items-center w-9 h-9 rounded-full text-brand-black hover:bg-brand-gray-light active:scale-95 transition"
             >
               <Search size={17} strokeWidth={1.5} />
             </button>
             {mounted && user ? (
-              <div className="hidden md:flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-1">
                 <Link
                   href="/account"
-                  className="text-[15px] tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors"
+                  className="text-[15px] tracking-widest text-brand-black px-2.5 py-1.5 rounded-full hover:bg-brand-gray-light active:scale-95 transition"
                 >
                   {displayName ?? "MY PAGE"}
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="text-[15px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors"
+                  className="text-[15px] tracking-widest text-brand-gray-mid px-2.5 py-1.5 rounded-full hover:bg-brand-gray-light hover:text-brand-black active:scale-95 transition"
                 >
                   LOGOUT
                 </button>
@@ -102,7 +102,7 @@ export default function CompNav() {
               <button
                 aria-label="로그인"
                 onClick={() => setAuthModalOpen(true, "login")}
-                className="hidden md:block text-brand-black hover:text-brand-gray-mid transition-colors"
+                className="hidden md:grid place-items-center w-9 h-9 rounded-full text-brand-black hover:bg-brand-gray-light active:scale-95 transition"
               >
                 <User size={17} strokeWidth={1.5} />
               </button>
@@ -110,11 +110,11 @@ export default function CompNav() {
             <button
               aria-label="장바구니"
               onClick={() => setCartOpen(true)}
-              className="relative text-brand-black hover:text-brand-gray-mid transition-colors"
+              className="relative grid place-items-center w-9 h-9 rounded-full text-brand-black hover:bg-brand-gray-light active:scale-95 transition"
             >
               <ShoppingBag size={17} strokeWidth={1.5} />
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-brand-fill text-brand-black text-[11px] w-4 h-4 flex items-center justify-center rounded-full leading-none">
+                <span className="absolute top-0 right-0 bg-brand-fill text-brand-black text-[11px] w-4 h-4 flex items-center justify-center rounded-full leading-none">
                   {cartCount}
                 </span>
               )}
@@ -122,7 +122,7 @@ export default function CompNav() {
             <button
               aria-label="메뉴 열기"
               onClick={() => setMobileOpen(true)}
-              className="md:hidden text-brand-black"
+              className="md:hidden grid place-items-center w-9 h-9 rounded-full text-brand-black hover:bg-brand-gray-light active:scale-95 transition"
             >
               <Menu size={19} strokeWidth={1.5} />
             </button>

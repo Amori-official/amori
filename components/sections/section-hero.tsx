@@ -66,10 +66,10 @@ export default function SectionHero() {
       {/* 텍스트 레이어 (누끼: mix-blend-multiply) */}
       <div className="relative min-h-screen flex flex-col">
         <div className="flex-1 max-w-screen-xl mx-auto w-full px-6 pt-20 pb-16 flex items-end justify-end">
-          <div className="flex flex-col gap-8 mix-blend-multiply items-end text-right">
+          <div className="flex flex-col gap-5 sm:gap-8 mix-blend-multiply items-end text-right">
             <motion.h1
               {...fadeUp(0.15)}
-              className="text-6xl md:text-8xl leading-[0.95] tracking-tight font-[family-name:var(--font-katibeh)] text-brand-black"
+              className="text-[2.75rem] sm:text-6xl md:text-8xl leading-[0.95] tracking-tight font-[family-name:var(--font-katibeh)] text-brand-black"
             >
               Things,
               <br />
@@ -78,7 +78,7 @@ export default function SectionHero() {
 
             <motion.p
               {...fadeUp(0.3)}
-              className="text-sm text-brand-black tracking-wide leading-7 max-w-xs opacity-70"
+              className="text-[13px] sm:text-sm text-brand-black tracking-wide leading-6 sm:leading-7 max-w-[15rem] sm:max-w-xs opacity-70"
             >
               사랑하는 마음을 담아,
               <br />

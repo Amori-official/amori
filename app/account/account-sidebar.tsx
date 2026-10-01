@@ -23,8 +23,8 @@ export default function AccountSidebar({ isAdmin = false }: { isAdmin?: boolean 
 
   return (
     <aside id="account-nav">
-      {/* 모바일: 수평 스크롤 */}
-      <nav className="flex lg:flex-col gap-0 overflow-x-auto lg:overflow-x-visible border-b lg:border-b-0 border-brand-border pb-1 lg:pb-0 mb-4 lg:mb-0">
+      {/* 모바일: 2열 그리드로 한 화면에 모두 노출 / 데스크톱: 세로 목록 */}
+      <nav className="grid grid-cols-2 lg:flex lg:flex-col gap-0 border lg:border-0 border-brand-border rounded lg:rounded-none overflow-hidden mb-4 lg:mb-0">
         {NAV.map(({ href, label }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -32,10 +32,10 @@ export default function AccountSidebar({ isAdmin = false }: { isAdmin?: boolean 
               key={href}
               href={href}
               className={[
-                "shrink-0 text-[14px] tracking-widest px-4 lg:px-0 py-3 lg:py-3.5 border-b-2 lg:border-b-0 lg:border-l-[2px] transition-colors whitespace-nowrap",
+                "text-center lg:text-left text-[14px] tracking-widest px-3 lg:px-0 py-3 lg:py-3.5 border-b lg:border-b-0 lg:border-l-[2px] transition-colors",
                 active
-                  ? "border-brand-black text-brand-black"
-                  : "border-transparent text-brand-gray-mid hover:text-brand-black",
+                  ? "lg:border-brand-black text-brand-black bg-brand-gray-light lg:bg-transparent font-medium"
+                  : "lg:border-transparent text-brand-gray-mid hover:text-brand-black",
               ].join(" ")}
             >
               {label}

@@ -95,4 +95,14 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  /* 클릭 가능한 요소는 손가락 커서로 (브라우저 기본 button 커서가 화살표라 인지가 어려움) */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
 }

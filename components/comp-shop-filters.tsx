@@ -45,14 +45,14 @@ export default function CompShopFilters({ category = "all", sort = "new", availa
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 pb-5 border-b border-brand-border">
-      {/* 카테고리 탭 */}
-      <div className="flex gap-0 overflow-x-auto">
+      {/* 카테고리 탭 (모바일에서도 가로 스크롤 없이 한눈에 보이도록 줄바꿈) */}
+      <div className="flex flex-wrap gap-x-1 gap-y-1">
         {visibleCategories.map((cat) => (
           <button
             key={cat.value}
             onClick={() => update("category", cat.value)}
             className={[
-              "text-[14px] tracking-widest px-4 py-2 transition-all shrink-0",
+              "text-[13px] sm:text-[14px] tracking-widest px-3 sm:px-4 py-2 transition-all shrink-0",
               category === cat.value
                 ? "font-bold text-brand-black"
                 : "font-normal text-brand-gray-mid hover:font-bold hover:text-brand-black",
