@@ -475,12 +475,17 @@ export const mockProducts: Product[] = [
 
 // 상품 카드(SHOP, 홈페이지, 추천상품) 기본 썸네일 — 각 상품 이미지 파일의 "0번"(대표 이미지) 규칙과 동일하게 통일.
 // 컬러칩에 hover하면 해당 컬러 이미지로 바뀌고, hover가 끝나면 이 기본 이미지로 되돌아감
+// 리스트 대표썸네일(홈·SHOP)만 톤 보정한 WebP 사용 — 누런끼 완화(밝기 유지).
+// 상세페이지 이미지는 원본 그대로 둔다. 거즈빕(bib0)·테리빕(hero)은 톤이 이미
+// 깨끗해 보정 없이 원본 유지. (-card.webp = 감쇠 그레이월드 화이트밸런스본)
 export const CARD_DEFAULT_IMAGE: Record<string, string> = {
   "gauze-bib": "/products/bib0.png",
-  "gauze-scarf-bib": "/products/scarfbib0.png",
-  spread: "/products/spread0.png",
-  "flower-pouch": "/products/pouch0.png",
-  "hand-towel": "/products/handtowel0.png",
+  "gauze-scarf-bib": "/products/scarfbib0-card.webp",
+  spread: "/products/spread0-card.webp",
+  "flower-pouch": "/products/pouch0-card.webp",
+  "hand-towel": "/products/handtowel0-card.webp",
+  "terry-scarf-bib": "/products/terry-scarf-bib-main-card.webp",
+  "gift-box": "/products/gift-box-new-1-card.webp",
 };
 
 // 주문 내역은 실제 DB(orders 테이블)에서 조회한다 — app/actions/account.ts의 getOrders() 참고.

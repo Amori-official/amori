@@ -106,3 +106,26 @@
     cursor: not-allowed;
   }
 }
+
+/* ─── 모바일 폰트 +1px ────────────────────────────────────────────
+   폰(≈sm 미만)에서 글자만 1px씩 키운다. font-size만 조정하고 line-height는
+   그대로 둬서 줄간격·여백은 늘어나지 않는다. @layer 밖 규칙이라 Tailwind
+   유틸리티(px 고정값 + rem 기반 named)보다 우선 적용된다. */
+@media (max-width: 639.98px) {
+  .text-\[11px\] { font-size: 12px; }
+  .text-\[12px\] { font-size: 13px; }
+  .text-\[13px\] { font-size: 14px; }
+  .text-\[14px\] { font-size: 15px; }
+  .text-\[15px\] { font-size: 16px; }
+
+  .text-xs   { font-size: calc(0.75rem + 1px); }
+  .text-sm   { font-size: calc(0.875rem + 1px); }
+  .text-base { font-size: calc(1rem + 1px); }
+  .text-lg   { font-size: calc(1.125rem + 1px); }
+  .text-xl   { font-size: calc(1.25rem + 1px); }
+  .text-2xl  { font-size: calc(1.5rem + 1px); }
+  .text-3xl  { font-size: calc(1.875rem + 1px); }
+  .text-4xl  { font-size: calc(2.25rem + 1px); }
+  .text-5xl  { font-size: calc(3rem + 1px); }
+  .text-6xl  { font-size: calc(3.75rem + 1px); }
+}
