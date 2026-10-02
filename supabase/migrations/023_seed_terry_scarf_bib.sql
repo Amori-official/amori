@@ -86,11 +86,10 @@ BEGIN
   INSERT INTO public.product_images (product_id, role, image_url, alt_text, layout, width, height, display_order) VALUES
     -- 대표(샵 목록 썸네일) = 7색 부채꼴 겹침
     (v_product_id, 'hero', '/products/terry-scarf-bib-g8.webp', '아모리 테리 스카프 빕 7가지 컬러', NULL, NULL, NULL, 0),
-    -- 상단 갤러리 캐러셀
-    (v_product_id, 'gallery', '/products/terry-scarf-bib-g8.webp', '테리 스카프 빕 7가지 컬러', NULL, NULL, NULL, 0),
-    (v_product_id, 'gallery', '/products/terry-scarf-bib-g4.webp', '테리 스카프 빕 7색 라인업', NULL, NULL, NULL, 1),
-    (v_product_id, 'gallery', '/products/terry-scarf-bib-g7.webp', '테리 스카프 빕 7색 플랫 연출', NULL, NULL, NULL, 2),
-    (v_product_id, 'gallery', '/products/terry-scarf-bib-g5.webp', '테리 스카프 빕 7색 연출', NULL, NULL, NULL, 3),
+    -- 상단 갤러리 서브 썸네일(컬러칩으로 바뀌는 메인 제외 3장)
+    (v_product_id, 'gallery', '/products/terry-scarf-bib-s1.webp', '테리 스카프 빕 연출 1', NULL, NULL, NULL, 0),
+    (v_product_id, 'gallery', '/products/terry-scarf-bib-s2.webp', '테리 스카프 빕 7색 원형 연출', NULL, NULL, NULL, 1),
+    (v_product_id, 'gallery', '/products/terry-scarf-bib-s3.webp', '테리 스카프 빕 7색 겹침 연출', NULL, NULL, NULL, 2),
     -- 전체 폭 배너
     (v_product_id, 'material_detail', '/products/terry-scarf-bib-g6.webp', '테리 스카프 빕 7색 원형 연출', NULL, 2000, 1219, 0),
     -- Details 섹션 — 단체(연출) 컷 전부 (중복 OK: 상세페이지를 풍부하게)
