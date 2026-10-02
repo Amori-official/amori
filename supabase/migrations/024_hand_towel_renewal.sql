@@ -26,7 +26,7 @@ update public.products set
 · 양면 배색에서 *앞뒤 동일한 색상*으로 변경되었어요.
 · 수건 고리가 조금 더 길어졌어요.
 
-※ 상단 이미지 비교 컷(왼쪽 리뉴얼 버전, 오른쪽 구버전)을 참고해주세요.'
+※ 하단 이미지 비교 컷을 참고해주세요.'
 where slug = 'hand-towel';
 
 -- 비교 사진은 공지 박스 전용 role 'renewal'로 넣는다(썸네일/갤러리/Details에는 노출 안 됨).
@@ -46,6 +46,6 @@ begin
     where product_id = v_id and image_url like '/products/hand-towel-renewal-%';
 
   insert into public.product_images (product_id, role, image_url, alt_text, layout, width, height, display_order) values
-    (v_id, 'renewal', '/products/hand-towel-renewal-1.webp', '핸드타월 리뉴얼 비교 (좌 리뉴얼 / 우 구버전)', null, null, null, 0),
-    (v_id, 'renewal', '/products/hand-towel-renewal-2.webp', '핸드타월 리뉴얼 비교 (좌 리뉴얼 / 우 구버전)', null, null, null, 1);
+    (v_id, 'renewal', '/products/hand-towel-renewal-1.webp', '앞면 (좌) 리뉴얼ver / (우) 구ver', null, null, null, 0),
+    (v_id, 'renewal', '/products/hand-towel-renewal-2.webp', '뒷면 (좌) 리뉴얼ver / (우) 구ver', null, null, null, 1);
 end $$;

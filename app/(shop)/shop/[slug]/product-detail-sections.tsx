@@ -303,7 +303,7 @@ function RenewalNotice({
 
   return (
     <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-4">
-      <div className="max-w-2xl mx-auto bg-white/55 border border-white/70 shadow-sm px-6 sm:px-12 py-10 text-center backdrop-blur-[2px]">
+      <div className="max-w-2xl mx-auto bg-white/45 border border-white/60 shadow-sm px-6 sm:px-12 py-10 text-center backdrop-blur-[2px]">
         <p className="text-[11px] tracking-[0.4em] text-brand-gray-mid uppercase mb-5">
           Renewal Notice
         </p>
@@ -319,18 +319,25 @@ function RenewalNotice({
           </p>
         )}
         {images && images.length > 0 && (
-          <div className="mt-8 flex flex-col gap-4">
+          <div className="mt-8 flex flex-col gap-6">
             {images.map((img) => (
-              <div key={img.src} className="relative w-full bg-brand-gray-light">
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  width={1500}
-                  height={1000}
-                  className="w-full h-auto"
-                  sizes="(min-width: 768px) 640px, 100vw"
-                />
-              </div>
+              <figure key={img.src}>
+                <div className="relative w-full bg-brand-gray-light">
+                  <Image
+                    src={img.src}
+                    alt={img.alt}
+                    width={1500}
+                    height={1000}
+                    className="w-full h-auto"
+                    sizes="(min-width: 768px) 640px, 100vw"
+                  />
+                </div>
+                {img.alt && (
+                  <figcaption className="mt-2.5 text-[12px] sm:text-[13px] text-brand-gray-mid tracking-wide">
+                    {img.alt}
+                  </figcaption>
+                )}
+              </figure>
             ))}
           </div>
         )}
