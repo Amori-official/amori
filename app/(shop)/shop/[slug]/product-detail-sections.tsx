@@ -49,15 +49,7 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
   return (
     <div className="border-t border-brand-border bg-brand-gray-light">
       {/* 리뉴얼/변경 공지 (상세 본문 최상단) */}
-      {product.renewalNotice && (
-        <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-4">
-          <div className="max-w-3xl mx-auto border border-brand-border bg-white px-5 sm:px-7 py-6">
-            <p className="text-sm text-brand-black tracking-wide leading-8 whitespace-pre-line">
-              {product.renewalNotice}
-            </p>
-          </div>
-        </section>
-      )}
+      {product.renewalNotice && <RenewalNotice text={product.renewalNotice} />}
 
       {/* More Information 도입부 */}
       {product.detailIntro && (
@@ -279,5 +271,46 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
         <ProductReviews reviews={reviews} productId={product.id} />
       </section>
     </div>
+  );
+}
+
+// 강조 마크업: *...* → 짙은 빨강. 리뉴얼 등 강조 부분에 사용.
+function renderEmphasis(text: string) {
+  return text.split(/(\*[^*]+\*)/g).map((part, i) =>
+    part.startsWith("*") && part.endsWith("*") && part.length > 2 ? (
+      <span key={i} className="text-red-800 font-semibold">
+        {part.slice(1, -1)}
+      </span>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
+// 상세 본문 최상단 리뉴얼/변경 공지 — 세련된 가운데 정렬 박스.
+function RenewalNotice({ text }: { text: string }) {
+  const nl = text.indexOf("\n");
+  const heading = (nl === -1 ? text : text.slice(0, nl)).trim();
+  const body = (nl === -1 ? "" : text.slice(nl + 1)).trim();
+
+  return (
+    <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-4">
+      <div className="max-w-2xl mx-auto bg-white border border-brand-border px-6 sm:px-12 py-10 text-center">
+        <p className="text-[11px] tracking-[0.4em] text-brand-gray-mid uppercase mb-5">
+          Renewal Notice
+        </p>
+        {heading && (
+          <h3 className="text-lg sm:text-xl tracking-wide text-brand-black mb-5">
+            {renderEmphasis(heading)}
+          </h3>
+        )}
+        <div className="w-10 h-px bg-brand-border mx-auto mb-6" />
+        {body && (
+          <p className="text-sm text-brand-gray-mid tracking-wide leading-8 whitespace-pre-line">
+            {renderEmphasis(body)}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
