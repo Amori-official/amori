@@ -184,39 +184,57 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
         </section>
       )}
 
-      {/* 컬러 소개 */}
-      {product.colors && product.colors.length > 0 && product.colorSectionImage && (
-        <section className="px-4 sm:px-8 lg:px-16 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          <div className="relative aspect-[4/5] bg-brand-gray-light">
-            <Image
-              src={product.colorSectionImage}
-              alt={product.colorSectionImageAlt ?? product.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div className="flex flex-col gap-4">
-            <p className={sectionTitle + " mb-0"}>{product.colorSectionTitle ?? "Colors"}</p>
-            {product.colorDescription && (
-              <p className="text-sm text-brand-gray-mid tracking-wide leading-8">
-                {product.colorDescription}
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {product.colors.map((c) => (
+      {/* 컬러 소개 + 색상별 단독 컷 (한 줄 3장, 마지막 1장은 우측 정렬) */}
+      {product.colors && product.colors.length > 0 && (
+        <section className="px-4 sm:px-8 lg:px-16 pb-16">
+          <p className={sectionTitle}>{product.colorSectionTitle ?? "Colors"}</p>
+          {product.colorDescription && (
+            <p className="text-sm text-brand-gray-mid tracking-wide leading-8 max-w-3xl mb-6">
+              {product.colorDescription}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {product.colors.map((c) => (
+              <span
+                key={c.name}
+                className="flex items-center gap-1.5 text-[13px] tracking-wide text-brand-gray-mid border border-brand-border px-2.5 py-1"
+              >
                 <span
-                  key={c.name}
-                  className="flex items-center gap-1.5 text-[13px] tracking-wide text-brand-gray-mid border border-brand-border px-2.5 py-1"
-                >
-                  <span
-                    className="w-3 h-3 rounded-full border border-brand-border"
-                    style={{ backgroundColor: c.hex }}
-                  />
-                  {c.name}
-                </span>
-              ))}
-            </div>
+                  className="w-3 h-3 rounded-full border border-brand-border"
+                  style={{ backgroundColor: c.hex }}
+                />
+                {c.name}
+              </span>
+            ))}
           </div>
+          {(() => {
+            const withImg = product.colors.filter((c) => c.image);
+            if (withImg.length === 0) return null;
+            const lastAlone = withImg.length % 3 === 1;
+            return (
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                {withImg.map((c, i) => (
+                  <figure
+                    key={c.name}
+                    className={lastAlone && i === withImg.length - 1 ? "col-start-3" : ""}
+                  >
+                    <div className="relative aspect-[4/3] bg-brand-gray-light overflow-hidden">
+                      <Image
+                        src={c.image as string}
+                        alt={`${product.name} ${c.name}`}
+                        fill
+                        className="object-cover"
+                        sizes="(min-width: 1024px) 30vw, 33vw"
+                      />
+                    </div>
+                    <figcaption className="mt-1.5 text-[11px] sm:text-[12px] tracking-wide text-brand-gray-mid text-center">
+                      {c.name}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            );
+          })()}
         </section>
       )}
 

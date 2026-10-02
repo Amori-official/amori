@@ -82,29 +82,22 @@ BEGIN
     (v_product_id, 'Stone Blue',   '#8C9BB0', NULL, '/products/terry-bib-stoneblue.webp',   NULL, true, 5),
     (v_product_id, 'Yellow Green', '#AFB07A', NULL, '/products/terry-bib-yellowgreen.webp', NULL, true, 6);
 
+  -- 색상별 단독 컷(7장)은 variants(image_url)로 들어가 "7 Colors" 아래 3열 그리드에 자동 노출된다.
   DELETE FROM public.product_images WHERE product_id = v_product_id;
   INSERT INTO public.product_images (product_id, role, image_url, alt_text, layout, width, height, display_order) VALUES
     -- 대표(샵 목록 썸네일)
     (v_product_id, 'hero', '/products/terry-bib-hero.webp', '아모리 테리 빕 7가지 컬러', NULL, NULL, NULL, 0),
-    -- 상단 갤러리 캐러셀 (연출·그룹 컷 모두)
+    -- 상단 갤러리 캐러셀 (단체·연출 컷)
     (v_product_id, 'gallery', '/products/terry-bib-hero.webp', '아모리 테리 빕 7가지 컬러', NULL, NULL, NULL, 0),
     (v_product_id, 'gallery', '/products/terry-bib-2.webp', '테리 빕 컬러 디테일', NULL, NULL, NULL, 1),
     (v_product_id, 'gallery', '/products/terry-bib-3.webp', '테리 빕 옐로우·스톤블루 디테일', NULL, NULL, NULL, 2),
     (v_product_id, 'gallery', '/products/terry-bib-6.webp', '테리 빕 컬러 모음 연출', NULL, NULL, NULL, 3),
-    (v_product_id, 'gallery', '/products/terry-bib-4.webp', '테리 빕 7컬러 라벨 디테일', NULL, NULL, NULL, 4),
-    (v_product_id, 'gallery', '/products/terry-bib-7.webp', '테리 원단 질감과 컬러 라인', NULL, NULL, NULL, 5),
-    (v_product_id, 'gallery', '/products/terry-bib-5.webp', '테리 빕 컬러 스택', NULL, NULL, NULL, 6),
     -- 전체 폭 배너
     (v_product_id, 'material_detail', '/products/terry-bib-7.webp', '테리 원단 질감과 컬러 라인', NULL, 2000, 1333, 0),
-    -- Details 섹션 — 7색 단독 컷을 본문에 모두 크게 노출
-    (v_product_id, 'detail', '/products/terry-bib-burgundy.webp',    '테리 빕 버건디',     'full', 2000, 1333, 0),
-    (v_product_id, 'detail', '/products/terry-bib-dust.webp',        '테리 빕 더스트',     'grid', 2000, 1333, 1),
-    (v_product_id, 'detail', '/products/terry-bib-charcoal.webp',    '테리 빕 차콜',       'grid', 2000, 1333, 2),
-    (v_product_id, 'detail', '/products/terry-bib-lilac.webp',       '테리 빕 라일락',     'grid', 2000, 1333, 3),
-    (v_product_id, 'detail', '/products/terry-bib-yellow.webp',      '테리 빕 옐로우',     'grid', 2000, 1333, 4),
-    (v_product_id, 'detail', '/products/terry-bib-stoneblue.webp',   '테리 빕 스톤블루',   'grid', 2000, 1333, 5),
-    (v_product_id, 'detail', '/products/terry-bib-yellowgreen.webp', '테리 빕 옐로우그린', 'grid', 2000, 1333, 6),
-    (v_product_id, 'detail', '/products/terry-bib-5.webp',           '테리 빕 컬러 스택',  'full', 1333, 2000, 7),
-    -- 컬러 소개 섹션 이미지
-    (v_product_id, 'color_section', '/products/terry-bib-4.webp', '테리 빕 7컬러 라벨 디테일', NULL, NULL, NULL, 0);
+    -- Details 섹션 — 단체(연출) 컷
+    (v_product_id, 'detail', '/products/terry-bib-4.webp', '테리 빕 7컬러 라벨 디테일',   'full', 2000, 1333, 0),
+    (v_product_id, 'detail', '/products/terry-bib-2.webp', '테리 빕 라일락·옐로우그린',   'grid', 2000, 1333, 1),
+    (v_product_id, 'detail', '/products/terry-bib-3.webp', '테리 빕 옐로우·스톤블루',     'grid', 2000, 1333, 2),
+    (v_product_id, 'detail', '/products/terry-bib-6.webp', '테리 빕 컬러 모음 연출',      'full', 2000, 1333, 3),
+    (v_product_id, 'detail', '/products/terry-bib-5.webp', '테리 빕 컬러 스택',           'right', 1333, 2000, 4);
 END $$;
