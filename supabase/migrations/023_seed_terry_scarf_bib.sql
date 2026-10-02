@@ -21,7 +21,7 @@ BEGIN
     '국내산 면 100% 테리 원단으로 만든 스카프형 턱받이입니다. 도톰한 테리 원단이 침과 물기를 빠르게 흡수해 침이 많은 아기도 보송하게, 포근하고 따뜻하게 사용할 수 있습니다. 스냅 단추로 간편하게 채우고, 간절기에는 아기의 목을 포근하게 보호해주며 외출 시 스카프 아이템으로도 잘 어울립니다. 앞뒤 양면을 모두 사용할 수 있고, 쨍하지 않은 은은한 색감으로 어떤 코디에도 자연스럽게 어우러집니다.',
     '턱받이처럼 실용적이고 스카프처럼 자연스러운 도톰한 테리 스카프빕',
     NULL, 13000,
-    ARRAY['/products/terry-scarf-bib-g8.webp', '/products/terry-scarf-bib-g4.webp', '/products/terry-scarf-bib-g7.webp', '/products/terry-scarf-bib-g5.webp']::text[],
+    ARRAY['/products/terry-scarf-bib-main.webp', '/products/terry-scarf-bib-s1.webp', '/products/terry-scarf-bib-s2.webp', '/products/terry-scarf-bib-s3.webp']::text[],
     'small-things', 100, false,
     '국내산 면 100% 테리 원단
 
@@ -84,23 +84,18 @@ BEGIN
 
   DELETE FROM public.product_images WHERE product_id = v_product_id;
   INSERT INTO public.product_images (product_id, role, image_url, alt_text, layout, width, height, display_order) VALUES
-    -- 대표(샵 목록 썸네일) = 7색 부채꼴 겹침
-    (v_product_id, 'hero', '/products/terry-scarf-bib-g8.webp', '아모리 테리 스카프 빕 7가지 컬러', NULL, NULL, NULL, 0),
+    -- 대표(샵 목록 썸네일) = 7색 바람개비 단체컷
+    (v_product_id, 'hero', '/products/terry-scarf-bib-main.webp', '아모리 테리 스카프 빕 7가지 컬러', NULL, NULL, NULL, 0),
     -- 상단 갤러리 서브 썸네일(컬러칩으로 바뀌는 메인 제외 3장)
     (v_product_id, 'gallery', '/products/terry-scarf-bib-s1.webp', '테리 스카프 빕 연출 1', NULL, NULL, NULL, 0),
     (v_product_id, 'gallery', '/products/terry-scarf-bib-s2.webp', '테리 스카프 빕 7색 원형 연출', NULL, NULL, NULL, 1),
     (v_product_id, 'gallery', '/products/terry-scarf-bib-s3.webp', '테리 스카프 빕 7색 겹침 연출', NULL, NULL, NULL, 2),
     -- 전체 폭 배너
-    (v_product_id, 'material_detail', '/products/terry-scarf-bib-g6.webp', '테리 스카프 빕 7색 원형 연출', NULL, 2000, 1219, 0),
-    -- Details 섹션 — 단체(연출) 컷 전부 (중복 OK: 상세페이지를 풍부하게)
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g8.webp',  '테리 스카프 빕 7색 부채꼴', 'full', 2000, 1333, 0),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g4.webp',  '테리 스카프 빕 7색 라인업', 'grid', 2000, 1333, 1),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g5.webp',  '테리 스카프 빕 7색 연출',   'grid', 2000, 1333, 2),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g7.webp',  '테리 스카프 빕 7색 플랫',   'grid', 2000, 1333, 3),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g1.webp',  '테리 스카프 빕 연출 1',     'grid', 2000, 1333, 4),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g2.webp',  '테리 스카프 빕 연출 2',     'grid', 2000, 1333, 5),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g3.webp',  '테리 스카프 빕 연출 3',     'grid', 2000, 1333, 6),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g9.webp',  '테리 스카프 빕 컬러 디테일 1', 'grid', 2000, 1333, 7),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g10.webp', '테리 스카프 빕 컬러 디테일 2', 'grid', 2000, 1333, 8),
-    (v_product_id, 'detail', '/products/terry-scarf-bib-g11.webp', '테리 스카프 빕 컬러 디테일 3', 'full', 2000, 1333, 9);
+    (v_product_id, 'material_detail', '/products/terry-scarf-bib-g8.webp', '테리 스카프 빕 7색 연출', NULL, 2000, 1333, 0),
+    -- Details 섹션 — 3색/4색 컷을 양옆(2단 그리드)으로 + 연출 컷
+    (v_product_id, 'detail', '/products/terry-scarf-bib-trio.webp', '테리 스카프 빕 3색', 'grid', 2000, 1333, 0),
+    (v_product_id, 'detail', '/products/terry-scarf-bib-quad.webp', '테리 스카프 빕 4색', 'grid', 2000, 1333, 1),
+    (v_product_id, 'detail', '/products/terry-scarf-bib-g5.webp',   '테리 스카프 빕 7색 연출',   'full', 2000, 1333, 2),
+    (v_product_id, 'detail', '/products/terry-scarf-bib-g1.webp',   '테리 스카프 빕 연출 1',     'grid', 2000, 1333, 3),
+    (v_product_id, 'detail', '/products/terry-scarf-bib-g2.webp',   '테리 스카프 빕 연출 2',     'grid', 2000, 1333, 4);
 END $$;
