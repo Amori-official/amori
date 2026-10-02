@@ -54,6 +54,7 @@ function mapRow(row: Record<string, unknown>): Product {
   const materialDetail = oneByRole("material_detail");
   const colorSection = oneByRole("color_section");
   const detail = byRole("detail");
+  const renewal = byRole("renewal");
 
   const price = Number(row.price);
 
@@ -122,6 +123,10 @@ function mapRow(row: Record<string, unknown>): Product {
     careInstructions: row.care_instructions ? String(row.care_instructions) : undefined,
     detailIntro: row.detail_intro ? String(row.detail_intro) : undefined,
     renewalNotice: row.renewal_notice ? String(row.renewal_notice) : undefined,
+    renewalImages:
+      renewal.length > 0
+        ? renewal.map((i) => ({ src: i.image_url, alt: i.alt_text ?? "" }))
+        : undefined,
     tagline: row.tagline ? String(row.tagline) : undefined,
     features: Array.isArray(row.features) ? (row.features as Product["features"]) : undefined,
     brandStory: row.brand_story ? String(row.brand_story) : undefined,

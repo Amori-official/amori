@@ -29,6 +29,12 @@ update public.products set
 ※ 상단 이미지 비교 컷(왼쪽 리뉴얼 버전, 오른쪽 구버전)을 참고해주세요.'
 where slug = 'hand-towel';
 
+-- 비교 사진은 공지 박스 전용 role 'renewal'로 넣는다(썸네일/갤러리/Details에는 노출 안 됨).
+-- role 체크 제약에 'renewal' 추가.
+alter table public.product_images drop constraint if exists product_images_role_check;
+alter table public.product_images add constraint product_images_role_check
+  check (role in ('hero', 'gallery', 'detail', 'story', 'material_detail', 'color_section', 'renewal'));
+
 -- 비교 사진 추가 (재실행 안전: renewal 이미지만 교체, 기존 이미지는 유지)
 do $$
 declare v_id uuid;
@@ -40,6 +46,6 @@ begin
     where product_id = v_id and image_url like '/products/hand-towel-renewal-%';
 
   insert into public.product_images (product_id, role, image_url, alt_text, layout, width, height, display_order) values
-    (v_id, 'gallery', '/products/hand-towel-renewal-1.webp', '핸드타월 리뉴얼 비교 (좌 리뉴얼 / 우 구버전)', null, null, null, -2),
-    (v_id, 'gallery', '/products/hand-towel-renewal-2.webp', '핸드타월 리뉴얼 비교 (좌 리뉴얼 / 우 구버전)', null, null, null, -1);
+    (v_id, 'renewal', '/products/hand-towel-renewal-1.webp', '핸드타월 리뉴얼 비교 (좌 리뉴얼 / 우 구버전)', null, null, null, 0),
+    (v_id, 'renewal', '/products/hand-towel-renewal-2.webp', '핸드타월 리뉴얼 비교 (좌 리뉴얼 / 우 구버전)', null, null, null, 1);
 end $$;

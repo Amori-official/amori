@@ -45,6 +45,8 @@ export interface Product {
   detailIntro?: string;
   /** 상세 본문 최상단에 노출할 리뉴얼/변경 공지 (있을 때만 표시) */
   renewalNotice?: string;
+  /** 리뉴얼 공지 박스에 함께 노출할 비교 이미지 */
+  renewalImages?: { src: string; alt: string }[];
   tagline?: string;
   features?: { label: string; body: string }[];
   brandStory?: string;

@@ -49,7 +49,9 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
   return (
     <div className="border-t border-brand-border bg-brand-gray-light">
       {/* 리뉴얼/변경 공지 (상세 본문 최상단) */}
-      {product.renewalNotice && <RenewalNotice text={product.renewalNotice} />}
+      {product.renewalNotice && (
+        <RenewalNotice text={product.renewalNotice} images={product.renewalImages} />
+      )}
 
       {/* More Information 도입부 */}
       {product.detailIntro && (
@@ -287,15 +289,21 @@ function renderEmphasis(text: string) {
   );
 }
 
-// 상세 본문 최상단 리뉴얼/변경 공지 — 세련된 가운데 정렬 박스.
-function RenewalNotice({ text }: { text: string }) {
+// 상세 본문 최상단 리뉴얼/변경 공지 — 세련된 가운데 정렬 박스(반투명 배경) + 비교 이미지.
+function RenewalNotice({
+  text,
+  images,
+}: {
+  text: string;
+  images?: { src: string; alt: string }[];
+}) {
   const nl = text.indexOf("\n");
   const heading = (nl === -1 ? text : text.slice(0, nl)).trim();
   const body = (nl === -1 ? "" : text.slice(nl + 1)).trim();
 
   return (
     <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-4">
-      <div className="max-w-2xl mx-auto bg-white border border-brand-border px-6 sm:px-12 py-10 text-center">
+      <div className="max-w-2xl mx-auto bg-white/55 border border-white/70 shadow-sm px-6 sm:px-12 py-10 text-center backdrop-blur-[2px]">
         <p className="text-[11px] tracking-[0.4em] text-brand-gray-mid uppercase mb-5">
           Renewal Notice
         </p>
@@ -309,6 +317,22 @@ function RenewalNotice({ text }: { text: string }) {
           <p className="text-sm text-brand-gray-mid tracking-wide leading-8 whitespace-pre-line">
             {renderEmphasis(body)}
           </p>
+        )}
+        {images && images.length > 0 && (
+          <div className="mt-8 flex flex-col gap-4">
+            {images.map((img) => (
+              <div key={img.src} className="relative w-full bg-brand-gray-light">
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  width={1500}
+                  height={1000}
+                  className="w-full h-auto"
+                  sizes="(min-width: 768px) 640px, 100vw"
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </section>
