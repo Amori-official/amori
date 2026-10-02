@@ -43,6 +43,8 @@ export interface Product {
   sizeGuide?: string;
   careInstructions?: string;
   detailIntro?: string;
+  /** 상세 본문 최상단에 노출할 리뉴얼/변경 공지 (있을 때만 표시) */
+  renewalNotice?: string;
   tagline?: string;
   features?: { label: string; body: string }[];
   brandStory?: string;

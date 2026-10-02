@@ -48,6 +48,17 @@ const sectionTitle = "text-base font-bold tracking-[0.25em] text-brand-black upp
 export default function ProductDetailSections({ product, reviews, relatedProducts }: Props) {
   return (
     <div className="border-t border-brand-border bg-brand-gray-light">
+      {/* 리뉴얼/변경 공지 (상세 본문 최상단) */}
+      {product.renewalNotice && (
+        <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-4">
+          <div className="max-w-3xl mx-auto border border-brand-border bg-white px-5 sm:px-7 py-6">
+            <p className="text-sm text-brand-black tracking-wide leading-8 whitespace-pre-line">
+              {product.renewalNotice}
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* More Information 도입부 */}
       {product.detailIntro && (
         <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-12">

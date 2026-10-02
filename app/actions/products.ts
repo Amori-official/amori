@@ -121,6 +121,7 @@ function mapRow(row: Record<string, unknown>): Product {
     sizeGuide: row.size_guide ? String(row.size_guide) : undefined,
     careInstructions: row.care_instructions ? String(row.care_instructions) : undefined,
     detailIntro: row.detail_intro ? String(row.detail_intro) : undefined,
+    renewalNotice: row.renewal_notice ? String(row.renewal_notice) : undefined,
     tagline: row.tagline ? String(row.tagline) : undefined,
     features: Array.isArray(row.features) ? (row.features as Product["features"]) : undefined,
     brandStory: row.brand_story ? String(row.brand_story) : undefined,
