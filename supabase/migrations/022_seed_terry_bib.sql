@@ -94,10 +94,11 @@ BEGIN
     (v_product_id, 'gallery', '/products/terry-bib-6.webp', '테리 빕 컬러 모음 연출', NULL, NULL, NULL, 3),
     -- 전체 폭 배너
     (v_product_id, 'material_detail', '/products/terry-bib-7.webp', '테리 원단 질감과 컬러 라인', NULL, 2000, 1333, 0),
-    -- Details 섹션 — 단체(연출) 컷
-    (v_product_id, 'detail', '/products/terry-bib-4.webp', '테리 빕 7컬러 라벨 디테일',   'full', 2000, 1333, 0),
-    (v_product_id, 'detail', '/products/terry-bib-2.webp', '테리 빕 라일락·옐로우그린',   'grid', 2000, 1333, 1),
-    (v_product_id, 'detail', '/products/terry-bib-3.webp', '테리 빕 옐로우·스톤블루',     'grid', 2000, 1333, 2),
-    (v_product_id, 'detail', '/products/terry-bib-6.webp', '테리 빕 컬러 모음 연출',      'full', 2000, 1333, 3),
-    (v_product_id, 'detail', '/products/terry-bib-5.webp', '테리 빕 컬러 스택',           'right', 1333, 2000, 4);
+    -- Details 섹션 — 단체(연출) 컷 (썸네일 포함 전부, 중복 OK: 상세페이지를 풍부하게)
+    (v_product_id, 'detail', '/products/terry-bib-hero.webp', '아모리 테리 빕 7가지 컬러', 'full', 2000, 1333, 0),
+    (v_product_id, 'detail', '/products/terry-bib-2.webp', '테리 빕 컬러 디테일',        'grid', 2000, 1333, 1),
+    (v_product_id, 'detail', '/products/terry-bib-3.webp', '테리 빕 옐로우·스톤블루',    'grid', 2000, 1333, 2),
+    (v_product_id, 'detail', '/products/terry-bib-4.webp', '테리 빕 7컬러 라벨 디테일',  'grid', 2000, 1333, 3),
+    (v_product_id, 'detail', '/products/terry-bib-6.webp', '테리 빕 컬러 모음 연출',     'grid', 2000, 1333, 4),
+    (v_product_id, 'detail', '/products/terry-bib-5.webp', '테리 빕 컬러 스택',          'right', 1333, 2000, 5);
 END $$;
