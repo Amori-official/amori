@@ -590,6 +590,9 @@ async function cancelOrderCore(
     .update({ status: "active", used_at: null, used_order_id: null })
     .eq("used_order_id", id);
 
+  // 사용된 포인트 복원(이중 복원 방지는 RPC 내부에서 처리).
+  await supabase.rpc("restore_order_points", { p_order_id: id });
+
   return {};
 }
 
@@ -687,6 +690,9 @@ export async function approveReturn(id: string): Promise<{ error?: string }> {
       .from("user_coupons")
       .update({ status: "active", used_at: null, used_order_id: null })
       .eq("used_order_id", id);
+
+    // 사용된 포인트 복원
+    await supabase.rpc("restore_order_points", { p_order_id: id });
 
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${id}`);

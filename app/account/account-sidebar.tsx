@@ -9,6 +9,7 @@ const NAV = [
   { href: "/account/profile", label: "회원 정보 수정" },
   { href: "/account/wishlist", label: "위시리스트" },
   { href: "/account/coupons", label: "보유 쿠폰" },
+  { href: "/account/points", label: "적립금" },
 ];
 
 export default function AccountSidebar({ isAdmin = false }: { isAdmin?: boolean }) {

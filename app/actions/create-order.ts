@@ -20,6 +20,7 @@ export interface CreateOrderResult {
   orderNumber: string;
   subtotalAmount: number;
   discountAmount: number;
+  pointsUsed: number;
   shippingFee: number;
   totalAmount: number;
   currency: string;
@@ -33,6 +34,7 @@ interface CreateOrderRpcResponse {
   order_number: string;
   subtotal_amount: number;
   discount_amount: number;
+  points_used: number;
   shipping_fee: number;
   total_amount: number;
   currency: string;
@@ -70,6 +72,7 @@ export async function createOrderSecure(raw: unknown): Promise<CreateOrderResult
     p_address_line2: input.addressLine2,
     p_delivery_request: input.deliveryRequest,
     p_user_coupon_id: input.userCouponId,
+    p_points_to_use: input.pointsToUse,
   });
 
   if (error || !data) {
@@ -83,6 +86,7 @@ export async function createOrderSecure(raw: unknown): Promise<CreateOrderResult
     orderNumber: result.order_number,
     subtotalAmount: result.subtotal_amount,
     discountAmount: result.discount_amount,
+    pointsUsed: result.points_used,
     shippingFee: result.shipping_fee,
     totalAmount: result.total_amount,
     currency: result.currency,

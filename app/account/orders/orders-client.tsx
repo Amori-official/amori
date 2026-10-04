@@ -367,7 +367,7 @@ function ReviewForm({
         setError(res.error);
         return;
       }
-      showToast(`리뷰가 등록되었습니다. ${REVIEW_POINT}P 적립 예정!`);
+      showToast(`리뷰가 등록되었습니다. ${REVIEW_POINT}P 적립 완료!`);
       onDone();
     });
   };

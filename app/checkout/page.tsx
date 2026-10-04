@@ -12,9 +12,12 @@ import { createOrderSecure } from "@/app/actions/create-order";
 import {
   getUserCoupons,
   getCheckoutPrefill,
+  getMyPoints,
   type UserCoupon,
   type CheckoutPrefill,
 } from "@/app/actions/account";
+
+const MIN_POINTS_USE = 1000; // 포인트 최소 사용 단위(정책)
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
 const FREE_SHIPPING = 50000;
@@ -97,6 +100,8 @@ export default function CheckoutPage() {
   // 쿠폰 (로그인 사용자만)
   const [coupons, setCoupons] = useState<UserCoupon[]>([]);
   const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
+  const [pointsBalance, setPointsBalance] = useState(0);
+  const [pointsInput, setPointsInput] = useState("");
 
   // 회원 정보 자동입력 (로그인 사용자)
   const [prefill, setPrefill] = useState<CheckoutPrefill | null>(null);
@@ -131,12 +136,19 @@ export default function CheckoutPage() {
       setCoupons([]);
       setSelectedCouponId(null);
       setPrefill(null);
+      setPointsBalance(0);
+      setPointsInput("");
       return;
     }
     let cancelled = false;
     getUserCoupons()
       .then((list) => {
         if (!cancelled) setCoupons(list.filter((c) => c.status === "active"));
+      })
+      .catch(() => {});
+    getMyPoints()
+      .then((p) => {
+        if (!cancelled) setPointsBalance(p);
       })
       .catch(() => {});
     getCheckoutPrefill()
@@ -308,6 +320,7 @@ export default function CheckoutPage() {
         addressLine2: addressLine2 || null,
         deliveryRequest: deliveryRequest || null,
         userCouponId: selectedCouponId,
+        pointsToUse,
       });
     } catch (err) {
       setSubmitting(false);
@@ -358,7 +371,15 @@ export default function CheckoutPage() {
   const couponDiscount = computeCouponDiscount(selectedCoupon, cartTotal);
   // 배송비 무료 기준은 할인 적용 후 금액 기준(create_order RPC와 동일).
   const shipping = cartTotal - couponDiscount >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
-  const grandTotal = cartTotal - couponDiscount + shipping;
+  // 포인트: 1,000P 이상·잔액 이내·결제액 한도 내에서만 적용(서버 create_order와 동일 규칙).
+  const maxPointsUsable = Math.max(0, cartTotal - couponDiscount + shipping);
+  const parsedPoints = parseInt(pointsInput, 10) || 0;
+  const pointsToUse =
+    user && parsedPoints >= MIN_POINTS_USE
+      ? Math.min(parsedPoints, pointsBalance, maxPointsUsable)
+      : 0;
+  const pointsInputInvalid = parsedPoints > 0 && parsedPoints < MIN_POINTS_USE;
+  const grandTotal = cartTotal - couponDiscount - pointsToUse + shipping;
 
   return (
     <>
@@ -665,6 +686,43 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
+                {user && pointsBalance >= MIN_POINTS_USE && (
+                  <div className="border-t border-brand-border pt-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs tracking-wide text-brand-gray-mid">적립금 사용</label>
+                      <span className="text-[11px] text-brand-gray-mid">
+                        보유 {pointsBalance.toLocaleString("ko-KR")}P
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        value={pointsInput}
+                        onChange={(e) => setPointsInput(e.target.value.replace(/[^0-9]/g, ""))}
+                        placeholder={`${MIN_POINTS_USE.toLocaleString("ko-KR")}P 이상`}
+                        className="h-10 flex-1 border border-brand-border px-2 text-sm focus:outline-none focus:border-brand-black"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPointsInput(String(Math.min(pointsBalance, maxPointsUsable)))}
+                        className="h-10 px-3 border border-brand-border text-xs tracking-wide text-brand-gray-mid hover:text-brand-black shrink-0"
+                      >
+                        전액 사용
+                      </button>
+                    </div>
+                    {pointsInputInvalid ? (
+                      <p className="text-[11px] text-red-500 mt-1">
+                        {MIN_POINTS_USE.toLocaleString("ko-KR")}P 이상부터 사용할 수 있어요.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-brand-gray-mid mt-1">
+                        1P = 1원 · 최소 {MIN_POINTS_USE.toLocaleString("ko-KR")}P
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="border-t border-brand-border pt-3 space-y-2 text-xs">
                   <div className="flex justify-between text-brand-gray-mid">
                     <span className="tracking-wide">상품 합계</span>
@@ -674,6 +732,12 @@ export default function CheckoutPage() {
                     <div className="flex justify-between text-brand-black">
                       <span className="tracking-wide">쿠폰 할인</span>
                       <span>-₩{couponDiscount.toLocaleString("ko-KR")}</span>
+                    </div>
+                  )}
+                  {pointsToUse > 0 && (
+                    <div className="flex justify-between text-brand-black">
+                      <span className="tracking-wide">적립금 사용</span>
+                      <span>-₩{pointsToUse.toLocaleString("ko-KR")}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-brand-gray-mid">

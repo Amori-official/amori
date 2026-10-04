@@ -34,6 +34,7 @@ export interface CreateOrderInput {
   addressLine2: string | null;
   deliveryRequest: string | null;
   userCouponId: string | null;
+  pointsToUse: number;
 }
 
 const ALLOWED_TOP_LEVEL_KEYS = new Set([
@@ -48,6 +49,7 @@ const ALLOWED_TOP_LEVEL_KEYS = new Set([
   "addressLine2",
   "deliveryRequest",
   "userCouponId",
+  "pointsToUse",
 ]);
 
 const ALLOWED_ITEM_KEYS = new Set(["productId", "variantId", "quantity"]);
@@ -152,5 +154,15 @@ export function parseCreateOrderInput(raw: unknown): CreateOrderInput {
       raw.userCouponId === undefined || raw.userCouponId === null
         ? null
         : requireUuid(raw.userCouponId, "쿠폰 정보"),
+    pointsToUse: parsePoints(raw.pointsToUse),
   };
+}
+
+// 사용 포인트: 0 이상 정수. 상세 검증(최소 1,000P·잔액)은 서버 RPC에서 수행.
+function parsePoints(value: unknown): number {
+  if (value === undefined || value === null) return 0;
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 2000000000) {
+    throw new OrderInputError("포인트 사용 값이 올바르지 않습니다.");
+  }
+  return value;
 }

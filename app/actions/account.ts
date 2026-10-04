@@ -1,6 +1,7 @@
 "use server";
 
 import type { Order, ShippingAddress } from "@/lib/types";
+import type { PointTransaction } from "@/lib/points";
 import { revalidatePath } from "next/cache";
 
 const IS_CONFIGURED = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").startsWith("http");
@@ -69,6 +70,49 @@ export async function getOrders(): Promise<Order[]> {
       ),
       shippingAddress: o.shipping_address as ShippingAddress,
       createdAt: String(o.created_at),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// ── 적립금(포인트) ──────────────────────────────────────────
+// 내 적립금 잔액.
+export async function getMyPoints(): Promise<number> {
+  if (!IS_CONFIGURED) return 0;
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+    const { data } = await supabase.from("profiles").select("points").eq("id", user.id).maybeSingle();
+    return Number(data?.points ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+// 내 적립금 내역.
+export async function getPointHistory(): Promise<PointTransaction[]> {
+  if (!IS_CONFIGURED) return [];
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data } = await supabase
+      .from("point_transactions")
+      .select("id, amount, balance_after, type, reason, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    return (data ?? []).map((t) => ({
+      id: String(t.id),
+      amount: Number(t.amount),
+      balanceAfter: Number(t.balance_after),
+      type: String(t.type),
+      reason: t.reason ? String(t.reason) : null,
+      createdAt: String(t.created_at),
     }));
   } catch {
     return [];
