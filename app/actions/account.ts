@@ -75,6 +75,56 @@ export async function getOrders(): Promise<Order[]> {
   }
 }
 
+// ── 리뷰 작성 (1b) ──────────────────────────────────────────
+// 내가 이미 리뷰를 작성한 상품 id 목록(주문내역에서 '작성 완료' 표시용).
+export async function getReviewedProductIds(): Promise<string[]> {
+  if (!IS_CONFIGURED) return [];
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data } = await supabase.from("reviews").select("product_id").eq("user_id", user.id);
+    return (data ?? []).map((r) => String(r.product_id));
+  } catch {
+    return [];
+  }
+}
+
+// 배송완료 주문의 상품에 리뷰 작성. 구매 검증·중복 방지·평점 집계는 create_review RPC가 수행.
+export async function createReview(input: {
+  productId: string;
+  orderId: string;
+  rating: number;
+  content: string;
+}): Promise<{ error?: string }> {
+  if (!IS_CONFIGURED) return { error: "사용할 수 없습니다." };
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "로그인이 필요합니다." };
+
+    const { error } = await supabase.rpc("create_review", {
+      p_product_id: input.productId,
+      p_order_id: input.orderId,
+      p_rating: input.rating,
+      p_content: input.content,
+    });
+    if (error) {
+      // RPC가 raise한 한글 메시지를 그대로 전달(마지막 세그먼트만).
+      const msg = error.message.includes(":")
+        ? error.message.split(":").pop()!.trim()
+        : error.message;
+      return { error: msg || "리뷰 작성에 실패했습니다." };
+    }
+    revalidatePath("/account/orders");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "리뷰 작성 중 오류가 발생했습니다." };
+  }
+}
+
 // ── 고객 자가 취소 / 반품 (PC3) ────────────────────────────
 // 취소(배송 준비 전): Toss 환불 선 처리 → cancel_my_order RPC로 상태/쿠폰 반영.
 export async function cancelMyOrder(orderId: string): Promise<{ error?: string }> {

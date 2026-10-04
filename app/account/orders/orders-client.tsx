@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Order } from "@/lib/types";
-import { cancelMyOrder, requestReturn } from "@/app/actions/account";
+import type { Order, OrderItem } from "@/lib/types";
+import { cancelMyOrder, requestReturn, createReview } from "@/app/actions/account";
 import { useUIStore } from "@/store/ui";
+
+const REVIEW_POINT = 500; // 리뷰 작성 적립 포인트(문구용 — 실제 적립은 추후)
 
 // 고객에게 보여줄 배송/주문 상태. 핵심 규칙(요청): 결제 후 송장 입력 전에는
 // '배송 준비중', 송장 입력 후에는 '배송 중'으로 표시한다(송장 유무 기준).
@@ -27,8 +29,15 @@ function trackingUrl(order: Order): string {
   )}`;
 }
 
-export default function OrdersClient({ orders }: { orders: Order[] }) {
+export default function OrdersClient({
+  orders,
+  reviewedProductIds = [],
+}: {
+  orders: Order[];
+  reviewedProductIds?: string[];
+}) {
   const [selected, setSelected] = useState<Order | null>(null);
+  const reviewedSet = new Set(reviewedProductIds);
 
   return (
     <div id="account-orders" className="p-6 sm:p-8">
@@ -60,6 +69,12 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
                       {order.items[0]?.productName}
                       {order.items.length > 1 && ` 외 ${order.items.length - 1}건`}
                     </p>
+                    {order.fulfillmentStatus === "delivered" &&
+                      order.items.some((it) => !reviewedSet.has(it.productId)) && (
+                        <p className="text-[13px] text-amber-700 tracking-wide mt-1">
+                          ⭐ 리뷰 작성 시 {REVIEW_POINT}P 적립
+                        </p>
+                      )}
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span className={`text-[14px] tracking-wide px-2.5 py-1 rounded-full ${s.color}`}>
@@ -89,7 +104,11 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
 
       {/* 주문 상세 모달 */}
       {selected && (
-        <OrderDetailModal order={selected} onClose={() => setSelected(null)} />
+        <OrderDetailModal
+          order={selected}
+          reviewedSet={reviewedSet}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );
@@ -97,11 +116,21 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
 
 const FULFILLMENT_RETURNABLE = ["preparing", "shipped", "delivered"];
 
-function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
+function OrderDetailModal({
+  order,
+  reviewedSet,
+  onClose,
+}: {
+  order: Order;
+  reviewedSet: Set<string>;
+  onClose: () => void;
+}) {
   const s = getDisplayStatus(order);
   const router = useRouter();
   const { showToast } = useUIStore();
   const [pending, startTransition] = useTransition();
+  const [reviewItem, setReviewItem] = useState<OrderItem | null>(null);
+  const isDelivered = order.fulfillmentStatus === "delivered";
 
   const isCancelled = order.status === "cancelled";
   const isPaid = order.paymentStatus === "paid";
@@ -172,16 +201,37 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
         </div>
 
         {/* 주문 상품 */}
-        <div className="py-4 border-b border-brand-border space-y-2">
+        <div className="py-4 border-b border-brand-border space-y-3">
           <p className="text-[14px] tracking-widest mb-3">주문 상품</p>
-          {order.items.map((item, i) => (
-            <div key={i} className="flex justify-between text-xs">
-              <span className="text-brand-black">{item.productName} × {item.quantity}</span>
-              <span className="text-brand-gray-mid">
-                ₩{(item.price * item.quantity).toLocaleString("ko-KR")}
-              </span>
-            </div>
-          ))}
+          {order.items.map((item, i) => {
+            const reviewed = reviewedSet.has(item.productId);
+            return (
+              <div key={i} className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-brand-black">{item.productName} × {item.quantity}</span>
+                  <span className="text-brand-gray-mid">
+                    ₩{(item.price * item.quantity).toLocaleString("ko-KR")}
+                  </span>
+                </div>
+                {isDelivered &&
+                  (reviewed ? (
+                    <p className="text-[12px] text-brand-gray-mid">✓ 리뷰 작성 완료</p>
+                  ) : (
+                    <div>
+                      <button
+                        onClick={() => setReviewItem(item)}
+                        className="h-8 px-3 border border-amber-300 text-amber-700 text-[12px] tracking-widest hover:bg-amber-50 transition-colors"
+                      >
+                        리뷰 작성
+                      </button>
+                      <p className="text-[11px] text-amber-700 mt-1">
+                        리뷰 작성 시 {REVIEW_POINT}P 적립
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            );
+          })}
         </div>
 
         {/* 배송지 */}
@@ -263,6 +313,116 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
             · 배송 준비 후에는 반품 신청 → 관리자 확인 후 환불됩니다.
           </p>
         </div>
+      </div>
+
+      {reviewItem && (
+        <ReviewForm
+          item={reviewItem}
+          orderId={order.orderId}
+          onClose={() => setReviewItem(null)}
+          onDone={() => {
+            setReviewItem(null);
+            onClose();
+            router.refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// 리뷰 작성 폼(별점 + 내용). 성공 시 onDone.
+function ReviewForm({
+  item,
+  orderId,
+  onClose,
+  onDone,
+}: {
+  item: OrderItem;
+  orderId: string;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const { showToast } = useUIStore();
+  const [rating, setRating] = useState(5);
+  const [hover, setHover] = useState(0);
+  const [content, setContent] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = () => {
+    if (content.trim().length < 5) {
+      setError("리뷰 내용을 5자 이상 입력해주세요.");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await createReview({
+        productId: item.productId,
+        orderId,
+        rating,
+        content: content.trim(),
+      });
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      showToast(`리뷰가 등록되었습니다. ${REVIEW_POINT}P 적립 예정!`);
+      onDone();
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-md p-6 sm:p-8">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-[14px] tracking-[0.3em]">리뷰 작성</h3>
+          <button onClick={onClose} className="text-xl leading-none text-brand-gray-mid hover:text-brand-black">
+            ×
+          </button>
+        </div>
+
+        <p className="text-sm font-medium mb-4">{item.productName}</p>
+
+        {/* 별점 */}
+        <div className="flex items-center gap-1 mb-4">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setRating(n)}
+              onMouseEnter={() => setHover(n)}
+              onMouseLeave={() => setHover(0)}
+              aria-label={`${n}점`}
+              className="text-2xl leading-none p-0.5"
+            >
+              <span className={(hover || rating) >= n ? "text-amber-400" : "text-brand-border"}>★</span>
+            </button>
+          ))}
+          <span className="ml-2 text-[13px] text-brand-gray-mid">{rating}점</span>
+        </div>
+
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={4}
+          maxLength={1000}
+          placeholder="상품은 어떠셨나요? 솔직한 후기를 남겨주세요. (5자 이상)"
+          className="w-full border border-brand-border p-3 text-[14px] tracking-wide focus:outline-none focus:border-brand-black resize-none"
+        />
+
+        {error && <p className="mt-2 text-[13px] text-red-500 tracking-wide">{error}</p>}
+
+        <p className="mt-2 text-[12px] text-amber-700">리뷰 작성 시 {REVIEW_POINT}P 적립</p>
+
+        <button
+          onClick={submit}
+          disabled={pending}
+          className="mt-4 w-full h-11 bg-brand-black text-white text-[14px] tracking-widest hover:bg-brand-gray-mid transition-colors disabled:opacity-50"
+        >
+          {pending ? "등록 중..." : "리뷰 등록"}
+        </button>
       </div>
     </div>
   );
