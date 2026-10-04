@@ -36,7 +36,7 @@ export async function getOrders(): Promise<Order[]> {
     const { data, error } = await supabase
       .from("orders")
       .select(
-        "id, order_number, total_amount, order_status, payment_status, fulfillment_status, return_status, shipping_address, created_at, order_items(*)"
+        "id, order_number, total_amount, order_status, payment_status, fulfillment_status, return_status, courier, tracking_number, shipping_address, created_at, order_items(*)"
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -50,6 +50,8 @@ export async function getOrders(): Promise<Order[]> {
       fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
       paymentStatus: String(o.payment_status ?? "pending"),
       returnStatus: o.return_status ? String(o.return_status) : null,
+      courier: o.courier ? String(o.courier) : null,
+      trackingNumber: o.tracking_number ? String(o.tracking_number) : null,
       userId: String(user.id),
       items: Array.isArray(o.order_items)
         ? o.order_items.map((i: Record<string, unknown>) => ({

@@ -6,13 +6,26 @@ import type { Order } from "@/lib/types";
 import { cancelMyOrder, requestReturn } from "@/app/actions/account";
 import { useUIStore } from "@/store/ui";
 
-const STATUS_MAP: Record<Order["status"], { label: string; color: string }> = {
-  pending:   { label: "결제 대기", color: "bg-gray-100 text-gray-600" },
-  paid:      { label: "결제 완료", color: "bg-blue-50 text-blue-600" },
-  shipped:   { label: "배송 중",   color: "bg-amber-50 text-amber-600" },
-  delivered: { label: "배송 완료", color: "bg-green-50 text-green-600" },
-  cancelled: { label: "취소",      color: "bg-red-50 text-red-500" },
-};
+// 고객에게 보여줄 배송/주문 상태. 핵심 규칙(요청): 결제 후 송장 입력 전에는
+// '배송 준비중', 송장 입력 후에는 '배송 중'으로 표시한다(송장 유무 기준).
+function getDisplayStatus(order: Order): { label: string; color: string } {
+  if (order.status === "cancelled") return { label: "취소", color: "bg-red-50 text-red-500" };
+  if (order.fulfillmentStatus === "returned") return { label: "반품", color: "bg-red-50 text-red-500" };
+  if (order.fulfillmentStatus === "delivered") return { label: "배송 완료", color: "bg-green-50 text-green-600" };
+  if (order.paymentStatus === "paid") {
+    return order.trackingNumber
+      ? { label: "배송 중", color: "bg-amber-50 text-amber-600" }
+      : { label: "배송 준비중", color: "bg-blue-50 text-blue-600" };
+  }
+  return { label: "결제 대기", color: "bg-gray-100 text-gray-600" };
+}
+
+// 택배사 통합 조회(네이버) 링크 — 관리자 주문상세와 동일 방식.
+function trackingUrl(order: Order): string {
+  return `https://search.naver.com/search.naver?query=${encodeURIComponent(
+    `${order.courier || ""} 택배조회 ${order.trackingNumber}`.trim()
+  )}`;
+}
 
 export default function OrdersClient({ orders }: { orders: Order[] }) {
   const [selected, setSelected] = useState<Order | null>(null);
@@ -28,7 +41,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
       ) : (
         <ul className="space-y-3">
           {orders.map((order) => {
-            const s = STATUS_MAP[order.status];
+            const s = getDisplayStatus(order);
             return (
               <li
                 key={order.id}
@@ -55,6 +68,17 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
                     <span className="text-sm font-medium">
                       ₩{order.totalAmount.toLocaleString("ko-KR")}
                     </span>
+                    {order.trackingNumber && (
+                      <a
+                        href={trackingUrl(order)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[13px] tracking-wide text-blue-600 underline underline-offset-4 hover:text-blue-700"
+                      >
+                        배송조회 →
+                      </a>
+                    )}
                   </div>
                 </div>
               </li>
@@ -74,7 +98,7 @@ export default function OrdersClient({ orders }: { orders: Order[] }) {
 const FULFILLMENT_RETURNABLE = ["preparing", "shipped", "delivered"];
 
 function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => void }) {
-  const s = STATUS_MAP[order.status];
+  const s = getDisplayStatus(order);
   const router = useRouter();
   const { showToast } = useUIStore();
   const [pending, startTransition] = useTransition();
@@ -167,6 +191,31 @@ function OrderDetailModal({ order, onClose }: { order: Order; onClose: () => voi
           <p>[{order.shippingAddress.zipCode}] {order.shippingAddress.address}</p>
           {order.shippingAddress.addressDetail && <p>{order.shippingAddress.addressDetail}</p>}
         </div>
+
+        {/* 배송 정보 (송장 입력 시) */}
+        {order.trackingNumber && (
+          <div className="py-4 border-b border-brand-border space-y-1 text-xs text-brand-gray-mid tracking-wide">
+            <p className="text-[14px] tracking-widest mb-2 text-brand-black">배송 정보</p>
+            {order.courier && (
+              <div className="flex justify-between">
+                <span>택배사</span>
+                <span className="text-brand-black">{order.courier}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span>운송장번호</span>
+              <span className="text-brand-black">{order.trackingNumber}</span>
+            </div>
+            <a
+              href={trackingUrl(order)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block w-full h-10 leading-10 text-center border border-brand-black text-brand-black text-[14px] tracking-widest hover:bg-brand-fill transition-colors"
+            >
+              배송 조회하기 →
+            </a>
+          </div>
+        )}
 
         {/* 결제 금액 */}
         <div className="pt-4 flex justify-between font-medium">

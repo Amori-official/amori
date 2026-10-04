@@ -114,6 +114,10 @@ export interface Order {
   fulfillmentStatus: string;
   paymentStatus: string;
   returnStatus: string | null;
+  /** 택배사명 (예: CJ대한통운). 송장 입력 전에는 null */
+  courier?: string | null;
+  /** 운송장 번호. 입력되면 마이페이지 상태가 '배송준비중'→'배송중'으로 바뀜 */
+  trackingNumber?: string | null;
   shippingAddress: ShippingAddress;
   giftWrapping?: boolean;
   giftMessage?: string;
