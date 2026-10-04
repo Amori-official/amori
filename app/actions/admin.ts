@@ -25,6 +25,7 @@ export interface AdminProduct {
   nameKo: string | null;
   category: string | null;
   price: number;
+  stock: number;
   isPublished: boolean;
   saleStatus: string;
   variants: AdminProductVariant[];
@@ -200,7 +201,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, name_ko, category, price, is_published, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
+        "id, slug, name, name_ko, category, price, stock, is_published, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
       )
       .order("created_at", { ascending: true });
 
@@ -216,6 +217,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
       nameKo: (p.name_ko as string | null) ?? null,
       category: (p.category as string | null) ?? null,
       price: Number(p.price),
+      stock: Number(p.stock ?? 0),
       isPublished: Boolean(p.is_published),
       saleStatus: String(p.sale_status ?? "active"),
       variants: (Array.isArray(p.product_variants) ? p.product_variants : [])
@@ -274,6 +276,56 @@ export async function setVariantActive(
       return { error: "옵션 상태 변경에 실패했습니다." };
     }
     revalidatePath("/admin/products");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 재고 수정(품절 표시는 stock=0 기준). 음수 방지.
+export async function setProductStock(
+  productId: string,
+  stock: number
+): Promise<{ error?: string }> {
+  try {
+    if (!Number.isInteger(stock) || stock < 0 || stock > 1000000) {
+      return { error: "재고 수량이 올바르지 않습니다." };
+    }
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.from("products").update({ stock }).eq("id", productId);
+    if (error) {
+      logSupabaseError("setProductStock", error);
+      return { error: "재고 변경에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    revalidatePath("/shop");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 카테고리 수정. 빈 값이면 null(미분류)로 저장.
+export async function setProductCategory(
+  productId: string,
+  category: string
+): Promise<{ error?: string }> {
+  try {
+    const value = category.trim();
+    if (value.length > 50) return { error: "카테고리명이 너무 깁니다." };
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase
+      .from("products")
+      .update({ category: value || null })
+      .eq("id", productId);
+    if (error) {
+      logSupabaseError("setProductCategory", error);
+      return { error: "카테고리 변경에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    revalidatePath("/shop");
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   setProductPublished,
   setVariantActive,
+  setProductStock,
+  setProductCategory,
   type AdminProduct,
 } from "@/app/actions/admin";
 
@@ -14,6 +16,11 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 카테고리 입력 자동완성용 — 기존 상품들의 카테고리 모음.
+  const categoryOptions = Array.from(
+    new Set(products.map((p) => p.category).filter((c): c is string => !!c))
+  ).sort();
 
   const togglePublished = (p: AdminProduct) => {
     setBusyId(p.id);
@@ -74,9 +81,12 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                       <span className="text-[13px] text-brand-gray-mid">{p.nameKo}</span>
                     )}
                     <StatusBadge published={p.isPublished} />
+                    {p.stock === 0 && (
+                      <span className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">품절</span>
+                    )}
                   </div>
                   <p className="text-[13px] text-brand-gray-mid mt-1">
-                    {p.category ?? "-"} · ₩{p.price.toLocaleString("ko-KR")} · /{p.slug}
+                    {p.category ?? "-"} · ₩{p.price.toLocaleString("ko-KR")} · 재고 {p.stock.toLocaleString("ko-KR")} · /{p.slug}
                   </p>
                 </div>
 
@@ -101,6 +111,9 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                   </button>
                 </div>
               </div>
+
+              {/* 재고 · 카테고리 수정 */}
+              <InventoryEditor product={p} categoryOptions={categoryOptions} onDone={() => router.refresh()} />
 
               {/* 옵션(변형) 품절 토글 */}
               {p.variants.length > 0 && (
@@ -138,6 +151,94 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+// 상품별 재고·카테고리 인라인 수정.
+function InventoryEditor({
+  product,
+  categoryOptions,
+  onDone,
+}: {
+  product: AdminProduct;
+  categoryOptions: string[];
+  onDone: () => void;
+}) {
+  const [stock, setStock] = useState(String(product.stock));
+  const [category, setCategory] = useState(product.category ?? "");
+  const [pending, startTransition] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const stockChanged = stock.trim() !== "" && Number(stock) !== product.stock;
+  const categoryChanged = category.trim() !== (product.category ?? "");
+  const dirty = stockChanged || categoryChanged;
+
+  const save = () => {
+    setErr(null);
+    setMsg(null);
+    startTransition(async () => {
+      if (stockChanged) {
+        const res = await setProductStock(product.id, Number(stock));
+        if (res.error) {
+          setErr(res.error);
+          return;
+        }
+      }
+      if (categoryChanged) {
+        const res = await setProductCategory(product.id, category);
+        if (res.error) {
+          setErr(res.error);
+          return;
+        }
+      }
+      setMsg("저장되었습니다.");
+      onDone();
+    });
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-brand-border">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+        <label className="flex flex-col gap-1">
+          <span className="text-[12px] tracking-widest text-brand-gray-mid">재고</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={stock}
+            onChange={(e) => setStock(e.target.value.replace(/[^0-9]/g, ""))}
+            className="h-9 w-24 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[12px] tracking-widest text-brand-gray-mid">카테고리</span>
+          <input
+            list="admin-category-options"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="미분류"
+            className="h-9 w-44 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
+          />
+        </label>
+        <datalist id="admin-category-options">
+          {categoryOptions.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+        <button
+          type="button"
+          onClick={save}
+          disabled={!dirty || pending}
+          className="h-9 px-4 bg-brand-black text-white text-[13px] tracking-widest hover:bg-brand-gray-mid transition-colors disabled:opacity-40"
+        >
+          {pending ? "저장 중..." : "저장"}
+        </button>
+        {msg && <span className="text-[12px] text-green-600">{msg}</span>}
+        {err && <span className="text-[12px] text-red-500">{err}</span>}
+      </div>
+      <p className="text-[12px] text-brand-gray-mid mt-2">재고를 0으로 두면 상품이 &lsquo;품절&rsquo;로 표시됩니다.</p>
     </div>
   );
 }
