@@ -1435,3 +1435,92 @@ export async function updateCoupon(id: string, input: CouponInput): Promise<{ er
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
+
+// ── 리뷰 관리 (Phase 2-A) ───────────────────────────────────
+export interface AdminReview {
+  id: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  userName: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+}
+
+const REVIEWS_PAGE_SIZE = 50;
+
+export interface AdminReviewsResult {
+  reviews: AdminReview[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function getAdminReviews(filters?: {
+  page?: number;
+  productId?: string;
+}): Promise<AdminReviewsResult> {
+  const page = Math.max(1, filters?.page ?? 1);
+  const pageSize = REVIEWS_PAGE_SIZE;
+  const empty: AdminReviewsResult = { reviews: [], total: 0, page, pageSize };
+  if (!isSupabaseConfigured()) return empty;
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    let query = supabase
+      .from("reviews")
+      .select("id, product_id, rating, content, created_at, products(name, slug), profiles(name)", {
+        count: "exact",
+      })
+      .order("created_at", { ascending: false })
+      .range((page - 1) * pageSize, page * pageSize - 1);
+
+    if (filters?.productId) query = query.eq("product_id", filters.productId);
+
+    const { data, error, count } = await query;
+    if (error) {
+      logSupabaseError("getAdminReviews", error);
+      return empty;
+    }
+    const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
+    return {
+      page,
+      pageSize,
+      total: count ?? rows.length,
+      reviews: rows.map((r) => {
+        const product = (r.products ?? {}) as { name?: string; slug?: string };
+        const profile = (r.profiles ?? {}) as { name?: string };
+        return {
+          id: s(r.id),
+          productId: s(r.product_id),
+          productName: s(product.name) || "(삭제된 상품)",
+          productSlug: s(product.slug),
+          userName: s(profile.name) || "익명",
+          rating: Number(r.rating ?? 0),
+          content: s(r.content),
+          createdAt: s(r.created_at),
+        };
+      }),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+export async function adminDeleteReview(id: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.rpc("admin_delete_review", { p_review_id: id });
+    if (error) {
+      logSupabaseError("adminDeleteReview", error);
+      return { error: "리뷰 삭제에 실패했습니다." };
+    }
+    revalidatePath("/admin/reviews");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
