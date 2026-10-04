@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/members", label: "회원 관리" },
   { href: "/admin/reviews", label: "리뷰 관리" },
   { href: "/admin/coupons", label: "쿠폰 관리" },
+  { href: "/admin/stats", label: "통계" },
 ];
 
 export default function AdminSidebar() {

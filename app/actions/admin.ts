@@ -1576,3 +1576,102 @@ export async function adminDeleteReview(id: string): Promise<{ error?: string }>
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
+
+// ── 통계 (Phase 2-C) ────────────────────────────────────────
+export interface SalesStats {
+  days: number;
+  totalSales: number;
+  orderCount: number;
+  avgOrder: number;
+  newMembers: number;
+  daily: { label: string; sales: number; orders: number }[];
+  topProducts: { name: string; qty: number; revenue: number }[];
+}
+
+// KST 기준 날짜키(YYYY-MM-DD).
+function kstDateKey(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+}
+
+export async function getSalesStats(days: number = 30): Promise<SalesStats> {
+  const period = days === 7 ? 7 : 30; // 허용값만
+  const empty: SalesStats = {
+    days: period, totalSales: 0, orderCount: 0, avgOrder: 0, newMembers: 0, daily: [], topProducts: [],
+  };
+  if (!isSupabaseConfigured()) return empty;
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    // 기간 시작(KST 자정 기준 period-1일 전)
+    const now = new Date();
+    const kst = new Date(now.getTime() + 9 * 3600 * 1000);
+    const todayStartUtcMs =
+      Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) - 9 * 3600 * 1000;
+    const startUtcMs = todayStartUtcMs - (period - 1) * 86400000;
+    const startISO = new Date(startUtcMs).toISOString();
+
+    // 결제완료 주문(기간)
+    const { data: paid } = await supabase
+      .from("orders")
+      .select("total_amount, created_at")
+      .eq("payment_status", "paid")
+      .gte("created_at", startISO);
+    const rows = paid ?? [];
+    const totalSales = rows.reduce((s, o) => s + Number(o.total_amount ?? 0), 0);
+    const orderCount = rows.length;
+    const avgOrder = orderCount ? Math.round(totalSales / orderCount) : 0;
+
+    // 일별 버킷 초기화(연속된 날짜)
+    const buckets = new Map<string, { sales: number; orders: number }>();
+    const order: string[] = [];
+    for (let i = 0; i < period; i++) {
+      const key = kstDateKey(new Date(startUtcMs + i * 86400000).toISOString());
+      buckets.set(key, { sales: 0, orders: 0 });
+      order.push(key);
+    }
+    for (const o of rows) {
+      const key = kstDateKey(String(o.created_at));
+      const b = buckets.get(key);
+      if (b) {
+        b.sales += Number(o.total_amount ?? 0);
+        b.orders += 1;
+      }
+    }
+    const daily = order.map((key) => {
+      const [, m, d] = key.split("-");
+      return { label: `${m}/${d}`, sales: buckets.get(key)!.sales, orders: buckets.get(key)!.orders };
+    });
+
+    // 신규 회원(기간)
+    const { count: newMembers } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", startISO);
+
+    // 인기 상품(기간 내 결제완료 주문의 품목 집계)
+    const { data: items } = await supabase
+      .from("order_items")
+      .select("product_name, quantity, price, orders!inner(payment_status, created_at)")
+      .eq("orders.payment_status", "paid")
+      .gte("orders.created_at", startISO);
+    const prodMap = new Map<string, { qty: number; revenue: number }>();
+    for (const it of items ?? []) {
+      const name = String((it as Record<string, unknown>).product_name ?? "-");
+      const qty = Number((it as Record<string, unknown>).quantity ?? 0);
+      const price = Number((it as Record<string, unknown>).price ?? 0);
+      const cur = prodMap.get(name) ?? { qty: 0, revenue: 0 };
+      cur.qty += qty;
+      cur.revenue += price * qty;
+      prodMap.set(name, cur);
+    }
+    const topProducts = Array.from(prodMap.entries())
+      .map(([name, v]) => ({ name, qty: v.qty, revenue: v.revenue }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 8);
+
+    return { days: period, totalSales, orderCount, avgOrder, newMembers: newMembers ?? 0, daily, topProducts };
+  } catch {
+    return empty;
+  }
+}
