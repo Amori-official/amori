@@ -152,14 +152,27 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
         </div>
       )}
 
-      {/* 평점 */}
-      {(product.reviewCount ?? 0) > 0 && (
-        <div className="flex items-center gap-2 text-xs text-brand-gray-mid">
-          <span className="text-amber-400">{"★".repeat(Math.round(product.rating ?? 0))}</span>
-          <span>{product.rating?.toFixed(1)}</span>
-          <span>({product.reviewCount}개 리뷰)</span>
-        </div>
-      )}
+      {/* 평점 · 리뷰 바로가기 (클릭 시 하단 리뷰 섹션으로 스크롤) */}
+      <button
+        type="button"
+        onClick={() =>
+          document
+            .getElementById("product-reviews")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+        className="flex items-center gap-2 text-xs text-brand-gray-mid hover:text-brand-black transition-colors w-fit"
+      >
+        {(product.reviewCount ?? 0) > 0 ? (
+          <>
+            <span className="text-amber-400">{"★".repeat(Math.round(product.rating ?? 0))}</span>
+            <span>{product.rating?.toFixed(1)}</span>
+            <span>({product.reviewCount}개 리뷰)</span>
+            <span className="underline underline-offset-2">리뷰 보기 →</span>
+          </>
+        ) : (
+          <span className="underline underline-offset-2">리뷰 보기 →</span>
+        )}
+      </button>
 
       {/* 컬러 선택 */}
       {product.colors && product.colors.length > 0 && (

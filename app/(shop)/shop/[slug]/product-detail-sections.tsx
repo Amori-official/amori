@@ -269,7 +269,7 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
       )}
 
       {/* Reviews */}
-      <section id="product-reviews" className="border-t border-brand-border px-4 sm:px-8 lg:px-16 py-16">
+      <section id="product-reviews" className="scroll-mt-20 border-t border-brand-border px-4 sm:px-8 lg:px-16 py-16">
         <ProductReviews reviews={reviews} productId={product.id} />
       </section>
     </div>

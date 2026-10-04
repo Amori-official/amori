@@ -70,6 +70,7 @@ export default function OrdersClient({
                       {order.items.length > 1 && ` 외 ${order.items.length - 1}건`}
                     </p>
                     {order.fulfillmentStatus === "delivered" &&
+                      order.status !== "cancelled" &&
                       order.items.some((it) => !reviewedSet.has(it.productId)) && (
                         <p className="text-[13px] text-amber-700 tracking-wide mt-1">
                           ⭐ 리뷰 작성 시 {REVIEW_POINT}P 적립
@@ -130,7 +131,8 @@ function OrderDetailModal({
   const { showToast } = useUIStore();
   const [pending, startTransition] = useTransition();
   const [reviewItem, setReviewItem] = useState<OrderItem | null>(null);
-  const isDelivered = order.fulfillmentStatus === "delivered";
+  // 취소/반품된 주문은 리뷰 불가 — 배송완료 + 미취소만 리뷰 대상.
+  const isDelivered = order.fulfillmentStatus === "delivered" && order.status !== "cancelled";
 
   const isCancelled = order.status === "cancelled";
   const isPaid = order.paymentStatus === "paid";
