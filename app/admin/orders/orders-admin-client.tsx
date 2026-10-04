@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { updateOrderStatus, type AdminOrder } from "@/app/actions/admin";
+import { updateOrderStatus, bulkCancelOrders, type AdminOrder } from "@/app/actions/admin";
 
 const PAYMENT_LABEL: Record<string, { label: string; color: string }> = {
   ready: { label: "결제 대기", color: "bg-gray-100 text-gray-600" },
@@ -63,8 +63,51 @@ export default function OrdersAdminClient({
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState(initialQuery);
 
+  // 선택/일괄 취소
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPending, startBulk] = useTransition();
+  const [notice, setNotice] = useState<string | null>(null);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasFilter = !!(initialQuery || initialFulfillment || initialPayment);
+
+  // 취소 가능한(아직 취소되지 않은) 주문만 선택 대상
+  const cancellableIds = orders.filter((o) => o.orderStatus !== "cancelled").map((o) => o.id);
+  const allSelected = cancellableIds.length > 0 && cancellableIds.every((id) => selected.has(id));
+  const selectedCount = selected.size;
+
+  const toggleOne = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(cancellableIds));
+
+  const handleBulkCancel = () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (!confirm(`선택한 ${ids.length}건의 주문을 취소하시겠습니까?\n(사용된 쿠폰은 복원됩니다)`)) return;
+    setError(null);
+    setNotice(null);
+    startBulk(async () => {
+      const res = await bulkCancelOrders(ids);
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      setSelected(new Set());
+      if (res.failed.length > 0) {
+        setNotice(`${res.cancelled}건 취소 완료 · ${res.failed.length}건 실패`);
+      } else {
+        setNotice(`${res.cancelled}건이 취소되었습니다.`);
+      }
+      router.refresh();
+    });
+  };
 
   const buildUrl = (opts: { q?: string; fulfillment?: string; payment?: string; page?: number }) => {
     const params = new URLSearchParams();
@@ -80,9 +123,12 @@ export default function OrdersAdminClient({
     return `/admin/orders${qs ? `?${qs}` : ""}`;
   };
 
-  // 필터 변경 시 1페이지로 리셋
-  const go = (opts: { q?: string; fulfillment?: string; payment?: string; page?: number }) =>
+  // 필터 변경 시 1페이지로 리셋 (선택/알림도 초기화 — 다른 목록으로 이동하므로)
+  const go = (opts: { q?: string; fulfillment?: string; payment?: string; page?: number }) => {
+    setSelected(new Set());
+    setNotice(null);
     router.push(buildUrl(opts));
+  };
 
   const change = (orderId: string, patch: { fulfillmentStatus?: string; orderStatus?: string }) => {
     setBusyId(orderId);
@@ -157,6 +203,36 @@ export default function OrdersAdminClient({
           {error}
         </p>
       )}
+      {notice && (
+        <p className="mb-4 text-[13px] text-brand-gray-mid tracking-wide border border-brand-border bg-brand-gray-light px-3 py-2">
+          {notice}
+        </p>
+      )}
+
+      {/* 일괄 취소 툴바 */}
+      {orders.length > 0 && cancellableIds.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-3 px-1">
+          <label className="flex items-center gap-2 text-[13px] text-brand-gray-mid tracking-wide cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleAll}
+              className="w-4 h-4 accent-brand-black cursor-pointer"
+            />
+            전체 선택
+            {selectedCount > 0 && <span className="text-brand-black font-medium">({selectedCount}건 선택됨)</span>}
+          </label>
+          {selectedCount > 0 && (
+            <button
+              onClick={handleBulkCancel}
+              disabled={bulkPending}
+              className="h-9 px-4 border border-red-300 text-red-500 text-[13px] tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              {bulkPending ? "취소 처리 중..." : `선택한 ${selectedCount}건 취소`}
+            </button>
+          )}
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <div className="py-20 text-center text-brand-gray-mid text-sm tracking-wide">
@@ -171,7 +247,19 @@ export default function OrdersAdminClient({
               const cancelled = o.orderStatus === "cancelled";
               return (
                 <li key={o.id} className="border border-brand-border p-4 sm:p-5">
-                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-start gap-3">
+                    {cancelled ? (
+                      <span className="w-4 h-4 mt-1 shrink-0" aria-hidden />
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(o.id)}
+                        onChange={() => toggleOne(o.id)}
+                        aria-label={`${o.orderNumber} 선택`}
+                        className="w-4 h-4 mt-1 shrink-0 accent-brand-black cursor-pointer"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0 flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
@@ -230,6 +318,7 @@ export default function OrdersAdminClient({
                           </select>
                         )}
                       </label>
+                    </div>
                     </div>
                   </div>
                 </li>

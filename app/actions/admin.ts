@@ -536,38 +536,82 @@ export async function setOrderTracking(
   }
 }
 
+// 단건 취소 핵심 로직(권한 확인·revalidate 제외) — 단건/일괄 취소가 공유한다.
+// 상태만 취소 + 쿠폰 복원(실제 결제 취소/환불은 PG 연동 후 별도 처리 필요).
+async function cancelOrderCore(
+  supabase: SupabaseClient,
+  id: string
+): Promise<{ error?: string }> {
+  // 이미 취소된 주문은 재취소하지 않는다(쿠폰 이중 복원 방지).
+  const { data: cur } = await supabase.from("orders").select("order_status").eq("id", id).single();
+  if (cur?.order_status === "cancelled") {
+    return { error: "이미 취소된 주문입니다." };
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ order_status: "cancelled", payment_status: "cancelled" })
+    .eq("id", id);
+  if (error) {
+    logSupabaseError("cancelOrder", error);
+    return { error: "주문 취소에 실패했습니다." };
+  }
+
+  // 사용된 쿠폰 복원(있으면 다시 사용 가능하도록).
+  await supabase
+    .from("user_coupons")
+    .update({ status: "active", used_at: null, used_order_id: null })
+    .eq("used_order_id", id);
+
+  return {};
+}
+
 export async function cancelOrder(id: string): Promise<{ error?: string }> {
   try {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
 
-    // 이미 취소된 주문은 재취소하지 않는다(쿠폰 이중 복원 방지).
-    const { data: cur } = await supabase.from("orders").select("order_status").eq("id", id).single();
-    if (cur?.order_status === "cancelled") {
-      return { error: "이미 취소된 주문입니다." };
-    }
-
-    // 주문 취소(상태만 — 실제 결제 취소/환불은 PG 연동 후 별도 처리 필요).
-    const { error } = await supabase
-      .from("orders")
-      .update({ order_status: "cancelled", payment_status: "cancelled" })
-      .eq("id", id);
-    if (error) {
-      logSupabaseError("cancelOrder", error);
-      return { error: "주문 취소에 실패했습니다." };
-    }
-
-    // 사용된 쿠폰 복원(있으면 다시 사용 가능하도록).
-    await supabase
-      .from("user_coupons")
-      .update({ status: "active", used_at: null, used_order_id: null })
-      .eq("used_order_id", id);
+    const res = await cancelOrderCore(supabase, id);
+    if (res.error) return res;
 
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${id}`);
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+export interface BulkCancelResult {
+  cancelled: number;
+  failed: { id: string; error: string }[];
+  error?: string;
+}
+
+// 여러 주문을 한 번에 취소한다(관리자 선택/일괄 취소). 각 건은 단건 취소와
+// 동일하게 상태 취소 + 쿠폰 복원으로 처리되며, 일부 실패해도 나머지는 계속 진행한다.
+export async function bulkCancelOrders(ids: string[]): Promise<BulkCancelResult> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const unique = Array.from(new Set(ids.filter((v) => typeof v === "string" && v)));
+    if (unique.length === 0) return { cancelled: 0, failed: [], error: "선택된 주문이 없습니다." };
+    if (unique.length > 100) return { cancelled: 0, failed: [], error: "한 번에 최대 100건까지 취소할 수 있습니다." };
+
+    let cancelled = 0;
+    const failed: { id: string; error: string }[] = [];
+    // 결제/쿠폰 정합성을 위해 순차 처리한다.
+    for (const id of unique) {
+      const res = await cancelOrderCore(supabase, id);
+      if (res.error) failed.push({ id, error: res.error });
+      else cancelled++;
+    }
+
+    revalidatePath("/admin/orders");
+    return { cancelled, failed };
+  } catch (e) {
+    return { cancelled: 0, failed: [], error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
 
