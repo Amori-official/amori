@@ -90,7 +90,7 @@ export default function OrdersAdminClient({
   const handleBulkCancel = () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    if (!confirm(`선택한 ${ids.length}건의 주문을 취소하시겠습니까?\n(사용된 쿠폰은 복원됩니다)`)) return;
+    if (!confirm(`선택한 ${ids.length}건의 주문을 취소하시겠습니까?\n결제 완료 건은 자동으로 환불되고, 사용된 쿠폰은 복원됩니다.`)) return;
     setError(null);
     setNotice(null);
     startBulk(async () => {

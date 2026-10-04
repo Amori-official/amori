@@ -76,9 +76,9 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
   };
 
   const doCancel = () => {
-    if (!confirm("이 주문을 취소하시겠습니까? 사용된 쿠폰이 있으면 복원됩니다.\n(실제 결제 취소·환불은 PG사에서 별도 처리해야 합니다.)"))
+    if (!confirm("이 주문을 취소하시겠습니까?\n결제 완료 건은 토스페이먼츠로 자동 환불되고, 사용된 쿠폰은 복원됩니다."))
       return;
-    run(() => cancelOrder(order.id), "주문을 취소했습니다.");
+    run(() => cancelOrder(order.id), "주문을 취소했습니다. (결제 완료 건은 환불 처리됨)");
   };
 
   const doApproveReturn = () => {

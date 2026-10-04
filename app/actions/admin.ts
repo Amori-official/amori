@@ -537,20 +537,47 @@ export async function setOrderTracking(
 }
 
 // 단건 취소 핵심 로직(권한 확인·revalidate 제외) — 단건/일괄 취소가 공유한다.
-// 상태만 취소 + 쿠폰 복원(실제 결제 취소/환불은 PG 연동 후 별도 처리 필요).
+// 결제 완료 건은 토스 환불을 선 처리한 뒤 상태 취소(환불 실패 시 취소하지 않아
+// '취소됐는데 환불 안 됨' 정합성 깨짐을 방지). 미결제 건은 상태 취소만. + 쿠폰 복원.
 async function cancelOrderCore(
   supabase: SupabaseClient,
   id: string
 ): Promise<{ error?: string }> {
+  const { data: cur } = await supabase
+    .from("orders")
+    .select("order_status, payment_status")
+    .eq("id", id)
+    .single();
+  if (!cur) return { error: "주문을 찾을 수 없습니다." };
   // 이미 취소된 주문은 재취소하지 않는다(쿠폰 이중 복원 방지).
-  const { data: cur } = await supabase.from("orders").select("order_status").eq("id", id).single();
-  if (cur?.order_status === "cancelled") {
+  if (cur.order_status === "cancelled") {
     return { error: "이미 취소된 주문입니다." };
+  }
+
+  // 결제 완료 건은 토스 환불을 선 처리한다. 성공해야 상태를 취소로 바꾼다.
+  let nextPaymentStatus = "cancelled";
+  if (cur.payment_status === "paid") {
+    const { data: pay } = await supabase
+      .from("payments")
+      .select("payment_key")
+      .eq("order_id", id)
+      .not("payment_key", "is", null)
+      .maybeSingle();
+    if (!pay?.payment_key) {
+      return { error: "결제키를 찾을 수 없어 환불할 수 없습니다. 고객센터 확인이 필요합니다." };
+    }
+    try {
+      const { cancelTossPayment } = await import("@/lib/toss");
+      await cancelTossPayment(String(pay.payment_key), "관리자 주문 취소");
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "환불 처리에 실패했습니다." };
+    }
+    nextPaymentStatus = "refunded";
   }
 
   const { error } = await supabase
     .from("orders")
-    .update({ order_status: "cancelled", payment_status: "cancelled" })
+    .update({ order_status: "cancelled", payment_status: nextPaymentStatus })
     .eq("id", id);
   if (error) {
     logSupabaseError("cancelOrder", error);
