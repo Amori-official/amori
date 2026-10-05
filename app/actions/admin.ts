@@ -1364,6 +1364,8 @@ export interface AdminCoupon {
   validDays: number | null;
   isActive: boolean;
   codeRedeemable: boolean;
+  stackable: boolean;
+  endsAt: string | null;
   issuedCount: number;
 }
 
@@ -1377,6 +1379,8 @@ export interface CouponInput {
   validDays: number | null;
   isActive: boolean;
   codeRedeemable: boolean;
+  stackable: boolean;
+  endsAt: string | null;
 }
 
 const COUPON_CODE_REGEX = /^[A-Z0-9]{2,40}$/;
@@ -1392,6 +1396,8 @@ function validateCoupon(input: CouponInput): string | null {
     return "최대 할인액이 올바르지 않습니다.";
   if (input.validDays != null && (!Number.isInteger(input.validDays) || input.validDays < 0))
     return "유효일수가 올바르지 않습니다.";
+  if (input.endsAt != null && input.endsAt.trim() !== "" && Number.isNaN(new Date(toEndsAtISO(input.endsAt)!).getTime()))
+    return "이벤트 종료일이 올바르지 않습니다.";
   return null;
 }
 
@@ -1406,7 +1412,18 @@ function couponRow(input: CouponInput) {
     valid_days: input.validDays == null ? null : Math.round(input.validDays),
     is_active: input.isActive,
     code_redeemable: input.codeRedeemable,
+    stackable: input.stackable,
+    ends_at: toEndsAtISO(input.endsAt),
   };
+}
+
+// 종료일: 날짜만(YYYY-MM-DD) 입력 시 해당 날짜의 끝(KST 23:59:59)으로 저장. 비우면 null.
+function toEndsAtISO(v: string | null): string | null {
+  if (!v) return null;
+  const sv = v.trim();
+  if (!sv) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(sv)) return `${sv}T23:59:59+09:00`;
+  return sv;
 }
 
 export async function getAdminCoupons(): Promise<AdminCoupon[]> {
@@ -1441,6 +1458,8 @@ export async function getAdminCoupons(): Promise<AdminCoupon[]> {
         validDays: c.valid_days == null ? null : Number(c.valid_days),
         isActive: Boolean(c.is_active),
         codeRedeemable: Boolean(c.code_redeemable),
+        stackable: Boolean(c.stackable),
+        endsAt: c.ends_at ? String(c.ends_at) : null,
         issuedCount: count ?? 0,
       });
     }

@@ -34,6 +34,7 @@ export interface CreateOrderInput {
   addressLine2: string | null;
   deliveryRequest: string | null;
   userCouponId: string | null;
+  userCouponIds: string[] | null;
   pointsToUse: number;
 }
 
@@ -49,6 +50,7 @@ const ALLOWED_TOP_LEVEL_KEYS = new Set([
   "addressLine2",
   "deliveryRequest",
   "userCouponId",
+  "userCouponIds",
   "pointsToUse",
 ]);
 
@@ -154,8 +156,19 @@ export function parseCreateOrderInput(raw: unknown): CreateOrderInput {
       raw.userCouponId === undefined || raw.userCouponId === null
         ? null
         : requireUuid(raw.userCouponId, "쿠폰 정보"),
+    userCouponIds: parseCouponIds(raw.userCouponIds),
     pointsToUse: parsePoints(raw.pointsToUse),
   };
+}
+
+// 적용 쿠폰 id 목록(스태킹). 최대 10장, 각 UUID. 상세 검증은 서버 RPC에서.
+function parseCouponIds(value: unknown): string[] | null {
+  if (value === undefined || value === null) return null;
+  if (!Array.isArray(value)) throw new OrderInputError("쿠폰 정보가 올바르지 않습니다.");
+  if (value.length === 0) return null;
+  if (value.length > 10) throw new OrderInputError("한 번에 사용할 수 있는 쿠폰 수를 초과했습니다.");
+  const ids = value.map((v) => requireUuid(v, "쿠폰 정보"));
+  return Array.from(new Set(ids));
 }
 
 // 사용 포인트: 0 이상 정수. 상세 검증(최소 1,000P·잔액)은 서버 RPC에서 수행.

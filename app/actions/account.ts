@@ -397,6 +397,7 @@ export interface UserCoupon {
   minOrderAmount: number;
   status: "active" | "used" | "expired";
   expiresAt: string | null;
+  stackable: boolean;
 }
 
 // ── 체크아웃 자동입력(회원 기본정보 + 기본 배송지) ──────────
@@ -505,7 +506,7 @@ export async function getUserCoupons(): Promise<UserCoupon[]> {
     const { data, error } = await supabase
       .from("user_coupons")
       .select(
-        "id, status, expires_at, coupons(code, name, discount_type, discount_value, min_order_amount, max_discount_amount)"
+        "id, status, expires_at, coupons(code, name, discount_type, discount_value, min_order_amount, max_discount_amount, stackable, ends_at)"
       )
       .eq("user_id", user.id)
       .order("issued_at", { ascending: false });
@@ -518,7 +519,10 @@ export async function getUserCoupons(): Promise<UserCoupon[]> {
       const raw = uc.coupons as unknown;
       const c = ((Array.isArray(raw) ? raw[0] : raw) ?? {}) as Record<string, unknown>;
       const expiresAt = uc.expires_at ? String(uc.expires_at) : null;
-      const expired = expiresAt ? new Date(expiresAt).getTime() < now : false;
+      const endsAt = c.ends_at ? String(c.ends_at) : null;
+      const expiredByIssue = expiresAt ? new Date(expiresAt).getTime() < now : false;
+      const expiredByEvent = endsAt ? new Date(endsAt).getTime() < now : false;
+      const expired = expiredByIssue || expiredByEvent;
       const status: UserCoupon["status"] =
         uc.status === "used" ? "used" : expired ? "expired" : "active";
       const discountLabel =
@@ -536,6 +540,7 @@ export async function getUserCoupons(): Promise<UserCoupon[]> {
         minOrderAmount: Number(c.min_order_amount ?? 0),
         status,
         expiresAt,
+        stackable: Boolean(c.stackable),
       };
     });
   } catch {

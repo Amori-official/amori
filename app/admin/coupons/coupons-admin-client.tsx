@@ -19,6 +19,8 @@ const EMPTY: CouponInput = {
   validDays: 30,
   isActive: true,
   codeRedeemable: true,
+  stackable: false,
+  endsAt: "",
 };
 
 export default function CouponsAdminClient({ coupons }: { coupons: AdminCoupon[] }) {
@@ -100,7 +102,10 @@ function CouponCard({
   pending: boolean;
   onSave: (v: CouponInput) => void;
 }) {
-  const [v, setV] = useState<CouponInput>({ ...coupon });
+  const [v, setV] = useState<CouponInput>({
+    ...coupon,
+    endsAt: coupon.endsAt ? coupon.endsAt.slice(0, 10) : "",
+  });
   return (
     <li className="border border-brand-border p-4">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -111,6 +116,14 @@ function CouponCard({
           )}
           {coupon.codeRedeemable && (
             <span className="text-[12px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">코드 등록</span>
+          )}
+          {coupon.stackable && (
+            <span className="text-[12px] px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">중복 가능</span>
+          )}
+          {coupon.endsAt && (
+            <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+              ~{coupon.endsAt.slice(0, 10)} 종료
+            </span>
           )}
         </div>
         <span className="text-[12px] text-brand-gray-mid">발급 {coupon.issuedCount}건</span>
@@ -181,6 +194,20 @@ function CouponFields({ value, onChange }: { value: CouponInput; onChange: (v: C
           <input type="checkbox" checked={value.codeRedeemable} onChange={(e) => u({ codeRedeemable: e.target.checked })} className="w-4 h-4 accent-brand-black" />
           <span className="text-[13px]">{value.codeRedeemable ? "코드로 발급" : "자동/수동만"}</span>
         </label>
+      </F>
+      <F label="중복 적용(다른 쿠폰과 함께)">
+        <label className="flex items-center gap-2 h-11">
+          <input type="checkbox" checked={value.stackable} onChange={(e) => u({ stackable: e.target.checked })} className="w-4 h-4 accent-brand-black" />
+          <span className="text-[13px]">{value.stackable ? "중복 사용 가능" : "단독 사용"}</span>
+        </label>
+      </F>
+      <F label="이벤트 종료일 (비우면 없음)">
+        <Input
+          type="date"
+          value={value.endsAt ?? ""}
+          onChange={(x) => u({ endsAt: x })}
+          placeholder="없음"
+        />
       </F>
     </div>
   );

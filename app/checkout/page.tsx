@@ -99,7 +99,7 @@ export default function CheckoutPage() {
 
   // 쿠폰 (로그인 사용자만)
   const [coupons, setCoupons] = useState<UserCoupon[]>([]);
-  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null);
+  const [selectedCouponIds, setSelectedCouponIds] = useState<string[]>([]);
   const [pointsBalance, setPointsBalance] = useState(0);
   const [pointsInput, setPointsInput] = useState("");
 
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!mounted || !user) {
       setCoupons([]);
-      setSelectedCouponId(null);
+      setSelectedCouponIds([]);
       setPrefill(null);
       setPointsBalance(0);
       setPointsInput("");
@@ -319,7 +319,8 @@ export default function CheckoutPage() {
         addressLine1,
         addressLine2: addressLine2 || null,
         deliveryRequest: deliveryRequest || null,
-        userCouponId: selectedCouponId,
+        userCouponId: null,
+        userCouponIds: selectedCouponIds.length > 0 ? selectedCouponIds : null,
         pointsToUse,
       });
     } catch (err) {
@@ -367,8 +368,12 @@ export default function CheckoutPage() {
   if (!mounted) return null;
 
   const cartTotal = total();
-  const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
-  const couponDiscount = computeCouponDiscount(selectedCoupon, cartTotal);
+  const selectedCoupons = coupons.filter((c) => selectedCouponIds.includes(c.id));
+  // 각 쿠폰 할인 합산, 주문금액 상한. (서버 create_order가 최종 재계산)
+  const couponDiscount = Math.min(
+    cartTotal,
+    selectedCoupons.reduce((sum, c) => sum + computeCouponDiscount(c, cartTotal), 0)
+  );
   // 배송비 무료 기준은 할인 적용 후 금액 기준(create_order RPC와 동일).
   const shipping = cartTotal - couponDiscount >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
   // 포인트: 1,000P 이상·잔액 이내·결제액 한도 내에서만 적용(서버 create_order와 동일 규칙).
@@ -380,6 +385,18 @@ export default function CheckoutPage() {
       : 0;
   const pointsInputInvalid = parsedPoints > 0 && parsedPoints < MIN_POINTS_USE;
   const grandTotal = cartTotal - couponDiscount - pointsToUse + shipping;
+
+  // 쿠폰 선택 토글. 중복 불가(stackable=false) 쿠폰은 주문당 1장만 → 새로 고르면 기존 비중복 쿠폰 해제.
+  const toggleCoupon = (c: UserCoupon) => {
+    setSelectedCouponIds((prev) => {
+      if (prev.includes(c.id)) return prev.filter((id) => id !== c.id);
+      if (!c.stackable) {
+        const keptStackable = prev.filter((id) => coupons.find((x) => x.id === id)?.stackable);
+        return [...keptStackable, c.id];
+      }
+      return [...prev, c.id];
+    });
+  };
 
   return (
     <>
@@ -665,24 +682,43 @@ export default function CheckoutPage() {
                 {user && coupons.length > 0 && (
                   <div className="border-t border-brand-border pt-3">
                     <label className="text-xs tracking-wide text-brand-gray-mid block mb-1.5">
-                      쿠폰
+                      쿠폰 {selectedCouponIds.length > 0 && `(${selectedCouponIds.length}장 적용)`}
                     </label>
-                    <select
-                      value={selectedCouponId ?? ""}
-                      onChange={(e) => setSelectedCouponId(e.target.value || null)}
-                      className="w-full h-10 border border-brand-border px-2 text-sm focus:outline-none focus:border-brand-black"
-                    >
-                      <option value="">쿠폰 미적용</option>
+                    <div className="space-y-1.5">
                       {coupons.map((c) => {
                         const eligible = cartTotal >= c.minOrderAmount;
+                        const checked = selectedCouponIds.includes(c.id);
                         return (
-                          <option key={c.id} value={c.id} disabled={!eligible}>
-                            {c.discountLabel} · {c.name}
-                            {!eligible ? ` (${c.minOrderAmount.toLocaleString("ko-KR")}원 이상)` : ""}
-                          </option>
+                          <label
+                            key={c.id}
+                            className={`flex items-center gap-2 text-sm px-2 py-1.5 border transition-colors ${
+                              checked ? "border-brand-black bg-brand-gray-light" : "border-brand-border"
+                            } ${eligible ? "cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!eligible && !checked}
+                              onChange={() => toggleCoupon(c)}
+                              className="w-4 h-4 accent-brand-black shrink-0"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="font-medium">{c.discountLabel}</span>
+                              <span className="text-brand-gray-mid"> · {c.name}</span>
+                              {c.stackable && <span className="text-purple-600 text-[12px]"> · 중복가능</span>}
+                              {!eligible && (
+                                <span className="text-[12px] text-brand-gray-mid">
+                                  {" "}({c.minOrderAmount.toLocaleString("ko-KR")}원 이상)
+                                </span>
+                              )}
+                            </span>
+                          </label>
                         );
                       })}
-                    </select>
+                    </div>
+                    <p className="text-[11px] text-brand-gray-mid mt-1.5">
+                      ‘중복가능’ 쿠폰은 함께 적용돼요. 일반 쿠폰은 1장만 선택됩니다.
+                    </p>
                   </div>
                 )}
 
