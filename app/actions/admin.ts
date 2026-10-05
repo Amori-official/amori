@@ -1366,6 +1366,7 @@ export interface AdminCoupon {
   codeRedeemable: boolean;
   stackable: boolean;
   endsAt: string | null;
+  autoIssueOnSignup: boolean;
   issuedCount: number;
 }
 
@@ -1381,6 +1382,7 @@ export interface CouponInput {
   codeRedeemable: boolean;
   stackable: boolean;
   endsAt: string | null;
+  autoIssueOnSignup: boolean;
 }
 
 const COUPON_CODE_REGEX = /^[A-Z0-9]{2,40}$/;
@@ -1414,6 +1416,7 @@ function couponRow(input: CouponInput) {
     code_redeemable: input.codeRedeemable,
     stackable: input.stackable,
     ends_at: toEndsAtISO(input.endsAt),
+    auto_issue_on_signup: input.autoIssueOnSignup,
   };
 }
 
@@ -1460,6 +1463,7 @@ export async function getAdminCoupons(): Promise<AdminCoupon[]> {
         codeRedeemable: Boolean(c.code_redeemable),
         stackable: Boolean(c.stackable),
         endsAt: c.ends_at ? String(c.ends_at) : null,
+        autoIssueOnSignup: Boolean(c.auto_issue_on_signup),
         issuedCount: count ?? 0,
       });
     }

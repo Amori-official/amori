@@ -21,6 +21,7 @@ const EMPTY: CouponInput = {
   codeRedeemable: true,
   stackable: false,
   endsAt: "",
+  autoIssueOnSignup: false,
 };
 
 export default function CouponsAdminClient({ coupons }: { coupons: AdminCoupon[] }) {
@@ -114,6 +115,9 @@ function CouponCard({
           {!coupon.isActive && (
             <span className="text-[12px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">비활성</span>
           )}
+          {coupon.autoIssueOnSignup && (
+            <span className="text-[12px] px-2 py-0.5 rounded-full bg-green-50 text-green-600">가입 자동발급</span>
+          )}
           {coupon.codeRedeemable && (
             <span className="text-[12px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">코드 등록</span>
           )}
@@ -199,6 +203,12 @@ function CouponFields({ value, onChange }: { value: CouponInput; onChange: (v: C
         <label className="flex items-center gap-2 h-11">
           <input type="checkbox" checked={value.stackable} onChange={(e) => u({ stackable: e.target.checked })} className="w-4 h-4 accent-brand-black" />
           <span className="text-[13px]">{value.stackable ? "중복 사용 가능" : "단독 사용"}</span>
+        </label>
+      </F>
+      <F label="가입 시 자동발급">
+        <label className="flex items-center gap-2 h-11">
+          <input type="checkbox" checked={value.autoIssueOnSignup} onChange={(e) => u({ autoIssueOnSignup: e.target.checked })} className="w-4 h-4 accent-brand-black" />
+          <span className="text-[13px]">{value.autoIssueOnSignup ? "신규가입 자동지급" : "자동지급 안함"}</span>
         </label>
       </F>
       <F label="이벤트 종료일 (비우면 없음)">
