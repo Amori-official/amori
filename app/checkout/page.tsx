@@ -386,15 +386,15 @@ export default function CheckoutPage() {
   const pointsInputInvalid = parsedPoints > 0 && parsedPoints < MIN_POINTS_USE;
   const grandTotal = cartTotal - couponDiscount - pointsToUse + shipping;
 
-  // 쿠폰 선택 토글. 중복 불가(stackable=false) 쿠폰은 주문당 1장만 → 새로 고르면 기존 비중복 쿠폰 해제.
+  // 쿠폰 선택 토글. 규칙: 중복가능 쿠폰끼리만 함께 사용. 단독 쿠폰은 혼자만 사용.
   const toggleCoupon = (c: UserCoupon) => {
     setSelectedCouponIds((prev) => {
       if (prev.includes(c.id)) return prev.filter((id) => id !== c.id);
-      if (!c.stackable) {
-        const keptStackable = prev.filter((id) => coupons.find((x) => x.id === id)?.stackable);
-        return [...keptStackable, c.id];
-      }
-      return [...prev, c.id];
+      // 단독(중복불가) 쿠폰을 고르면 다른 모든 쿠폰 해제 → 혼자만.
+      if (!c.stackable) return [c.id];
+      // 중복가능 쿠폰을 고르면 기존 단독 쿠폰은 해제하고 중복가능 쿠폰들만 유지 + 추가.
+      const keptStackable = prev.filter((id) => coupons.find((x) => x.id === id)?.stackable);
+      return [...keptStackable, c.id];
     });
   };
 
@@ -717,7 +717,7 @@ export default function CheckoutPage() {
                       })}
                     </div>
                     <p className="text-[11px] text-brand-gray-mid mt-1.5">
-                      ‘중복가능’ 쿠폰은 함께 적용돼요. 일반 쿠폰은 1장만 선택됩니다.
+                      ‘중복가능’ 쿠폰끼리는 함께 적용돼요. 일반 쿠폰은 다른 쿠폰과 함께 쓸 수 없어요(혼자만).
                     </p>
                   </div>
                 )}
