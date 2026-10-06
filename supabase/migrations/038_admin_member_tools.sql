@@ -10,6 +10,8 @@
 alter table public.profiles add column if not exists admin_note text;
 
 -- admin_get_member: points·admin_note 추가 반환
+-- 반환 컬럼이 바뀌므로 CREATE OR REPLACE 불가 → 먼저 DROP 후 재생성.
+drop function if exists public.admin_get_member(uuid);
 create or replace function public.admin_get_member(p_id uuid)
 returns table (
   id               uuid,
