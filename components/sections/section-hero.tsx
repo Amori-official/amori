@@ -35,7 +35,7 @@ export default function SectionHero() {
   }, []);
 
   return (
-    <section id="hero" className="relative min-h-screen overflow-hidden">
+    <section id="hero" className="relative h-[100vw] md:h-screen overflow-hidden">
       {/* 배경 이미지 슬라이드 (크로스페이드) */}
       <motion.div
         initial={{ opacity: 0, scale: 1.04 }}
@@ -64,7 +64,7 @@ export default function SectionHero() {
       </motion.div>
 
       {/* 텍스트 레이어 (누끼: mix-blend-multiply) */}
-      <div className="relative min-h-screen flex flex-col">
+      <div className="relative h-full flex flex-col">
         <div className="flex-1 max-w-screen-xl mx-auto w-full px-6 pt-20 pb-16 flex items-end justify-end">
           <div className="flex flex-col gap-5 sm:gap-8 mix-blend-multiply items-end text-right">
             <motion.h1

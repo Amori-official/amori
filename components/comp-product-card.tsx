@@ -59,7 +59,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
       className={`group block ${isComingSoon ? "opacity-50 cursor-default" : ""}`}
     >
       {/* 이미지 영역 */}
-      <div className="aspect-square md:aspect-[3/4] relative overflow-hidden bg-brand-gray-light">
+      <div className="aspect-[3/4] relative overflow-hidden bg-brand-gray-light">
         {displayImage && (
           <Image
             src={displayImage}

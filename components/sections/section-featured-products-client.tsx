@@ -55,7 +55,7 @@ function ProductCard({
     >
       <Link href={`/shop/${product.slug}`} className="block p-5">
         {/* 이미지 */}
-        <div className="relative aspect-square md:aspect-[3/4] bg-brand-gray-light mb-5 overflow-hidden">
+        <div className="relative aspect-[3/4] bg-brand-gray-light mb-5 overflow-hidden">
           {displayImage ? (
             <Image
               src={displayImage}
