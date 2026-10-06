@@ -9,6 +9,9 @@ import CompNav from "@/components/comp-nav";
 import CompFooter from "@/components/comp-footer";
 import SectionMarquee from "@/components/sections/section-marquee";
 import CompToast from "@/components/comp-toast";
+import CompSitePopup from "@/components/comp-site-popup";
+import { getSiteSettings } from "@/app/actions/site";
+import { isPopupActive } from "@/lib/site";
 import MetaPixel from "@/components/meta-pixel";
 
 // 클라이언트 전용 무거운 컴포넌트는 dynamic import로 코드 분할
@@ -59,12 +62,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // Supabase 미설정 시 비로그인 상태로 진행
   }
 
+  const site = await getSiteSettings();
+  const popupActive = isPopupActive(site);
+
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col antialiased">
         <AuthProvider initialUser={user}>
           <div className="sticky top-0 z-50">
-            <SectionMarquee />
+            <SectionMarquee items={site.marqueeItems} />
             <CompNav />
           </div>
           <main className="flex-1">{children}</main>
@@ -72,6 +78,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <CompCartDrawer />
           <CompAuthModal />
           <CompToast />
+          {popupActive && (
+            <CompSitePopup
+              title={site.popupTitle}
+              body={site.popupBody}
+              imageUrl={site.popupImageUrl}
+              linkUrl={site.popupLinkUrl}
+              linkLabel={site.popupLinkLabel}
+            />
+          )}
           <Suspense fallback={null}>
             <AuthModalController />
           </Suspense>

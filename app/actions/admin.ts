@@ -10,6 +10,7 @@ import { createServerSideClient } from "@/lib/supabase-server";
 import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SiteSettings } from "@/lib/site";
 
 export interface AdminProductVariant {
   id: string;
@@ -1696,5 +1697,58 @@ export async function getSalesStats(days: number = 30): Promise<SalesStats> {
     return { days: period, totalSales, orderCount, avgOrder, newMembers: newMembers ?? 0, daily, topProducts };
   } catch {
     return empty;
+  }
+}
+
+// ── 사이트 콘텐츠(팝업/공지바) 관리 (Phase 3-A) ─────────────
+// 날짜 입력(datetime-local 'YYYY-MM-DDTHH:mm' 또는 빈값)을 ISO(KST)로.
+function toTsOrNull(v: string | null): string | null {
+  if (!v) return null;
+  const s = v.trim();
+  if (!s) return null;
+  // 'YYYY-MM-DDTHH:mm' → KST로 간주
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) return `${s}:00+09:00`;
+  return s;
+}
+
+export async function updateSiteSettings(input: SiteSettings): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const marquee = (Array.isArray(input.marqueeItems) ? input.marqueeItems : [])
+      .map((i) => ({
+        text: String(i.text ?? "").slice(0, 200),
+        href: String(i.href ?? "").slice(0, 500),
+        action: i.action === "signup" ? "signup" : null,
+      }))
+      .filter((i) => i.text.trim().length > 0)
+      .slice(0, 10);
+
+    const { error } = await supabase
+      .from("site_settings")
+      .update({
+        marquee_items: marquee,
+        popup_enabled: !!input.popupEnabled,
+        popup_title: input.popupTitle?.slice(0, 200) || null,
+        popup_body: input.popupBody?.slice(0, 2000) || null,
+        popup_image_url: input.popupImageUrl?.slice(0, 1000) || null,
+        popup_link_url: input.popupLinkUrl?.slice(0, 1000) || null,
+        popup_link_label: input.popupLinkLabel?.slice(0, 100) || null,
+        popup_starts_at: toTsOrNull(input.popupStartsAt),
+        popup_ends_at: toTsOrNull(input.popupEndsAt),
+      })
+      .eq("id", "default");
+
+    if (error) {
+      logSupabaseError("updateSiteSettings", error);
+      return { error: "저장에 실패했습니다." };
+    }
+    // 사이트 전역에 반영(레이아웃에서 읽음).
+    revalidatePath("/", "layout");
+    revalidatePath("/admin/content");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
