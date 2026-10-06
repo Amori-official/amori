@@ -53,9 +53,9 @@ function ProductCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <Link href={`/shop/${product.slug}`} className="block p-5">
+      <Link href={`/shop/${product.slug}`} className="block p-2.5">
         {/* 이미지 */}
-        <div className="relative aspect-[3/4] bg-brand-gray-light mb-5 overflow-hidden">
+        <div className="relative aspect-[3/4] bg-brand-gray-light mb-3 overflow-hidden">
           {displayImage ? (
             <Image
               src={displayImage}
@@ -107,7 +107,7 @@ function ProductCard({
         animate={{ opacity: hovered ? 1 : 0, y: hovered ? 0 : 4 }}
         transition={{ duration: 0.2 }}
         onClick={handleAdd}
-        className="absolute bottom-5 right-5 border border-brand-border-soft bg-white text-[11px] tracking-widest px-3 py-1.5 hover:bg-brand-fill hover:text-brand-black transition-colors"
+        className="absolute bottom-3 right-3 border border-brand-border-soft bg-white text-[11px] tracking-widest px-3 py-1.5 hover:bg-brand-fill hover:text-brand-black transition-colors"
       >
         ADD →
       </motion.button>
