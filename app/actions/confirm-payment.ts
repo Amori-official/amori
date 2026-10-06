@@ -16,6 +16,7 @@
 
 import { createServerSideClient } from "@/lib/supabase-server";
 import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
+import { sendCapiEvent } from "@/lib/meta-capi";
 
 const TOSS_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
 // 주문번호 형식: create_order()가 발급하는 'ORDYYMMDD-XXXXXXXX' + 여유. Toss orderId 규칙과도 호환.
@@ -24,6 +25,8 @@ const PAYMENT_KEY_REGEX = /^[A-Za-z0-9_-]{1,200}$/;
 
 export interface ConfirmPaymentResult {
   orderNumber: string;
+  /** Toss가 실제 승인한 금액 */
+  amount: number;
   paymentStatus: string;
   orderStatus: string;
   alreadyConfirmed: boolean;
@@ -59,7 +62,7 @@ export async function confirmPaymentSecure(raw: unknown): Promise<ConfirmPayment
   if (typeof raw !== "object" || raw === null) {
     throw new Error("결제 정보가 올바르지 않습니다.");
   }
-  const { paymentKey, orderId, amount } = raw as Record<string, unknown>;
+  const { paymentKey, orderId, amount, meta } = raw as Record<string, unknown>;
 
   if (typeof paymentKey !== "string" || !PAYMENT_KEY_REGEX.test(paymentKey)) {
     throw new Error("결제 정보가 올바르지 않습니다.");
@@ -113,10 +116,64 @@ export async function confirmPaymentSecure(raw: unknown): Promise<ConfirmPayment
   }
 
   const result = data as ConfirmPaymentRpcResponse;
+
+  // Meta 전환 API: Purchase (최초 승인 시 1회). 금액은 Toss 승인 금액 기준.
+  // 브라우저 픽셀과 같은 event_id(purchase_<주문번호>)로 보내 중복 제거된다.
+  if (!result.already_confirmed) {
+    const m = parsePurchaseMeta(meta);
+    let externalId: string | null = null;
+    let userEmail: string | null = null;
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      externalId = auth.user?.id ?? null;
+      userEmail = auth.user?.email ?? null;
+    } catch {}
+    await sendCapiEvent({
+      eventName: "Purchase",
+      eventId: `purchase_${result.order_number}`,
+      customData: {
+        value: approvedAmount,
+        currency: "KRW",
+        content_type: "product",
+        content_ids: m.contents.map((c) => c.id),
+        contents: m.contents,
+        order_id: result.order_number,
+      },
+      user: { email: m.email ?? userEmail, phone: m.phone, externalId },
+    });
+  }
+
   return {
     orderNumber: result.order_number,
+    amount: approvedAmount,
     paymentStatus: result.payment_status,
     orderStatus: result.order_status,
     alreadyConfirmed: result.already_confirmed,
   };
+}
+
+// 완료 페이지가 넘겨주는 Meta 매칭용 정보(신뢰 불가 입력 — 해시 매칭에만 사용, 형식만 검증)
+function parsePurchaseMeta(raw: unknown): {
+  email: string | null;
+  phone: string | null;
+  contents: { id: string; quantity: number; item_price?: number }[];
+} {
+  const out = { email: null as string | null, phone: null as string | null, contents: [] as { id: string; quantity: number; item_price?: number }[] };
+  if (typeof raw !== "object" || raw === null) return out;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.email === "string" && r.email.length <= 254 && r.email.includes("@")) out.email = r.email;
+  if (typeof r.phone === "string" && r.phone.length <= 30) out.phone = r.phone;
+  if (Array.isArray(r.contents)) {
+    for (const c of r.contents.slice(0, 50)) {
+      if (typeof c !== "object" || c === null) continue;
+      const { id, quantity, item_price } = c as Record<string, unknown>;
+      if (typeof id !== "string" || id.length > 64 || typeof quantity !== "number") continue;
+      out.contents.push({
+        id,
+        quantity: Math.max(1, Math.min(999, Math.round(quantity))),
+        ...(typeof item_price === "number" ? { item_price: Math.round(item_price) } : {}),
+      });
+    }
+  }
+  return out;
 }

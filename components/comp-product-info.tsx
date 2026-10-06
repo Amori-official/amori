@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth";
 import { useWishlistStore } from "@/store/wishlist";
 import { resolveVariant, isSplitAxisProduct } from "@/lib/resolve-variant";
 import type { Product } from "@/lib/types";
+import { trackMeta, productContent } from "@/lib/meta-pixel";
 
 interface Props {
   product: Product;
@@ -31,6 +32,15 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
     product.sizes?.[0]?.name
   );
+
+  // Meta 광고 전환 추적: 상품 상세 조회 (상품당 1회)
+  const viewTrackedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (viewTrackedRef.current === product.id) return;
+    viewTrackedRef.current = product.id;
+    trackMeta("ViewContent", productContent(product, product.price));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
 
   useEffect(() => {
     if (selectedColor) onColorChange?.(selectedColor);

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCartStore } from "@/store/cart";
 import { confirmPaymentSecure } from "@/app/actions/confirm-payment";
+import { trackMeta, takePendingPurchase, purchaseEventId } from "@/lib/meta-pixel";
 
 // 16-4(3단계) 주문 완료 화면.
 //
@@ -44,8 +45,32 @@ function CompleteContent() {
 
     // 경로 A: 결제 성공 리다이렉트 — 서버에서 승인 확정
     if (paymentKey && orderId && amount) {
-      confirmPaymentSecure({ paymentKey, orderId, amount: Number(amount) })
+      // Meta Purchase 매칭용(이메일/전화번호는 서버에서 해시 후 전송)
+      const pending = takePendingPurchase(orderId);
+      confirmPaymentSecure({
+        paymentKey,
+        orderId,
+        amount: Number(amount),
+        meta: pending
+          ? { email: pending.email, phone: pending.phone, contents: pending.contents }
+          : undefined,
+      })
         .then((result) => {
+          // 새로고침 등으로 이미 승인된 주문을 다시 확인한 경우엔 전환을 중복 집계하지 않는다.
+          if (!result.alreadyConfirmed) {
+            trackMeta(
+              "Purchase",
+              {
+                value: result.amount,
+                currency: "KRW",
+                content_type: "product",
+                content_ids: pending?.contents.map((c) => c.id),
+                contents: pending?.contents,
+                order_id: result.orderNumber,
+              },
+              { eventId: purchaseEventId(result.orderNumber) }
+            );
+          }
           clear();
           setOrderNumber(result.orderNumber);
           setStatus("success");

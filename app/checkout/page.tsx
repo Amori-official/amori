@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/cart";
 import { useAuthStore } from "@/store/auth";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { createOrderSecure } from "@/app/actions/create-order";
+import { trackMeta, savePendingPurchase } from "@/lib/meta-pixel";
 import {
   getUserCoupons,
   getCheckoutPrefill,
@@ -142,6 +143,21 @@ export default function CheckoutPage() {
       router.push("/shop");
     }
   }, [mounted, items.length, router]);
+
+  // Meta 광고 전환 추적: 결제 페이지 진입(페이지당 1회)
+  const checkoutTrackedRef = useRef(false);
+  useEffect(() => {
+    if (!mounted || items.length === 0 || checkoutTrackedRef.current) return;
+    checkoutTrackedRef.current = true;
+    trackMeta("InitiateCheckout", {
+      value: total(),
+      currency: "KRW",
+      content_type: "product",
+      content_ids: items.map((i) => i.product.id),
+      contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: i.unitPrice })),
+      num_items: items.reduce((n, i) => n + i.quantity, 0),
+    });
+  }, [mounted, items, total]);
 
   // 로그인 사용자의 사용 가능한 쿠폰을 불러온다(비회원은 쿠폰 없음).
   useEffect(() => {
@@ -356,6 +372,15 @@ export default function CheckoutPage() {
     //    금액은 서버가 계산한 총액을 사용한다(클라이언트 추정치와 다를 수 있으므로
     //    결제창 금액을 서버 총액으로 맞춘 뒤 결제를 요청한다).
     //    카트 비우기·완료 처리는 결제 성공 후 /checkout/complete에서 수행한다.
+    // 결제 완료 페이지에서 Purchase 전환을 보낼 때 쓸 정보(Toss 리다이렉트 후엔 카트가 남아있지만
+    // 주문 시점 기준 값을 따로 보관한다). sessionStorage — 탭 닫으면 사라짐.
+    savePendingPurchase({
+      orderNumber: order.orderNumber,
+      email: buyerEmail,
+      phone: buyerPhone,
+      contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: i.unitPrice })),
+    });
+
     try {
       await widgetsRef.current.setAmount({ currency: "KRW", value: order.totalAmount });
       await widgetsRef.current.requestPayment({

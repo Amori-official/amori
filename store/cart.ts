@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product } from "@/lib/types";
 import { resolveVariant, isSplitAxisProduct } from "@/lib/resolve-variant";
+import { trackMeta, productContent } from "@/lib/meta-pixel";
 
 export interface CartItem {
   product: Product;
@@ -65,6 +66,7 @@ export const useCartStore = create<CartStore>()(
           }
           return { items: [...state.items, { product, quantity, selectedColor, selectedSize, unitPrice, variantId }] };
         });
+        trackMeta("AddToCart", productContent(product, unitPrice, quantity));
       },
 
       remove: (productId, selectedColor, selectedSize) =>

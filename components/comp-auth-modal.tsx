@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/store/ui";
 import { signIn, signUp, getKakaoOAuthUrl } from "@/app/actions/auth";
+import { trackMeta } from "@/lib/meta-pixel";
 
 const EMPTY_LOGIN = { email: "", password: "" };
 const EMPTY_SIGNUP = {
@@ -149,6 +150,7 @@ export default function CompAuthModal() {
     });
     setLoading(false);
     if (result.error) { setError(result.error); return; }
+    trackMeta("CompleteRegistration", { content_name: "email_signup" });
     setSignupForm(EMPTY_SIGNUP);
     setError(null);
     if (result.needsConfirmation) {

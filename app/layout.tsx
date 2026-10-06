@@ -9,6 +9,7 @@ import CompNav from "@/components/comp-nav";
 import CompFooter from "@/components/comp-footer";
 import SectionMarquee from "@/components/sections/section-marquee";
 import CompToast from "@/components/comp-toast";
+import MetaPixel from "@/components/meta-pixel";
 
 // 클라이언트 전용 무거운 컴포넌트는 dynamic import로 코드 분할
 const CompCartDrawer = dynamic(() => import("@/components/comp-cart-drawer"), { ssr: false });
@@ -73,6 +74,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <CompToast />
           <Suspense fallback={null}>
             <AuthModalController />
+          </Suspense>
+          <Suspense fallback={null}>
+            <MetaPixel />
           </Suspense>
         </AuthProvider>
       </body>
