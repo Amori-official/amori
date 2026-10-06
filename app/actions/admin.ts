@@ -875,6 +875,8 @@ export interface AdminMemberDetail {
   role: string;
   createdAt: string;
   deactivatedAt: string | null;
+  points: number;
+  adminNote: string;
   orders: {
     id: string;
     orderNumber: string;
@@ -923,6 +925,8 @@ export async function getAdminMemberDetail(id: string): Promise<AdminMemberDetai
       phone: s(m.phone),
       birthday: s(m.birthday),
       deactivatedAt: m.deactivated_at ? s(m.deactivated_at) : null,
+      points: Number(m.points ?? 0),
+      adminNote: s(m.admin_note),
       marketingAgreed: !!m.marketing_agreed,
       role: s(m.role) || "user",
       createdAt: s(m.created_at),
@@ -967,6 +971,51 @@ export async function adminSetMemberDeactivated(
       return { error: "처리에 실패했습니다." };
     }
     revalidatePath("/admin/members");
+    revalidatePath(`/admin/members/${userId}`);
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 적립금 수동 조정(+지급/-차감, 사유 기록). 성공 시 변경된 잔액 반환.
+export async function adminAdjustPoints(
+  userId: string,
+  amount: number,
+  reason: string
+): Promise<{ error?: string; balance?: number }> {
+  try {
+    if (!Number.isInteger(amount) || amount === 0) {
+      return { error: "조정할 포인트(0이 아닌 정수)를 입력해주세요." };
+    }
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { data, error } = await supabase.rpc("admin_adjust_points", {
+      p_user_id: userId,
+      p_amount: amount,
+      p_reason: reason,
+    });
+    if (error) {
+      const msg = error.message.includes(":") ? error.message.split(":").pop()!.trim() : error.message;
+      return { error: msg || "적립금 조정에 실패했습니다." };
+    }
+    revalidatePath(`/admin/members/${userId}`);
+    return { balance: Number(data ?? 0) };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 회원별 관리자 메모 저장.
+export async function adminSetMemberNote(userId: string, note: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.rpc("admin_set_member_note", { p_user_id: userId, p_note: note });
+    if (error) {
+      logSupabaseError("adminSetMemberNote", error);
+      return { error: "메모 저장에 실패했습니다." };
+    }
     revalidatePath(`/admin/members/${userId}`);
     return {};
   } catch (e) {

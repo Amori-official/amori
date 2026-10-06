@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { AdminMemberDetail } from "@/app/actions/admin";
 import DeactivateButton from "./deactivate-button";
+import PointsAdjust from "./points-adjust";
+import MemberNote from "./member-note";
 
 const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;
 
@@ -54,11 +56,22 @@ export default function MemberDetailClient({ member }: { member: AdminMemberDeta
       </div>
 
       {/* 요약 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="누적 주문" value={`${member.orders.length}건`} />
         <Stat label="결제 완료 금액" value={won(totalPaid)} />
         <Stat label="보유 쿠폰" value={`${member.coupons.filter((c) => c.status === "active").length}장`} />
+        <Stat label="적립금" value={`${member.points.toLocaleString("ko-KR")}P`} />
       </div>
+
+      {/* 관리자 메모 */}
+      <Section title="관리자 메모">
+        <MemberNote userId={member.id} initial={member.adminNote} />
+      </Section>
+
+      {/* 적립금 조정 */}
+      <Section title="적립금 지급 / 차감">
+        <PointsAdjust userId={member.id} balance={member.points} />
+      </Section>
 
       {/* 회원 정보 */}
       <Section title="회원 정보">
