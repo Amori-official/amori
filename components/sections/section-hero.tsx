@@ -16,7 +16,7 @@ const fadeUp = (delay = 0): MotionProps => ({
 // imgClassName으로 이미지별 보정(밝기/대비)을 다르게 줄 수 있다.
 const BASE_IMG = "object-cover object-center";
 const HERO_IMAGES: { src: string; alt: string; imgClassName?: string }[] = [
-  { src: "/hero-cream.png", alt: "Amori", imgClassName: `${BASE_IMG} brightness-125 contrast-90` },
+  { src: "/hero-cream.webp", alt: "Amori", imgClassName: `${BASE_IMG} brightness-125 contrast-90` },
   { src: "/hero-2.webp", alt: "Amori 아기", imgClassName: BASE_IMG },
   { src: "/hero-3.webp", alt: "Amori 거즈빕", imgClassName: BASE_IMG },
 ];
