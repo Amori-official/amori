@@ -17,6 +17,7 @@
 import { createServerSideClient } from "@/lib/supabase-server";
 import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
 import { sendCapiEvent } from "@/lib/meta-capi";
+import { notifyKakaoWork, won } from "@/lib/notify";
 
 const TOSS_CONFIRM_URL = "https://api.tosspayments.com/v1/payments/confirm";
 // 주문번호 형식: create_order()가 발급하는 'ORDYYMMDD-XXXXXXXX' + 여유. Toss orderId 규칙과도 호환.
@@ -141,6 +142,23 @@ export async function confirmPaymentSecure(raw: unknown): Promise<ConfirmPayment
       },
       user: { email: m.email ?? userEmail, phone: m.phone, externalId },
     });
+
+    // 운영진 카카오워크 알림 — 새 주문 접수(결제 완료 최초 1회)
+    try {
+      const { data: ord } = await supabase
+        .from("orders")
+        .select("buyer_name, total_amount, order_items(product_name, quantity)")
+        .eq("order_number", result.order_number)
+        .maybeSingle();
+      const items =
+        (ord?.order_items as { product_name?: string; quantity?: number }[] | undefined) ?? [];
+      const first = items[0]?.product_name ?? "상품";
+      const itemText = items.length > 1 ? `${first} 외 ${items.length - 1}건` : first;
+      const buyer = ord?.buyer_name ? String(ord.buyer_name) : "비회원";
+      await notifyKakaoWork(
+        `🛍️ 새 주문 접수\n주문번호: ${result.order_number}\n주문자: ${buyer}\n상품: ${itemText}\n결제금액: ${won(Number(ord?.total_amount ?? approvedAmount))}`
+      );
+    } catch {}
   }
 
   return {

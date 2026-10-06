@@ -83,6 +83,16 @@ export async function signUp(data: {
 
     if (error) return { error: toKoreanError(error.message) };
 
+    // 운영진 카카오워크 알림 — 신규 가입
+    try {
+      const { notifyKakaoWork } = await import("@/lib/notify");
+      await notifyKakaoWork(
+        `👋 신규 가입\n이름: ${data.name}\n이메일: ${data.email}\n연락처: ${data.phone}${
+          data.marketingAgreed ? "\n(마케팅 수신 동의)" : ""
+        }`
+      );
+    } catch {}
+
     revalidatePath("/", "layout");
     // 이메일 확인이 꺼져 있으면 가입 즉시 세션이 생성된다(바로 로그인됨).
     // 켜져 있으면 세션이 없고 메일 인증이 필요하다.
