@@ -30,6 +30,11 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
   const [startsAt, setStartsAt] = useState(toLocalInput(initial.popupStartsAt));
   const [endsAt, setEndsAt] = useState(toLocalInput(initial.popupEndsAt));
 
+  // 배송비 설정 — 빈 문자열 허용(입력 중). 저장 시 숫자로 변환.
+  const [freeThreshold, setFreeThreshold] = useState(String(initial.freeShippingThreshold ?? 50000));
+  const [baseFee, setBaseFee] = useState(String(initial.shippingBaseFee ?? 3000));
+  const [remoteFee, setRemoteFee] = useState(String(initial.shippingRemoteFee ?? 6000));
+
   const updateItem = (i: number, patch: Partial<MarqueeItem>) =>
     setMarquee((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
   const addItem = () => setMarquee((prev) => [...prev, { text: "", href: "", action: null }]);
@@ -48,6 +53,9 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
         popupLinkLabel: linkLabel,
         popupStartsAt: startsAt || null,
         popupEndsAt: endsAt || null,
+        freeShippingThreshold: Math.max(0, parseInt(freeThreshold, 10) || 0),
+        shippingBaseFee: Math.max(0, parseInt(baseFee, 10) || 0),
+        shippingRemoteFee: Math.max(0, parseInt(remoteFee, 10) || 0),
       });
       if (res.error) setMsg({ ok: false, text: res.error });
       else {
@@ -157,6 +165,32 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
         </p>
       </section>
 
+      {/* 배송비 설정 */}
+      <section className="border border-brand-border p-5 space-y-3">
+        <p className="text-[13px] tracking-widest font-medium">배송비 설정</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Field label="무료배송 기준금액 (원)">
+            <NumberInput value={freeThreshold} onChange={setFreeThreshold} placeholder="50000" />
+          </Field>
+          <Field label="기본 배송비 (원)">
+            <NumberInput value={baseFee} onChange={setBaseFee} placeholder="3000" />
+          </Field>
+          <Field label="제주·도서산간 배송비 (원)">
+            <NumberInput value={remoteFee} onChange={setRemoteFee} placeholder="6000" />
+          </Field>
+        </div>
+        <div className="text-[12px] text-brand-gray-mid bg-brand-gray-light px-3 py-2 leading-relaxed">
+          <p className="font-medium text-brand-black mb-1">고객에게 이렇게 안내됩니다 (미리보기)</p>
+          <p>· 기본 배송비: {fmt(baseFee)}원</p>
+          <p>· 무료배송: {fmt(freeThreshold)}원 이상 구매 시</p>
+          <p>· 제주·도서산간 지역: 추가 배송비 {fmt(remoteFee)}원</p>
+        </div>
+        <p className="text-[12px] text-brand-gray-mid">
+          저장하면 실제 주문 결제금액, 장바구니·주문서 표시, FAQ·배송안내·상품상세 문구에 모두 반영됩니다.
+          (무료배송 기준은 쿠폰 할인 적용 후 상품금액 기준)
+        </p>
+      </section>
+
       <button
         onClick={save}
         disabled={pending}
@@ -186,4 +220,23 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
       className="w-full h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
     />
   );
+}
+
+// 숫자만 입력(원 단위). 빈 값 허용(입력 중).
+function NumberInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <input
+      inputMode="numeric"
+      value={value}
+      onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
+      placeholder={placeholder}
+      className="w-full h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
+    />
+  );
+}
+
+// 천 단위 콤마 미리보기.
+function fmt(v: string): string {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? n.toLocaleString("ko-KR") : "0";
 }

@@ -1802,6 +1802,13 @@ export async function updateSiteSettings(input: SiteSettings): Promise<{ error?:
       .filter((i) => i.text.trim().length > 0)
       .slice(0, 10);
 
+    // 배송비: 0 이상 정수로 정규화(음수·소수·NaN 방어). 상한도 둔다(오입력 방지).
+    const clampFee = (v: unknown, fallback: number) => {
+      const n = Math.round(Number(v));
+      if (!Number.isFinite(n) || n < 0) return fallback;
+      return Math.min(n, 100_000_000);
+    };
+
     const { error } = await supabase
       .from("site_settings")
       .update({
@@ -1814,6 +1821,9 @@ export async function updateSiteSettings(input: SiteSettings): Promise<{ error?:
         popup_link_label: input.popupLinkLabel?.slice(0, 100) || null,
         popup_starts_at: toTsOrNull(input.popupStartsAt),
         popup_ends_at: toTsOrNull(input.popupEndsAt),
+        free_shipping_threshold: clampFee(input.freeShippingThreshold, 50000),
+        shipping_base_fee: clampFee(input.shippingBaseFee, 3000),
+        shipping_remote_fee: clampFee(input.shippingRemoteFee, 6000),
       })
       .eq("id", "default");
 

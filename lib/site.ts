@@ -16,6 +16,10 @@ export interface SiteSettings {
   popupLinkLabel: string;
   popupStartsAt: string | null;
   popupEndsAt: string | null;
+  // 배송비 설정(관리자 조정) — create_order RPC와 동일한 기본값.
+  freeShippingThreshold: number;
+  shippingBaseFee: number;
+  shippingRemoteFee: number;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -28,6 +32,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   popupLinkLabel: "",
   popupStartsAt: null,
   popupEndsAt: null,
+  freeShippingThreshold: 50000,
+  shippingBaseFee: 3000,
+  shippingRemoteFee: 6000,
 };
 
 // 팝업을 지금 노출해야 하는지(활성 + 기간 내).

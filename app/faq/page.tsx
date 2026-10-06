@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getSiteSettings } from "@/app/actions/site";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -9,14 +10,18 @@ interface QA {
   a: string;
 }
 
-const faqs: QA[] = [
+const won = (n: number) => Number(n ?? 0).toLocaleString("ko-KR");
+
+// 배송비 안내는 관리자 설정값으로 구성한다(반품 배송비는 별도 정책이라 고정).
+function buildFaqs(baseFee: number, threshold: number, remoteFee: number): QA[] {
+  return [
   {
     q: "배송은 얼마나 걸리나요?",
     a: "결제 완료 후 2~5영업일 이내 출고됩니다.",
   },
   {
     q: "배송비는 얼마인가요?",
-    a: "기본 배송비는 3,000원이며, 50,000원 이상 구매 시 무료배송입니다. 제주·도서산간 지역은 추가 배송비 6,000원이 부과됩니다.",
+    a: `기본 배송비는 ${won(baseFee)}원이며, ${won(threshold)}원 이상 구매 시 무료배송입니다. 제주·도서산간 지역은 추가 배송비 ${won(remoteFee)}원이 부과됩니다.`,
   },
   {
     q: "회원가입 혜택이 있나요?",
@@ -30,7 +35,8 @@ const faqs: QA[] = [
     q: "핸드메이드 제품인데 박음질이 조금 다른 것 같아요.",
     a: "아모리의 모든 제품은 손으로 하나하나 만드는 핸드메이드입니다. 박음질이나 부자재 위치에 약간의 오차나 비대칭이 있을 수 있으며 이는 제품의 결함이 아닙니다. 다만 하자가 의심되는 경우 상품을 받은 날로부터 48시간 이내에 제품 사진과 함께 고객센터로 문의해 주시면 확인 후 동일 색상·사이즈로 교환해 드립니다.",
   },
-];
+  ];
+}
 
 /* TODO: 확정 후 faqs 배열에 추가
   - 결제 수단 및 취소 방법
@@ -38,7 +44,9 @@ const faqs: QA[] = [
   - 재입고 알림 신청 방법
 */
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const s = await getSiteSettings();
+  const faqs = buildFaqs(s.shippingBaseFee, s.freeShippingThreshold, s.shippingRemoteFee);
   return (
     <div className="pt-[100px] pb-24 px-4 sm:px-8 lg:px-16 max-w-3xl mx-auto">
       <h1 className="text-base font-bold tracking-[0.25em] text-brand-black uppercase mb-12">

@@ -21,6 +21,10 @@ function mapRow(row: Record<string, unknown>): SiteSettings {
     popupLinkLabel: row.popup_link_label ? String(row.popup_link_label) : "",
     popupStartsAt: row.popup_starts_at ? String(row.popup_starts_at) : null,
     popupEndsAt: row.popup_ends_at ? String(row.popup_ends_at) : null,
+    // 배송비 설정(없으면 기본값 — 마이그레이션 전/행 누락 대비).
+    freeShippingThreshold: Number(row.free_shipping_threshold ?? DEFAULT_SITE_SETTINGS.freeShippingThreshold),
+    shippingBaseFee: Number(row.shipping_base_fee ?? DEFAULT_SITE_SETTINGS.shippingBaseFee),
+    shippingRemoteFee: Number(row.shipping_remote_fee ?? DEFAULT_SITE_SETTINGS.shippingRemoteFee),
   };
 }
 

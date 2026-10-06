@@ -8,6 +8,8 @@ interface Props {
   product: Product;
   reviews: Review[];
   relatedProducts: Product[];
+  /** 배송 안내 문구 — 관리자 배송비 설정으로 서버에서 구성해 전달. */
+  shippingText: string;
 }
 
 type DetailImage = NonNullable<Product["detailImages"]>[number];
@@ -37,15 +39,13 @@ function groupDetailImages(images: DetailImage[]): DetailRow[] {
   return rows;
 }
 
-const SHIPPING_TEXT = `· 결제 완료 후 2~5영업일 이내 출고됩니다.\n· 50,000원 이상 무료배송 (기본 배송비 3,000원)\n· 제주·도서산간 추가 배송비 6,000원`;
-
 const PRE_PURCHASE_NOTES = `· 모니터·조명 환경에 따라 실제 컬러와 다소 차이가 있을 수 있습니다.\n· 사이즈는 실측 기준이며, 측정 방법에 따라 1~2cm의 오차가 있을 수 있습니다.`;
 
 const sectionTitle = "text-base font-bold tracking-[0.25em] text-brand-black uppercase mb-8";
 
 // GAUZE BIB의 상세페이지 레이아웃을 상품 데이터 기반으로 일반화한 공통 섹션 모음.
 // 각 섹션은 해당 데이터가 없으면 렌더링되지 않는다 — 빈 영역이나 안내 문구를 고객 화면에 노출하지 않기 위함.
-export default function ProductDetailSections({ product, reviews, relatedProducts }: Props) {
+export default function ProductDetailSections({ product, reviews, relatedProducts, shippingText }: Props) {
   return (
     <div className="border-t border-brand-border bg-brand-gray-light">
       {/* 리뉴얼/변경 공지 (상세 본문 최상단) */}
@@ -249,7 +249,7 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
         {product.material && <AccordionItem title="제품 정보">{product.material}</AccordionItem>}
         {/* TODO: 교환 가능 기간·배송비 부담 기준 등 세부 정책 미확정 — 확정 후 보강, 우선 배송·반품 안내 페이지로 연결 */}
         <AccordionItem title="배송 및 교환">
-          {SHIPPING_TEXT}
+          {shippingText}
           {"\n\n"}
           자세한 배송·반품 정책은 배송·반품 안내 페이지를 확인해 주세요.
         </AccordionItem>

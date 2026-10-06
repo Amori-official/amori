@@ -7,15 +7,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUIStore } from "@/store/ui";
 import { useCartStore, type CartItem } from "@/store/cart";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
-
-const FREE_SHIPPING = 50000;
+import { getSiteSettings } from "@/app/actions/site";
 
 export default function CompCartDrawer() {
   const [mounted, setMounted] = useState(false);
+  const [FREE_SHIPPING, setFreeShipping] = useState(50000);
+  const [SHIPPING_FEE, setShippingFee] = useState(3000);
   const { cartOpen, setCartOpen } = useUIStore();
   const { items, updateQty, remove, total } = useCartStore();
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    getSiteSettings()
+      .then((s) => {
+        setFreeShipping(s.freeShippingThreshold);
+        setShippingFee(s.shippingBaseFee);
+      })
+      .catch(() => {});
+  }, []);
 
   const cartTotal = mounted ? total() : 0;
   const remaining = Math.max(0, FREE_SHIPPING - cartTotal);
@@ -112,7 +121,7 @@ export default function CompCartDrawer() {
                 </div>
                 <div className="flex items-center justify-between text-[14px] text-brand-gray-mid tracking-wide pb-1">
                   <span>배송비</span>
-                  <span>{remaining > 0 ? "₩3,000" : "무료"}</span>
+                  <span>{remaining > 0 ? `₩${SHIPPING_FEE.toLocaleString("ko-KR")}` : "무료"}</span>
                 </div>
                 <Link
                   href="/checkout"

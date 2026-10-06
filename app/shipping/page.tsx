@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getSiteSettings } from "@/app/actions/site";
+import { shippingPolicyLines } from "@/lib/shipping-policy";
 
 export const metadata: Metadata = {
   title: "배송·반품 안내",
@@ -6,12 +8,16 @@ export const metadata: Metadata = {
 
 const SHOW_RETURN_POLICY = true;
 
-const deliveryItems = [
-  "결제 완료 후 2~5영업일 이내 출고됩니다.",
-  "기본 배송비: 3,000원",
-  "무료배송: 50,000원 이상 구매 시",
-  "제주·도서산간 지역: 추가 배송비 6,000원",
-];
+// 배송 안내 문구는 관리자 설정값으로 구성(반품 배송비는 별도 정책이라 아래 returnSections에 고정).
+function buildDeliveryItems(threshold: number, baseFee: number, remoteFee: number): string[] {
+  const p = shippingPolicyLines({ threshold, baseFee, remoteFee });
+  return [
+    "결제 완료 후 2~5영업일 이내 출고됩니다.",
+    p.baseFee,
+    p.freeShipping,
+    p.remote,
+  ];
+}
 
 const returnSections: { title: string; items: string[] }[] = [
   {
@@ -52,7 +58,9 @@ const returnSections: { title: string; items: string[] }[] = [
   },
 ];
 
-export default function ShippingPage() {
+export default async function ShippingPage() {
+  const s = await getSiteSettings();
+  const deliveryItems = buildDeliveryItems(s.freeShippingThreshold, s.shippingBaseFee, s.shippingRemoteFee);
   return (
     <div className="pt-[100px] pb-24 px-4 sm:px-8 lg:px-16 max-w-3xl mx-auto">
       <h1 className="text-base font-bold tracking-[0.25em] text-brand-black uppercase mb-12">

@@ -11,6 +11,7 @@ import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { createOrderSecure } from "@/app/actions/create-order";
 import { trackMeta, savePendingPurchase } from "@/lib/meta-pixel";
 import { getAttribution } from "@/lib/attribution";
+import { getSiteSettings } from "@/app/actions/site";
 import {
   getUserCoupons,
   getCheckoutPrefill,
@@ -23,8 +24,6 @@ import {
 const MIN_POINTS_USE = 1000; // 포인트 최소 사용 단위(정책)
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
-const FREE_SHIPPING = 50000;
-const SHIPPING_FEE = 3000;
 
 // 16-4A: 아모리의 결제사는 NICE Payments로 결정되었다. 기존 TossPayments 연동 코드는
 // 레거시로 남겨두되(삭제/수정하지 않음) 이 플래그로 실행/화면 노출만 차단한다.
@@ -90,6 +89,10 @@ declare global {
 export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
 
+  // 배송비 정책(관리자 설정). 로드 전에는 기본값. 최종 과금은 서버 create_order가 재계산.
+  const [FREE_SHIPPING, setFreeShipping] = useState(50000);
+  const [SHIPPING_FEE, setShippingFee] = useState(3000);
+
   // 주문자(buyer) 정보
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
@@ -140,6 +143,15 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   useEffect(() => setMounted(true), []);
+  // 배송비 정책 로드(비회원 포함 전원). 표시용 — 최종 금액은 서버가 재계산.
+  useEffect(() => {
+    getSiteSettings()
+      .then((s) => {
+        setFreeShipping(s.freeShippingThreshold);
+        setShippingFee(s.shippingBaseFee);
+      })
+      .catch(() => {});
+  }, []);
 
   // 빈 장바구니 처리 (로그인 여부와 무관 — 비회원 주문 지원).
   // 단, 주문 완료로 인해 비워진 경우는 제외한다(완료 페이지로 이동 중).

@@ -17,9 +17,41 @@
 //   클라이언트가 보낸 remoteArea를 그대로 신뢰해서는 안 되며, 정확한 자동판정
 //   로직(우편번호 정책 테이블, 주소 API 연동 등)은 다음 단계의 과제다.
 
+// 기본값(관리자가 설정을 바꾸기 전, 그리고 설정을 못 읽을 때의 폴백).
+// create_order RPC·site_settings 기본값과 반드시 동일하게 유지한다.
 export const DEFAULT_SHIPPING_FEE = 3000;
 export const REMOTE_AREA_SHIPPING_FEE = 6000;
 export const FREE_SHIPPING_THRESHOLD = 50000;
+
+export interface ShippingPolicy {
+  /** 무료배송 기준금액(할인 적용 후) */
+  threshold: number;
+  /** 기본 배송비 */
+  baseFee: number;
+  /** 제주·도서산간 추가 배송비 */
+  remoteFee: number;
+}
+
+export const DEFAULT_SHIPPING_POLICY: ShippingPolicy = {
+  threshold: FREE_SHIPPING_THRESHOLD,
+  baseFee: DEFAULT_SHIPPING_FEE,
+  remoteFee: REMOTE_AREA_SHIPPING_FEE,
+};
+
+const krw = (n: number) => `${Number(n ?? 0).toLocaleString("ko-KR")}원`;
+
+/** 안내 문구용 — 정책값을 사람이 읽는 3줄로. (FAQ·배송안내·상품상세 공용) */
+export function shippingPolicyLines(p: ShippingPolicy = DEFAULT_SHIPPING_POLICY): {
+  baseFee: string;
+  freeShipping: string;
+  remote: string;
+} {
+  return {
+    baseFee: `기본 배송비: ${krw(p.baseFee)}`,
+    freeShipping: `무료배송: ${krw(p.threshold)} 이상 구매 시`,
+    remote: `제주·도서산간 지역: 추가 배송비 ${krw(p.remoteFee)}`,
+  };
+}
 
 export interface ShippingFeeInput {
   /** 상품 소계 (할인 적용 전, 원 단위 정수) */
@@ -53,19 +85,25 @@ function assertValidMoneyInputs(subtotalAmount: number, discountAmount: number):
 }
 
 /** 할인 적용 후 상품금액과 지역 여부만으로 배송비를 계산한다. */
-export function calculateShippingFee({ subtotalAmount, discountAmount, remoteArea }: ShippingFeeInput): number {
+export function calculateShippingFee(
+  { subtotalAmount, discountAmount, remoteArea }: ShippingFeeInput,
+  policy: ShippingPolicy = DEFAULT_SHIPPING_POLICY
+): number {
   assertValidMoneyInputs(subtotalAmount, discountAmount);
 
   const amountAfterDiscount = subtotalAmount - discountAmount;
-  if (amountAfterDiscount >= FREE_SHIPPING_THRESHOLD) {
+  if (amountAfterDiscount >= policy.threshold) {
     return 0;
   }
-  return remoteArea ? REMOTE_AREA_SHIPPING_FEE : DEFAULT_SHIPPING_FEE;
+  return remoteArea ? policy.remoteFee : policy.baseFee;
 }
 
 /** 배송비를 포함한 최종 결제금액까지 함께 계산한다. */
-export function calculateOrderAmount(input: ShippingFeeInput): OrderAmountBreakdown {
-  const shippingFee = calculateShippingFee(input);
+export function calculateOrderAmount(
+  input: ShippingFeeInput,
+  policy: ShippingPolicy = DEFAULT_SHIPPING_POLICY
+): OrderAmountBreakdown {
+  const shippingFee = calculateShippingFee(input, policy);
   return {
     subtotalAmount: input.subtotalAmount,
     discountAmount: input.discountAmount,

@@ -5,16 +5,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCartStore, type CartItem } from "@/store/cart";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
-
-// 드로어(comp-cart-drawer)와 동일한 정책·디자인 토큰을 사용하되 전체 페이지로 구현한다.
-const FREE_SHIPPING = 50000;
-const SHIPPING_FEE = 3000;
+import { getSiteSettings } from "@/app/actions/site";
 
 export default function CartPage() {
   const [mounted, setMounted] = useState(false);
+  // 배송비 정책(관리자 설정). 로드 전에는 기본값으로 표시.
+  const [FREE_SHIPPING, setFreeShipping] = useState(50000);
+  const [SHIPPING_FEE, setShippingFee] = useState(3000);
   const { items, updateQty, remove, total } = useCartStore();
 
   useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    getSiteSettings()
+      .then((s) => {
+        setFreeShipping(s.freeShippingThreshold);
+        setShippingFee(s.shippingBaseFee);
+      })
+      .catch(() => {});
+  }, []);
 
   // zustand persist 하이드레이션 전에는 빈 상태로 렌더해 SSR 불일치를 피한다.
   const displayItems: CartItem[] = mounted ? items : [];

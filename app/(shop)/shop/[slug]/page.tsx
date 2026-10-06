@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug, getProductReviews, getGiftBoxAddon } from "@/app/actions/products";
+import { getSiteSettings } from "@/app/actions/site";
 import ProductDetailHero from "./product-detail-hero";
 import ProductDetailSections from "./product-detail-sections";
 import type { Product } from "@/lib/types";
@@ -44,6 +45,14 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   if (!product) notFound();
 
   const productReviews = await getProductReviews(product.id);
+
+  // 배송 안내 문구(관리자 배송비 설정 반영).
+  const site = await getSiteSettings();
+  const won = (n: number) => Number(n ?? 0).toLocaleString("ko-KR");
+  const shippingText =
+    `· 결제 완료 후 2~5영업일 이내 출고됩니다.\n` +
+    `· ${won(site.freeShippingThreshold)}원 이상 무료배송 (기본 배송비 ${won(site.shippingBaseFee)}원)\n` +
+    `· 제주·도서산간 추가 배송비 ${won(site.shippingRemoteFee)}원`;
 
   // 선물포장 애드온: 자기 자신(GIFT BOX)에는 노출하지 않는다.
   const giftBox = product.slug === "gift-box" ? null : await getGiftBoxAddon();
@@ -104,6 +113,7 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
           product={product}
           reviews={productReviews}
           relatedProducts={relatedProducts}
+          shippingText={shippingText}
         />
 
       </div>
