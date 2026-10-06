@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/auth";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { createOrderSecure } from "@/app/actions/create-order";
 import { trackMeta, savePendingPurchase } from "@/lib/meta-pixel";
+import { getAttribution } from "@/lib/attribution";
 import {
   getUserCoupons,
   getCheckoutPrefill,
@@ -351,6 +352,7 @@ export default function CheckoutPage() {
         userCouponId: null,
         userCouponIds: selectedCouponIds.length > 0 ? selectedCouponIds : null,
         pointsToUse,
+        attribution: getAttribution(),
       });
     } catch (err) {
       setSubmitting(false);

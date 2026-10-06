@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { updateOrderStatus, bulkCancelOrders, type AdminOrder } from "@/app/actions/admin";
+import { attributionLabel } from "@/lib/attribution";
 
 const PAYMENT_LABEL: Record<string, { label: string; color: string }> = {
   ready: { label: "결제 대기", color: "bg-gray-100 text-gray-600" },
@@ -274,6 +275,14 @@ export default function OrdersAdminClient({
                         )}
                         {o.returnStatus === "requested" && (
                           <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">반품 신청</span>
+                        )}
+                        {attributionLabel(o.attribution) && (
+                          <span
+                            className="text-[12px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-600"
+                            title={o.attribution?.utm_campaign ?? undefined}
+                          >
+                            유입 {attributionLabel(o.attribution)}
+                          </span>
                         )}
                       </div>
                       <p className="text-[13px] text-brand-gray-mid mt-1">

@@ -11,6 +11,7 @@ import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SiteSettings } from "@/lib/site";
+import { toAttribution, type Attribution } from "@/lib/attribution";
 
 export interface AdminProductVariant {
   id: string;
@@ -50,6 +51,8 @@ export interface AdminOrder {
   returnStatus: string | null;
   createdAt: string;
   items: AdminOrderItem[];
+  /** 유입 경로(UTM 등) — orders.attribution */
+  attribution: Attribution | null;
 }
 
 /** 현재 세션이 관리자인지 (레이아웃 가드용 — throw 없이 boolean 반환). */
@@ -360,7 +363,7 @@ export async function getAdminOrders(filters?: {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, order_items(product_name, quantity, price)",
+        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, attribution, order_items(product_name, quantity, price)",
         { count: "exact" }
       );
 
@@ -404,6 +407,7 @@ export async function getAdminOrders(filters?: {
         fulfillmentStatus: String(o.fulfillment_status ?? "unfulfilled"),
         returnStatus: o.return_status ? String(o.return_status) : null,
         createdAt: String(o.created_at),
+        attribution: toAttribution(o.attribution),
         items: (Array.isArray(o.order_items) ? o.order_items : []).map(
           (i: Record<string, unknown>) => ({
             productName: String(i.product_name ?? ""),
@@ -488,6 +492,7 @@ export interface AdminOrderDetail {
   returnStatus: string | null;
   returnReason: string;
   returnRequestedAt: string;
+  attribution: Attribution | null;
   items: { productName: string; variantLabel: string; quantity: number; price: number }[];
 }
 
@@ -546,6 +551,7 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
       returnStatus: d.return_status ? s(d.return_status) : null,
       returnReason: s(d.return_reason),
       returnRequestedAt: s(d.return_requested_at),
+      attribution: toAttribution(d.attribution),
       items: (Array.isArray(d.order_items) ? (d.order_items as Record<string, unknown>[]) : []).map((i) => ({
         productName: s(i.product_name),
         variantLabel: s(i.variant_label),

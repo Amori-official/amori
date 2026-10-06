@@ -323,6 +323,26 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
         </Section>
       </div>
 
+      {/* 유입 경로 (광고 UTM 등) */}
+      <Section title="유입 경로">
+        {order.attribution ? (
+          <dl className="space-y-1.5 text-[13px]">
+            {order.attribution.utm_source && <Row label="소스" value={order.attribution.utm_source} />}
+            {order.attribution.utm_medium && <Row label="매체" value={order.attribution.utm_medium} />}
+            {order.attribution.utm_campaign && <Row label="캠페인" value={order.attribution.utm_campaign} />}
+            {order.attribution.utm_content && <Row label="광고" value={order.attribution.utm_content} />}
+            {order.attribution.utm_term && <Row label="키워드" value={order.attribution.utm_term} />}
+            {order.attribution.referrer && <Row label="유입 사이트" value={order.attribution.referrer} />}
+            {order.attribution.landing_path && <Row label="첫 방문 페이지" value={order.attribution.landing_path} />}
+            {order.attribution.captured_at && (
+              <Row label="유입 시각" value={new Date(order.attribution.captured_at).toLocaleString("ko-KR")} />
+            )}
+          </dl>
+        ) : (
+          <p className="text-[13px] text-brand-gray-mid">직접 방문 또는 기록 없음</p>
+        )}
+      </Section>
+
       {/* 취소 */}
       {!cancelled && (
         <div className="pt-2">

@@ -36,6 +36,8 @@ export interface CreateOrderInput {
   userCouponId: string | null;
   userCouponIds: string[] | null;
   pointsToUse: number;
+  /** 유입 경로(UTM 등). 분석용 — 서버 RPC가 허용 키만 다시 걸러 저장한다. */
+  attribution: Record<string, string> | null;
 }
 
 const ALLOWED_TOP_LEVEL_KEYS = new Set([
@@ -52,6 +54,7 @@ const ALLOWED_TOP_LEVEL_KEYS = new Set([
   "userCouponId",
   "userCouponIds",
   "pointsToUse",
+  "attribution",
 ]);
 
 const ALLOWED_ITEM_KEYS = new Set(["productId", "variantId", "quantity"]);
@@ -158,6 +161,7 @@ export function parseCreateOrderInput(raw: unknown): CreateOrderInput {
         : requireUuid(raw.userCouponId, "쿠폰 정보"),
     userCouponIds: parseCouponIds(raw.userCouponIds),
     pointsToUse: parsePoints(raw.pointsToUse),
+    attribution: parseAttribution(raw.attribution),
   };
 }
 
@@ -178,4 +182,27 @@ function parsePoints(value: unknown): number {
     throw new OrderInputError("포인트 사용 값이 올바르지 않습니다.");
   }
   return value;
+}
+
+// 유입 경로: 허용 키의 문자열만 남긴다. 형식이 이상하면 주문을 막지 않고 버린다(분석용 정보).
+const ATTRIBUTION_KEYS = new Set([
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "landing_path",
+  "referrer",
+  "captured_at",
+]);
+
+function parseAttribution(value: unknown): Record<string, string> | null {
+  if (!isPlainObject(value)) return null;
+  const out: Record<string, string> = {};
+  for (const [key, v] of Object.entries(value)) {
+    if (!ATTRIBUTION_KEYS.has(key) || typeof v !== "string") continue;
+    if (v.length === 0 || CONTROL_CHAR_REGEX.test(v)) continue;
+    out[key] = v.slice(0, 200);
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
