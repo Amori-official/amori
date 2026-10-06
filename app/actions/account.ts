@@ -206,7 +206,7 @@ export async function cancelMyOrder(orderId: string): Promise<{ error?: string }
 
     const { data: order } = await supabase
       .from("orders")
-      .select("id, payment_status, fulfillment_status, order_status")
+      .select("id, order_number, buyer_name, total_amount, payment_status, fulfillment_status, order_status")
       .eq("id", orderId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -232,6 +232,15 @@ export async function cancelMyOrder(orderId: string): Promise<{ error?: string }
     if (rpcErr) {
       return { error: "환불은 처리됐지만 주문 반영에 실패했습니다. 고객센터로 문의해주세요." };
     }
+
+    // 운영진 알림 — 고객이 직접 취소(환불 완료)
+    try {
+      const { notifyKakaoWork, won } = await import("@/lib/notify");
+      await notifyKakaoWork(
+        `❌ 주문 취소 (고객)\n주문번호: ${order.order_number}\n주문자: ${order.buyer_name ?? "-"}\n환불금액: ${won(Number(order.total_amount ?? 0))}`
+      );
+    } catch {}
+
     revalidatePath("/account/orders");
     return {};
   } catch (e) {
@@ -253,6 +262,21 @@ export async function requestReturn(orderId: string, reason: string): Promise<{ 
       p_reason: reason,
     });
     if (error) return { error: error.message || "반품 신청에 실패했습니다." };
+
+    // 운영진 알림 — 고객 반품 신청(승인 처리 필요)
+    try {
+      const { data: ord } = await supabase
+        .from("orders")
+        .select("order_number, buyer_name, total_amount")
+        .eq("id", orderId)
+        .maybeSingle();
+      const { notifyKakaoWork, won } = await import("@/lib/notify");
+      const r = (reason ?? "").trim();
+      await notifyKakaoWork(
+        `↩️ 반품 신청 (승인 필요)\n주문번호: ${ord?.order_number ?? "-"}\n주문자: ${ord?.buyer_name ?? "-"}\n금액: ${won(Number(ord?.total_amount ?? 0))}${r ? `\n사유: ${r.slice(0, 200)}` : ""}`
+      );
+    } catch {}
+
     revalidatePath("/account/orders");
     return {};
   } catch (e) {
