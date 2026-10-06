@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, OrderItem } from "@/lib/types";
 import { cancelMyOrder, requestReturn, createReview, releaseMyPendingOrder } from "@/app/actions/account";
+import { trackingUrl } from "@/lib/tracking";
 import { useUIStore } from "@/store/ui";
 
 const REVIEW_POINT = 500; // 리뷰 작성 적립 포인트(문구용 — 실제 적립은 추후)
@@ -20,13 +21,6 @@ function getDisplayStatus(order: Order): { label: string; color: string } {
       : { label: "배송 준비중", color: "bg-blue-50 text-blue-600" };
   }
   return { label: "결제 대기", color: "bg-gray-100 text-gray-600" };
-}
-
-// 택배사 통합 조회(네이버) 링크 — 관리자 주문상세와 동일 방식.
-function trackingUrl(order: Order): string {
-  return `https://search.naver.com/search.naver?query=${encodeURIComponent(
-    `${order.courier || ""} 택배조회 ${order.trackingNumber}`.trim()
-  )}`;
 }
 
 export default function OrdersClient({
@@ -86,7 +80,7 @@ export default function OrdersClient({
                     </span>
                     {order.trackingNumber && (
                       <a
-                        href={trackingUrl(order)}
+                        href={trackingUrl(order.courier, order.trackingNumber)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -266,7 +260,7 @@ function OrderDetailModal({
               <span className="text-brand-black">{order.trackingNumber}</span>
             </div>
             <a
-              href={trackingUrl(order)}
+              href={trackingUrl(order.courier, order.trackingNumber)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-2 block w-full h-10 leading-10 text-center border border-brand-black text-brand-black text-[14px] tracking-widest hover:bg-brand-fill transition-colors"

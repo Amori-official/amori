@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { trackingUrl } from "@/lib/tracking";
 import {
   updateOrderStatus,
   setOrderTracking,
@@ -247,9 +248,7 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
         </div>
         {order.trackingNumber && (
           <a
-            href={`https://search.naver.com/search.naver?query=${encodeURIComponent(
-              `${order.courier || ""} 택배조회 ${order.trackingNumber}`.trim()
-            )}`}
+            href={trackingUrl(order.courier, order.trackingNumber)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block mt-3 text-[13px] text-blue-600 underline underline-offset-4 hover:text-blue-700"
