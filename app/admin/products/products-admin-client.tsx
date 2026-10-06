@@ -8,6 +8,7 @@ import {
   setVariantActive,
   setProductStock,
   setProductCategory,
+  deleteProduct,
   type AdminProduct,
 } from "@/app/actions/admin";
 
@@ -27,6 +28,23 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
     setError(null);
     startTransition(async () => {
       const res = await setProductPublished(p.id, !p.isPublished);
+      setBusyId(null);
+      if (res.error) setError(res.error);
+      else router.refresh();
+    });
+  };
+
+  const handleDelete = (p: AdminProduct) => {
+    if (
+      !confirm(
+        `'${p.name}' 상품을 삭제하시겠습니까?\n이미지·옵션·리뷰가 함께 삭제됩니다. (기존 주문 내역은 보존됩니다)\n되돌릴 수 없습니다.`
+      )
+    )
+      return;
+    setBusyId(p.id);
+    setError(null);
+    startTransition(async () => {
+      const res = await deleteProduct(p.id);
       setBusyId(null);
       if (res.error) setError(res.error);
       else router.refresh();
@@ -108,6 +126,14 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                     }`}
                   >
                     {p.isPublished ? "게시 내리기" : "게시하기"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p)}
+                    disabled={pending && busyId === p.id}
+                    className="px-4 h-9 border border-red-300 text-red-500 text-[13px] tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    삭제
                   </button>
                 </div>
               </div>

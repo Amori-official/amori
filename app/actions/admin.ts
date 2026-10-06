@@ -336,6 +336,25 @@ export async function setProductCategory(
   }
 }
 
+// 상품 삭제. 이미지/옵션/리뷰/위시는 CASCADE로 함께 삭제되고,
+// 주문 항목(order_items)은 product_id/variant_id가 SET NULL 되어 주문 이력은 보존된다.
+export async function deleteProduct(productId: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.from("products").delete().eq("id", productId);
+    if (error) {
+      logSupabaseError("deleteProduct", error);
+      return { error: "상품 삭제에 실패했습니다. 잠시 후 다시 시도해주세요." };
+    }
+    revalidatePath("/admin/products");
+    revalidatePath("/shop");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
 // ── 주문 ────────────────────────────────────────────────
 const ORDERS_PAGE_SIZE = 50;
 

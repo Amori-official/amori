@@ -54,12 +54,18 @@ export default function CompAuthModal() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [guestPrompt, setGuestPrompt] = useState(false);
   const router = useRouter();
 
   useEffect(() => { setTab(authTab); }, [authTab]);
 
-  // 비회원 구매: 로그인 없이 바로 체크아웃으로 이동한다(게스트 체크아웃 지원).
+  // 비회원 구매: 바로 보내지 않고, 가입 혜택을 먼저 안내해 가입을 유도한다.
   const handleGuestCheckout = () => {
+    setGuestPrompt(true);
+  };
+
+  // 혜택 안내에서 '비회원으로 계속'을 택한 경우에만 체크아웃으로 이동.
+  const proceedAsGuest = () => {
     handleOpenChange(false);
     router.push("/checkout");
   };
@@ -71,6 +77,7 @@ export default function CompAuthModal() {
       setNotice(null);
       setLoginForm(EMPTY_LOGIN);
       setSignupForm(EMPTY_SIGNUP);
+      setGuestPrompt(false);
     }
   };
 
@@ -78,6 +85,7 @@ export default function CompAuthModal() {
     setTab(t);
     setError(null);
     setNotice(null);
+    setGuestPrompt(false);
   };
 
   // ── 로그인 ─────────────────────────────────────────────────
@@ -176,6 +184,42 @@ export default function CompAuthModal() {
   return (
     <Dialog open={authModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[420px] rounded-none border-brand-border p-0 gap-0 overflow-hidden">
+
+        {/* 비회원 구매 선택 시: 가입 혜택 안내로 가입 유도 */}
+        {guestPrompt && (
+          <div className="absolute inset-0 z-20 bg-white flex flex-col px-8 py-9">
+            <p className="text-base font-light tracking-[0.25em] text-brand-black">AMORI</p>
+            <p className="text-lg font-medium tracking-wide leading-snug mt-5">
+              회원가입하고
+              <br />
+              혜택 받으세요 🎁
+            </p>
+            <ul className="space-y-3 text-sm text-brand-gray-mid tracking-wide mt-5 leading-6">
+              <li>· 가입 즉시 <span className="text-brand-black font-medium">할인 쿠폰</span> 증정</li>
+              <li>· 리뷰 작성 시 <span className="text-brand-black font-medium">적립금</span> 지급</li>
+              <li>· 주문·적립금·쿠폰을 <span className="text-brand-black font-medium">마이페이지</span>에서 한눈에</li>
+            </ul>
+            <div className="mt-auto pt-8 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setGuestPrompt(false);
+                  setTab("signup");
+                }}
+                className="h-11 bg-brand-black text-white text-[14px] tracking-widest hover:bg-brand-gray-mid transition-colors"
+              >
+                회원가입하고 혜택 받기
+              </button>
+              <button
+                type="button"
+                onClick={proceedAsGuest}
+                className="h-11 border border-brand-border text-[14px] tracking-widest text-brand-gray-mid hover:text-brand-black transition-colors"
+              >
+                비회원으로 계속하기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 헤더 — 브랜드명 */}
         <DialogHeader className="px-8 pt-8 pb-0">

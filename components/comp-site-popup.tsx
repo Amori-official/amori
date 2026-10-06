@@ -20,13 +20,17 @@ function sig(p: Props): string {
 }
 
 const KEY = "amori_popup_dismiss";
+const SESSION_KEY = "amori_popup_seen";
 
 export default function CompSitePopup(props: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // '오늘 하루 보지 않기'가 유효하고 같은 내용이면 숨김.
     try {
+      // 이번 브라우징 세션에서 이미 본(닫은/이동한) 경우 다시 띄우지 않는다.
+      const seen = sessionStorage.getItem(SESSION_KEY);
+      if (seen === sig(props)) return;
+      // '오늘 하루 보지 않기'가 유효하고 같은 내용이면 숨김.
       const raw = localStorage.getItem(KEY);
       if (raw) {
         const saved = JSON.parse(raw) as { sig?: string; until?: number };
@@ -42,7 +46,19 @@ export default function CompSitePopup(props: Props) {
 
   if (!open) return null;
 
-  const close = () => setOpen(false);
+  // 닫기/링크 이동 시 세션 동안 재노출 방지(페이지 이동해도 다시 안 뜨게).
+  const markSeen = () => {
+    try {
+      sessionStorage.setItem(SESSION_KEY, sig(props));
+    } catch {
+      /* 무시 */
+    }
+  };
+
+  const close = () => {
+    markSeen();
+    setOpen(false);
+  };
   const hideToday = () => {
     try {
       const until = new Date();
@@ -51,6 +67,7 @@ export default function CompSitePopup(props: Props) {
     } catch {
       /* 무시 */
     }
+    markSeen();
     setOpen(false);
   };
 
@@ -87,6 +104,10 @@ export default function CompSitePopup(props: Props) {
               href={props.linkUrl}
               target={/^https?:\/\//.test(props.linkUrl) ? "_blank" : undefined}
               rel="noopener noreferrer"
+              onClick={() => {
+                markSeen();
+                setOpen(false);
+              }}
               className="mt-4 block w-full h-11 leading-[2.75rem] text-center bg-brand-black text-white text-[13px] tracking-widest hover:bg-brand-gray-mid transition-colors"
             >
               {props.linkLabel || "자세히 보기"}
