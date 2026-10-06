@@ -22,6 +22,16 @@ function sig(p: Props): string {
 const KEY = "amori_popup_dismiss";
 const SESSION_KEY = "amori_popup_seen";
 
+// 외부(다른 출처) 링크인지. 내부 경로("/...")나 동일 출처 절대 URL은 false → 같은 탭에서 이동.
+function isExternalLink(url: string): boolean {
+  if (!/^https?:\/\//i.test(url)) return false; // 상대 경로 등은 내부로 간주
+  try {
+    return new URL(url).host !== window.location.host;
+  } catch {
+    return false;
+  }
+}
+
 export default function CompSitePopup(props: Props) {
   const [open, setOpen] = useState(false);
 
@@ -102,7 +112,9 @@ export default function CompSitePopup(props: Props) {
           {props.linkUrl && (
             <a
               href={props.linkUrl}
-              target={/^https?:\/\//.test(props.linkUrl) ? "_blank" : undefined}
+              // 같은 사이트(내부/동일 출처) 링크는 같은 탭에서 이동해야 '이미 봄'(sessionStorage)이
+              // 유지돼 이동한 페이지에서 팝업이 다시 뜨지 않는다. 외부 사이트만 새 탭으로 연다.
+              target={isExternalLink(props.linkUrl) ? "_blank" : undefined}
               rel="noopener noreferrer"
               onClick={() => {
                 markSeen();
