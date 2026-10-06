@@ -2,11 +2,21 @@
 
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
+import { releaseMyPendingOrder } from "@/app/actions/account";
 
 function FailContent() {
   const searchParams = useSearchParams();
   const message = searchParams.get("message") ?? "결제에 실패했습니다.";
+
+  // 토스 결제 실패/이탈로 돌아온 경우, 남은 미결제 주문을 해제해 쿠폰·적립금을 복원한다.
+  const releasedRef = useRef(false);
+  useEffect(() => {
+    const orderId = searchParams.get("orderId");
+    if (!orderId || releasedRef.current) return;
+    releasedRef.current = true;
+    releaseMyPendingOrder(orderId).catch(() => {});
+  }, [searchParams]);
 
   return (
     <div className="pt-[60px] min-h-screen flex flex-col items-center justify-center gap-8 px-4 text-center">
@@ -14,6 +24,9 @@ function FailContent() {
         <p className="text-[14px] tracking-[0.4em] text-red-400">PAYMENT FAILED</p>
         <h1 className="text-3xl font-light tracking-[0.15em]">결제 실패</h1>
         <p className="text-sm text-brand-gray-mid tracking-wide mt-2">{message}</p>
+        <p className="text-[13px] text-brand-gray-mid tracking-wide mt-1">
+          사용하신 쿠폰·적립금은 복원되었어요. 다시 시도해주세요.
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

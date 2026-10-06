@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, OrderItem } from "@/lib/types";
-import { cancelMyOrder, requestReturn, createReview } from "@/app/actions/account";
+import { cancelMyOrder, requestReturn, createReview, releaseMyPendingOrder } from "@/app/actions/account";
 import { useUIStore } from "@/store/ui";
 
 const REVIEW_POINT = 500; // 리뷰 작성 적립 포인트(문구용 — 실제 적립은 추후)
@@ -137,6 +137,8 @@ function OrderDetailModal({
   const isCancelled = order.status === "cancelled";
   const isPaid = order.paymentStatus === "paid";
   const canCancel = !isCancelled && isPaid && order.fulfillmentStatus === "unfulfilled";
+  // 결제 대기(미결제) 주문 — 결제가 중간에 실패/이탈해 pending으로 남은 경우. 회원이 직접 취소.
+  const canCancelPending = !isCancelled && !isPaid;
   const canReturn =
     !isCancelled &&
     isPaid &&
@@ -162,6 +164,11 @@ function OrderDetailModal({
   const handleCancel = () => {
     if (!confirm("주문을 취소하시겠습니까?\n결제하신 금액은 자동으로 환불됩니다.")) return;
     run(() => cancelMyOrder(order.orderId), "주문이 취소되고 환불이 접수되었습니다.");
+  };
+
+  const handleCancelPending = () => {
+    if (!confirm("결제 대기 중인 주문을 취소하시겠습니까?\n사용한 쿠폰·적립금은 복원됩니다.")) return;
+    run(() => releaseMyPendingOrder(order.id), "주문이 취소되었습니다.");
   };
 
   const handleReturn = () => {
@@ -277,6 +284,15 @@ function OrderDetailModal({
 
         {/* 취소 / 반품 */}
         <div className="mt-5 space-y-2">
+          {canCancelPending && (
+            <button
+              onClick={handleCancelPending}
+              disabled={pending}
+              className="w-full h-10 border border-red-300 text-red-500 text-[14px] tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              {pending ? "처리 중..." : "주문 취소 (결제 대기)"}
+            </button>
+          )}
           {canCancel && (
             <button
               onClick={handleCancel}
