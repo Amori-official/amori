@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { AdminMemberDetail } from "@/app/actions/admin";
 import DeactivateButton from "./deactivate-button";
+import PurgeButton from "./purge-button";
 import PointsAdjust from "./points-adjust";
 import MemberNote from "./member-note";
 
@@ -145,6 +146,19 @@ export default function MemberDetailClient({ member }: { member: AdminMemberDeta
           </ul>
         )}
       </Section>
+
+      {/* 위험 구역 — 영구삭제 (관리자 계정 제외) */}
+      {member.role !== "admin" && (
+        <section className="border border-red-200 bg-red-50/40 p-5 space-y-3">
+          <p className="text-[13px] tracking-widest font-medium text-red-600">위험 구역</p>
+          <p className="text-[12px] text-brand-gray-mid leading-relaxed">
+            회원을 <b>영구삭제</b>하면 되돌릴 수 없습니다. 프로필·장바구니·리뷰·찜·쿠폰·적립금 내역이
+            함께 삭제되고, 주문 기록은 보존되지만 회원 연결은 해제됩니다. 같은 이메일로 재가입이 가능해집니다.
+            (테스트로 만든 계정 정리에 사용하세요)
+          </p>
+          <PurgeButton userId={member.id} email={member.email} />
+        </section>
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getSalesStats } from "@/app/actions/admin";
+import { getVisitStats } from "@/app/actions/visits";
 
 export const dynamic = "force-dynamic";
 
 const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;
+const num = (n: number) => n.toLocaleString("ko-KR");
 
 export default async function AdminStatsPage({
   searchParams,
@@ -11,10 +13,11 @@ export default async function AdminStatsPage({
   searchParams?: { days?: string };
 }) {
   const days = searchParams?.days === "7" ? 7 : 30;
-  const stats = await getSalesStats(days);
+  const [stats, visits] = await Promise.all([getSalesStats(days), getVisitStats()]);
 
   const maxSales = Math.max(1, ...stats.daily.map((d) => d.sales));
   const maxQty = Math.max(1, ...stats.topProducts.map((p) => p.qty));
+  const maxVisit = Math.max(1, ...visits.daily.map((d) => d.unique));
 
   return (
     <div className="p-6 sm:p-8">
@@ -36,6 +39,39 @@ export default async function AdminStatsPage({
           ))}
         </div>
       </div>
+
+      {/* 방문자 (오늘/누적) */}
+      <section className="mb-8">
+        <p className="text-[13px] tracking-widest text-brand-gray-mid mb-3">방문자</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatCard label="오늘 방문자" value={`${num(visits.todayUnique)}명`} />
+          <StatCard label="오늘 페이지뷰" value={`${num(visits.todayViews)}회`} />
+          <StatCard label="누적 방문자" value={`${num(visits.totalUnique)}명`} />
+          <StatCard label="누적 페이지뷰" value={`${num(visits.totalViews)}회`} />
+        </div>
+        {/* 최근 7일 방문자 추이 */}
+        {visits.daily.length > 0 && (visits.totalViews > 0) && (
+          <div className="border border-brand-border p-4 mt-3">
+            <p className="text-[12px] text-brand-gray-mid mb-3">최근 7일 방문자(순 방문자)</p>
+            <div className="flex items-end gap-2 h-28">
+              {visits.daily.map((d, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
+                  <span className="text-[11px] text-brand-gray-mid">{d.unique}</span>
+                  <div
+                    className="w-full bg-brand-black/80 rounded-t"
+                    style={{ height: `${(d.unique / maxVisit) * 100}%` }}
+                    title={`${d.day} · 방문자 ${d.unique}명 · 페이지뷰 ${d.views}회`}
+                  />
+                  <span className="text-[10px] text-brand-gray-mid">{d.day.slice(5)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <p className="text-[12px] text-brand-gray-mid mt-2">
+          · 순 방문자는 브라우저 기준(같은 사람이 하루에 여러 번 봐도 1명). 관리자 페이지 방문은 제외됩니다.
+        </p>
+      </section>
 
       {/* 요약 카드 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">

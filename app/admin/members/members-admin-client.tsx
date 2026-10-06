@@ -88,7 +88,14 @@ export default function MembersAdminClient({
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-[14px] font-medium truncate">{m.name || "(이름 없음)"}</p>
+                  <p className={`text-[14px] font-medium truncate ${m.deactivatedAt ? "text-brand-gray-mid line-through" : ""}`}>
+                    {m.name || "(이름 없음)"}
+                  </p>
+                  {m.deactivatedAt && (
+                    <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-500 tracking-wide">
+                      탈퇴
+                    </span>
+                  )}
                   {m.role === "admin" && (
                     <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-black text-white tracking-wide">
                       관리자

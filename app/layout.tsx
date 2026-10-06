@@ -11,6 +11,7 @@ import SectionMarquee from "@/components/sections/section-marquee";
 import CompToast from "@/components/comp-toast";
 import CompSitePopup from "@/components/comp-site-popup";
 import CompKakaoFab from "@/components/comp-kakao-fab";
+import CompVisitTracker from "@/components/comp-visit-tracker";
 import { getSiteSettings } from "@/app/actions/site";
 import { isPopupActive } from "@/lib/site";
 import MetaPixel from "@/components/meta-pixel";
@@ -94,6 +95,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </Suspense>
           <Suspense fallback={null}>
             <MetaPixel />
+          </Suspense>
+          <Suspense fallback={null}>
+            <CompVisitTracker />
           </Suspense>
         </AuthProvider>
       </body>

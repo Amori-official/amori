@@ -812,6 +812,7 @@ export interface AdminMember {
   marketingAgreed: boolean;
   role: string;
   createdAt: string;
+  deactivatedAt: string | null;
   orderCount: number;
   totalSpent: number;
 }
@@ -859,6 +860,7 @@ export async function getAdminMembers(filters?: {
         marketingAgreed: !!m.marketing_agreed,
         role: s(m.role) || "user",
         createdAt: s(m.created_at),
+        deactivatedAt: m.deactivated_at ? s(m.deactivated_at) : null,
         orderCount: Number(m.order_count ?? 0),
         totalSpent: Number(m.total_spent ?? 0),
       })),
@@ -975,6 +977,26 @@ export async function adminSetMemberDeactivated(
     }
     revalidatePath("/admin/members");
     revalidatePath(`/admin/members/${userId}`);
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 관리자: 회원 영구삭제(auth.users 행 삭제). 되돌릴 수 없음.
+// 프로필/장바구니/리뷰/찜/쿠폰/적립금 내역은 함께 삭제되고, 주문 기록은 보존(연결 해제)된다.
+// 같은 이메일로 재가입이 가능해진다. 관리자·본인 계정은 RPC에서 차단한다.
+export async function purgeMember(userId: string): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase.rpc("admin_purge_member", { p_user_id: userId });
+    if (error) {
+      logSupabaseError("purgeMember", error);
+      // RPC가 올린 한국어 메시지(권한/본인/관리자/대상없음)는 그대로 노출.
+      return { error: error.message || "영구삭제에 실패했습니다." };
+    }
+    revalidatePath("/admin/members");
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
