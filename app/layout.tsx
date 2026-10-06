@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     siteName: "AMORI",
     title: "AMORI — 아기를 위한 패브릭 브랜드",
     description: "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드.",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "AMORI" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "AMORI" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "AMORI — 아기를 위한 패브릭 브랜드",
     description: "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드.",
-    images: ["/og-image.jpg"],
+    images: ["/og-image.png"],
   },
   robots: { index: true, follow: true },
 };
