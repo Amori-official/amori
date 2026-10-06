@@ -317,8 +317,12 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
                   .join(" ") || "-"
               }
             />
-            {order.shippingRequest && <Row label="요청사항" value={order.shippingRequest} />}
           </dl>
+          {order.shippingRequest && (
+            <div className="mt-3 text-[13px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 tracking-wide break-words">
+              📝 배송메모: {order.shippingRequest}
+            </div>
+          )}
         </Section>
       </div>
 

@@ -294,6 +294,11 @@ export default function OrdersAdminClient({
                         {o.items.length > 1 && ` 외 ${o.items.length - 1}건`} ·{" "}
                         <span className="font-medium">₩{o.totalAmount.toLocaleString("ko-KR")}</span>
                       </p>
+                      {o.shippingRequest && (
+                        <p className="mt-1.5 inline-block text-[13px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1 tracking-wide break-words">
+                          📝 배송메모: {o.shippingRequest}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col items-end gap-2 shrink-0">

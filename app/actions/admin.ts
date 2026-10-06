@@ -53,6 +53,8 @@ export interface AdminOrder {
   items: AdminOrderItem[];
   /** 유입 경로(UTM 등) — orders.attribution */
   attribution: Attribution | null;
+  /** 고객 배송 요청사항(메모) — orders.shipping_request */
+  shippingRequest: string | null;
 }
 
 /** 현재 세션이 관리자인지 (레이아웃 가드용 — throw 없이 boolean 반환). */
@@ -382,7 +384,7 @@ export async function getAdminOrders(filters?: {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, attribution, order_items(product_name, quantity, price)",
+        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, attribution, shipping_request, order_items(product_name, quantity, price)",
         { count: "exact" }
       );
 
@@ -427,6 +429,7 @@ export async function getAdminOrders(filters?: {
         returnStatus: o.return_status ? String(o.return_status) : null,
         createdAt: String(o.created_at),
         attribution: toAttribution(o.attribution),
+        shippingRequest: o.shipping_request ? String(o.shipping_request) : null,
         items: (Array.isArray(o.order_items) ? o.order_items : []).map(
           (i: Record<string, unknown>) => ({
             productName: String(i.product_name ?? ""),
