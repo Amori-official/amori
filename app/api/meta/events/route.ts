@@ -97,5 +97,11 @@ export async function POST(request: NextRequest) {
   });
 
   // 진단용: Meta 응답 상태를 그대로 돌려준다(토큰 등 비밀값은 포함되지 않음)
-  return NextResponse.json({ ok: result.ok, metaStatus: result.status, metaError: result.error });
+  return NextResponse.json({
+    ok: result.ok,
+    metaStatus: result.status,
+    metaError: result.error,
+    eventsReceived: result.eventsReceived,
+    testMode: result.testMode,
+  });
 }

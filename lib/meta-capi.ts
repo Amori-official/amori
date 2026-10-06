@@ -19,6 +19,8 @@ export interface CapiResult {
   status?: number;
   /** Meta 응답의 오류 메시지(진단용, 비밀값 미포함) */
   error?: string;
+  eventsReceived?: number;
+  testMode?: boolean;
 }
 
 export interface CapiUserInput {
@@ -116,7 +118,13 @@ export async function sendCapiEvent(params: {
       } catch {}
       return { ok: false, status: res.status, error: message.slice(0, 300) };
     }
-    return { ok: true, status: res.status };
+    const json = (await res.json().catch(() => ({}))) as { events_received?: number };
+    return {
+      ok: true,
+      status: res.status,
+      eventsReceived: json.events_received,
+      testMode: Boolean(process.env.META_TEST_EVENT_CODE),
+    };
   } catch (err) {
     console.error("[meta-capi]", params.eventName, err);
     return { ok: false, error: "network_error" };
