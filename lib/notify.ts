@@ -9,7 +9,9 @@ export async function notifyKakaoWork(text: string): Promise<void> {
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      // 카카오워크·슬랙은 "text", 디스코드는 "content"를 사용한다. 둘 다 보내
+      // 어떤 웹훅 URL이든(카카오워크/디스코드/슬랙) 그대로 동작하게 한다.
+      body: JSON.stringify({ text, content: text }),
       // 알림이 결제 흐름을 오래 붙잡지 않도록 타임아웃(5초).
       signal: AbortSignal.timeout(5000),
     });
