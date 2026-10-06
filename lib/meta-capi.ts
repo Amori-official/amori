@@ -14,6 +14,13 @@ import type { MetaCustomData, MetaEventName } from "@/lib/meta-pixel";
 
 const GRAPH_API_VERSION = "v23.0";
 
+export interface CapiResult {
+  ok: boolean;
+  status?: number;
+  /** Meta 응답의 오류 메시지(진단용, 비밀값 미포함) */
+  error?: string;
+}
+
 export interface CapiUserInput {
   email?: string | null;
   phone?: string | null;
@@ -46,8 +53,8 @@ export async function sendCapiEvent(params: {
   eventSourceUrl?: string;
   customData?: MetaCustomData;
   user?: CapiUserInput;
-}): Promise<void> {
-  if (!isCapiConfigured()) return;
+}): Promise<CapiResult> {
+  if (!isCapiConfigured()) return { ok: false, error: "not_configured" };
 
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID!;
   const token = process.env.META_CAPI_ACCESS_TOKEN!;
@@ -101,9 +108,17 @@ export async function sendCapiEvent(params: {
       }
     );
     if (!res.ok) {
-      console.error("[meta-capi]", params.eventName, res.status, await res.text().catch(() => ""));
+      const text = await res.text().catch(() => "");
+      console.error("[meta-capi]", params.eventName, res.status, text);
+      let message = text;
+      try {
+        message = (JSON.parse(text) as { error?: { message?: string } }).error?.message ?? text;
+      } catch {}
+      return { ok: false, status: res.status, error: message.slice(0, 300) };
     }
+    return { ok: true, status: res.status };
   } catch (err) {
     console.error("[meta-capi]", params.eventName, err);
+    return { ok: false, error: "network_error" };
   }
 }

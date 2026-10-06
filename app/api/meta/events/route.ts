@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     } catch {}
   }
 
-  await sendCapiEvent({
+  const result = await sendCapiEvent({
     eventName,
     eventId,
     eventSourceUrl,
@@ -96,5 +96,6 @@ export async function POST(request: NextRequest) {
     user,
   });
 
-  return NextResponse.json({ ok: true });
+  // 진단용: Meta 응답 상태를 그대로 돌려준다(토큰 등 비밀값은 포함되지 않음)
+  return NextResponse.json({ ok: result.ok, metaStatus: result.status, metaError: result.error });
 }

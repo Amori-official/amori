@@ -16,7 +16,8 @@ function installPixel(pixelId: string) {
     version: string;
   };
   const n = function (...args: unknown[]) {
-    if (n.callMethod) n.callMethod(...args);
+    // fbevents.js의 callMethod는 this(=fbq)에 의존하므로 반드시 apply로 호출한다.
+    if (n.callMethod) n.callMethod.apply(n, args);
     else n.queue.push(args);
   } as Fbq;
   n.push = n;
