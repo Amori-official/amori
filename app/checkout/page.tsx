@@ -42,17 +42,30 @@ function isPlausiblePhone(value: string): boolean {
 }
 
 // 쿠폰 할인 추정(표시용). 서버(create_order RPC)가 동일 규칙으로 최종 계산·검증한다.
-function computeCouponDiscount(coupon: UserCoupon | null, subtotal: number): number {
-  if (!coupon) return 0;
-  if (subtotal < coupon.minOrderAmount) return 0;
-  let d =
-    coupon.discountType === "percent"
-      ? Math.floor((subtotal * coupon.discountValue) / 100)
-      : Math.min(coupon.discountValue, subtotal);
-  if (coupon.maxDiscountAmount != null && d > coupon.maxDiscountAmount) d = coupon.maxDiscountAmount;
-  if (d < 0) d = 0;
-  if (d > subtotal) d = subtotal;
-  return d;
+// 여러 쿠폰 순차(복리) 할인 합계. 정률(%)→정액(원) 순으로 '남은 금액'에 적용.
+// (서버 create_order와 동일 규칙 — 최소주문 판정은 원래 주문금액 기준)
+function computeStackedDiscount(coupons: UserCoupon[], subtotal: number): number {
+  const sorted = [...coupons].sort((a, b) => {
+    const ap = a.discountType === "percent" ? 0 : 1;
+    const bp = b.discountType === "percent" ? 0 : 1;
+    if (ap !== bp) return ap - bp;
+    return b.discountValue - a.discountValue;
+  });
+  let remaining = subtotal;
+  let total = 0;
+  for (const c of sorted) {
+    if (subtotal < c.minOrderAmount) continue;
+    let d =
+      c.discountType === "percent"
+        ? Math.floor((remaining * c.discountValue) / 100)
+        : Math.min(c.discountValue, remaining);
+    if (c.maxDiscountAmount != null && d > c.maxDiscountAmount) d = c.maxDiscountAmount;
+    if (d < 0) d = 0;
+    if (d > remaining) d = remaining;
+    total += d;
+    remaining -= d;
+  }
+  return total;
 }
 
 declare global {
@@ -369,11 +382,8 @@ export default function CheckoutPage() {
 
   const cartTotal = total();
   const selectedCoupons = coupons.filter((c) => selectedCouponIds.includes(c.id));
-  // 각 쿠폰 할인 합산, 주문금액 상한. (서버 create_order가 최종 재계산)
-  const couponDiscount = Math.min(
-    cartTotal,
-    selectedCoupons.reduce((sum, c) => sum + computeCouponDiscount(c, cartTotal), 0)
-  );
+  // 여러 쿠폰은 순차(복리)로 적용. (서버 create_order가 최종 재계산)
+  const couponDiscount = Math.min(cartTotal, computeStackedDiscount(selectedCoupons, cartTotal));
   // 배송비 무료 기준은 할인 적용 후 금액 기준(create_order RPC와 동일).
   const shipping = cartTotal - couponDiscount >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
   // 포인트: 1,000P 이상·잔액 이내·결제액 한도 내에서만 적용(서버 create_order와 동일 규칙).
