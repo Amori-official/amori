@@ -171,7 +171,13 @@ export async function createReview(input: {
 
 // 결제 실패/취소 시, 방금 만든 미결제 주문을 해제하고 쿠폰·적립금을 복원한다.
 // (재시도가 깨지지 않도록) — 로그인 사용자만 의미 있음(게스트는 복원할 것 없음).
-export async function releaseMyPendingOrder(orderNumber: string): Promise<{ error?: string }> {
+// notify=true는 "회원이 마이페이지에서 직접 취소 버튼을 누른" 경우에만 전달한다.
+// 결제 실패·이탈 시 자동 호출(checkout/fail, checkout 재시도)에는 전달하지 않아,
+// 결제 실패마다 운영진 알림이 쏟아지는 것을 막는다.
+export async function releaseMyPendingOrder(
+  orderNumber: string,
+  notify = false
+): Promise<{ error?: string }> {
   if (!IS_CONFIGURED) return {};
   try {
     const { createServerSideClient } = await import("@/lib/supabase-server");
@@ -180,13 +186,24 @@ export async function releaseMyPendingOrder(orderNumber: string): Promise<{ erro
     if (!user) return {};
     const { data: order } = await supabase
       .from("orders")
-      .select("id")
+      .select("id, buyer_name, total_amount")
       .eq("order_number", orderNumber)
       .eq("user_id", user.id)
       .maybeSingle();
     if (!order) return {};
     const { error } = await supabase.rpc("release_pending_order", { p_order_id: order.id });
     if (error) return { error: "주문 해제에 실패했습니다." };
+
+    // 운영진 알림 — 회원이 직접 '결제 대기' 주문을 취소한 경우에만.
+    if (notify) {
+      try {
+        const { notifyKakaoWork, won } = await import("@/lib/notify");
+        await notifyKakaoWork(
+          `❌ 주문 취소 (고객·결제대기)\n주문번호: ${orderNumber}\n주문자: ${order.buyer_name ?? "-"}\n금액: ${won(Number(order.total_amount ?? 0))}`
+        );
+      } catch {}
+    }
+
     revalidatePath("/account/orders");
     return {};
   } catch {

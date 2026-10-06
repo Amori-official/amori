@@ -162,7 +162,7 @@ function OrderDetailModal({
 
   const handleCancelPending = () => {
     if (!confirm("결제 대기 중인 주문을 취소하시겠습니까?\n사용한 쿠폰·적립금은 복원됩니다.")) return;
-    run(() => releaseMyPendingOrder(order.id), "주문이 취소되었습니다.");
+    run(() => releaseMyPendingOrder(order.id, true), "주문이 취소되었습니다.");
   };
 
   const handleReturn = () => {
