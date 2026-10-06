@@ -15,6 +15,7 @@ import {
   getUserCoupons,
   getCheckoutPrefill,
   getMyPoints,
+  releaseMyPendingOrder,
   type UserCoupon,
   type CheckoutPrefill,
 } from "@/app/actions/account";
@@ -120,10 +121,13 @@ export default function CheckoutPage() {
 
   // 회원 정보 자동입력 (로그인 사용자)
   const [prefill, setPrefill] = useState<CheckoutPrefill | null>(null);
+  const [prefillLoading, setPrefillLoading] = useState(false);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [tossReady, setTossReady] = useState(false);
+  // 결제 실패/만료 시 결제창을 새로 초기화하기 위한 키(bump하면 위젯 재생성).
+  const [widgetReloadKey, setWidgetReloadKey] = useState(0);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const widgetsRef = useRef<any>(null);
   // 주문 생성 성공 후 clear()로 카트를 비우면 items.length가 0이 되는데,
@@ -192,18 +196,36 @@ export default function CheckoutPage() {
   }, [mounted, user]);
 
   // 회원 정보로 주문자·배송지 자동 채우기
-  const applyPrefill = () => {
-    if (!prefill) return;
-    setBuyerName(prefill.name);
-    setBuyerEmail(prefill.email);
-    setBuyerPhone(prefill.phone);
-    if (prefill.address) {
+  const fillFromPrefill = (data: CheckoutPrefill) => {
+    setBuyerName(data.name);
+    setBuyerEmail(data.email);
+    setBuyerPhone(data.phone);
+    if (data.address) {
       setSameAsBuyer(false);
-      setRecipientName(prefill.address.name);
-      setRecipientPhone(prefill.address.phone);
-      setPostalCode(prefill.address.zip);
-      setAddressLine1(prefill.address.address);
-      setAddressLine2(prefill.address.addressDetail);
+      setRecipientName(data.address.name);
+      setRecipientPhone(data.address.phone);
+      setPostalCode(data.address.zip);
+      setAddressLine1(data.address.address);
+      setAddressLine2(data.address.addressDetail);
+    }
+  };
+
+  // 버튼은 로그인 즉시 노출하고, 아직 회원정보를 못 받았으면 클릭 시 불러와 채운다.
+  const applyPrefill = async () => {
+    if (prefill) {
+      fillFromPrefill(prefill);
+      return;
+    }
+    setPrefillLoading(true);
+    try {
+      const data = await getCheckoutPrefill();
+      setPrefill(data);
+      if (data) fillFromPrefill(data);
+      else setFormError("불러올 회원 정보가 없습니다. 직접 입력해주세요.");
+    } catch {
+      setFormError("회원 정보를 불러오지 못했습니다. 직접 입력해주세요.");
+    } finally {
+      setPrefillLoading(false);
     }
   };
 
@@ -248,6 +270,8 @@ export default function CheckoutPage() {
     if (!clientKey) return;
 
     let cancelled = false;
+    setTossReady(false);
+    widgetsRef.current = null;
     const cartTotal = total();
     const amount = cartTotal >= FREE_SHIPPING ? cartTotal : cartTotal + SHIPPING_FEE;
 
@@ -259,6 +283,11 @@ export default function CheckoutPage() {
         // 문자열 "ANONYMOUS"를 넘기면 InvalidCustomerKeyError로 위젯 초기화가 실패한다.
         const widgets = tossPayments.widgets({ customerKey: user?.id ?? ANONYMOUS });
         await widgets.setAmount({ currency: "KRW", value: amount });
+        // 재초기화 시 기존 위젯 DOM이 남아 중복 렌더되지 않도록 컨테이너를 비운다.
+        const pm = document.getElementById("payment-method");
+        const ag = document.getElementById("agreement");
+        if (pm) pm.innerHTML = "";
+        if (ag) ag.innerHTML = "";
         await Promise.all([
           widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
           widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" }),
@@ -275,7 +304,7 @@ export default function CheckoutPage() {
       });
 
     return () => { cancelled = true; };
-  }, [mounted, user, items.length, total]);
+  }, [mounted, user, items.length, total, widgetReloadKey]);
 
   // 모바일에서 팝업(.open())이 차단되거나 페이지를 리로드해 입력값이 초기화되는 문제를 피하기 위해
   // 화면 내 오버레이에 임베드(.embed())하는 방식으로 띄운다.
@@ -399,9 +428,16 @@ export default function CheckoutPage() {
       });
       // requestPayment 성공 시 페이지가 Toss로 리다이렉트되므로 이후 코드는 실행되지 않는다.
     } catch {
-      // 사용자가 결제창을 닫거나 실패한 경우 — 방금 만든 주문은 pending으로 남는다.
+      // 결제창을 닫거나 실패/만료한 경우: 방금 만든 미결제 주문을 해제해
+      // 쿠폰·적립금을 복원하고(재시도가 깨지지 않도록), 결제창을 새로 초기화한다.
+      try {
+        await releaseMyPendingOrder(order.orderNumber);
+      } catch {
+        /* 복원 실패해도 계속 — 관리자가 확인 */
+      }
       setSubmitting(false);
-      setFormError("결제가 취소되었습니다. 다시 시도해주세요.");
+      setWidgetReloadKey((k) => k + 1); // 만료 대비 결제창 재초기화
+      setFormError("결제가 취소되었습니다. 쿠폰·적립금은 복원됐어요. 잠시 후 다시 시도해주세요.");
     }
   };
 
@@ -485,13 +521,14 @@ export default function CheckoutPage() {
               <div id="checkout-buyer" className="bg-white p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-brand-border pb-1">
                   <h2 className="text-[14px] tracking-[0.25em]">주문자 정보</h2>
-                  {user && prefill && (
+                  {user && (
                     <button
                       type="button"
                       onClick={applyPrefill}
-                      className="text-[12px] tracking-widest text-brand-black border border-brand-border px-3 h-8 hover:bg-brand-gray-light transition-colors"
+                      disabled={prefillLoading}
+                      className="text-[12px] tracking-widest text-brand-black border border-brand-border px-3 h-8 hover:bg-brand-gray-light transition-colors disabled:opacity-50"
                     >
-                      회원 정보로 자동 입력
+                      {prefillLoading ? "불러오는 중..." : "회원 정보로 자동 입력"}
                     </button>
                   )}
                 </div>

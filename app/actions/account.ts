@@ -169,6 +169,31 @@ export async function createReview(input: {
   }
 }
 
+// 결제 실패/취소 시, 방금 만든 미결제 주문을 해제하고 쿠폰·적립금을 복원한다.
+// (재시도가 깨지지 않도록) — 로그인 사용자만 의미 있음(게스트는 복원할 것 없음).
+export async function releaseMyPendingOrder(orderNumber: string): Promise<{ error?: string }> {
+  if (!IS_CONFIGURED) return {};
+  try {
+    const { createServerSideClient } = await import("@/lib/supabase-server");
+    const supabase = createServerSideClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {};
+    const { data: order } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_number", orderNumber)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!order) return {};
+    const { error } = await supabase.rpc("release_pending_order", { p_order_id: order.id });
+    if (error) return { error: "주문 해제에 실패했습니다." };
+    revalidatePath("/account/orders");
+    return {};
+  } catch {
+    return {};
+  }
+}
+
 // ── 고객 자가 취소 / 반품 (PC3) ────────────────────────────
 // 취소(배송 준비 전): Toss 환불 선 처리 → cancel_my_order RPC로 상태/쿠폰 반영.
 export async function cancelMyOrder(orderId: string): Promise<{ error?: string }> {
