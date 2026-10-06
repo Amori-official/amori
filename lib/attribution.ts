@@ -47,6 +47,23 @@ function write(data: Attribution): void {
   } catch {}
 }
 
+// 앱 내 브라우저 User-Agent 표식 → 유입 소스. 위에서부터 먼저 일치하는 것 사용.
+// (Threads 앱 내 브라우저는 "Barcelona" 표식을 쓴다)
+const IN_APP_PATTERNS: [RegExp, string][] = [
+  [/Instagram/i, "instagram"],
+  [/Barcelona/, "threads"],
+  [/KAKAOTALK/i, "kakao"],
+  [/NAVER\(inapp/i, "naver"],
+  [/FBAN|FBAV|FB_IAB/, "facebook"],
+];
+
+export function detectInAppSource(userAgent: string): string | null {
+  for (const [pattern, source] of IN_APP_PATTERNS) {
+    if (pattern.test(userAgent)) return source;
+  }
+  return null;
+}
+
 /** 페이지 진입 시 호출 — 현재 URL/referrer에서 유입 정보를 기억한다. */
 export function captureAttribution(): void {
   if (typeof window === "undefined") return;
@@ -66,9 +83,18 @@ export function captureAttribution(): void {
       return;
     }
 
-    // UTM 없는 외부 유입: 기존 기억값이 없을 때만 referrer 도메인 기록
+    // 이하 UTM 없는 유입: 기존 기억값이 없을 때만 기록 (UTM > 기존값 > 앱 내 브라우저 > referrer)
     // (결제창 복귀 등 /checkout 경로는 제외 — 토스 도메인이 유입처로 잡히지 않게)
-    if (document.referrer && !read() && !landingPath.startsWith("/checkout")) {
+    if (read() || landingPath.startsWith("/checkout")) return;
+
+    // 앱 내 브라우저(인스타·카카오톡 등)는 referrer가 비어 오는 경우가 많아 User-Agent로 판별
+    const inApp = detectInAppSource(navigator.userAgent);
+    if (inApp) {
+      write({ utm_source: inApp, utm_medium: "inapp_browser", landing_path: landingPath, captured_at: now });
+      return;
+    }
+
+    if (document.referrer) {
       const ref = new URL(document.referrer);
       if (ref.host !== window.location.host) {
         write({ referrer: clip(ref.host), landing_path: landingPath, captured_at: now });
