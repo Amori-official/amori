@@ -17,8 +17,11 @@ const fadeUp = (delay = 0): MotionProps => ({
 const BASE_IMG = "object-cover object-center";
 const HERO_IMAGES: { src: string; alt: string; imgClassName?: string }[] = [
   { src: "/hero-cream.webp", alt: "Amori", imgClassName: `${BASE_IMG} brightness-125 contrast-90` },
-  { src: "/hero-2.webp", alt: "Amori 아기", imgClassName: BASE_IMG },
-  { src: "/hero-3.webp", alt: "Amori 거즈빕", imgClassName: BASE_IMG },
+  { src: "/hero-2.webp", alt: "아모리 원형 빕 컬러", imgClassName: BASE_IMG },
+  { src: "/hero-3.webp", alt: "아모리 빕 컬러 라인업", imgClassName: BASE_IMG },
+  { src: "/hero-4.webp", alt: "아모리 스카프 빕", imgClassName: BASE_IMG },
+  { src: "/hero-5.webp", alt: "아모리 거즈 패브릭", imgClassName: BASE_IMG },
+  { src: "/hero-6.webp", alt: "아모리 선물 패키지", imgClassName: BASE_IMG },
 ];
 
 const SLIDE_INTERVAL = 5000; // 5초마다 전환
