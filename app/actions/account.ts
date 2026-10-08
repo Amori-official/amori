@@ -33,6 +33,12 @@ export async function getOrders(): Promise<Order[]> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
+    // 결제창 이탈로 방치된 본인 미결제 주문을 먼저 해제(쿠폰·포인트 복원).
+    // 주문내역을 열기만 해도 사라졌던 쿠폰이 되살아난다. 실패해도 조회는 계속.
+    try {
+      await supabase.rpc("release_my_stale_pending_orders", { p_minutes: 2 });
+    } catch {}
+
     // 본인 주문만 조회된다(orders RLS: auth.uid() = user_id).
     const { data, error } = await supabase
       .from("orders")
@@ -166,6 +172,32 @@ export async function createReview(input: {
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "리뷰 작성 중 오류가 발생했습니다." };
+  }
+}
+
+// 결제 실패 시 운영진에게 사유를 알린다(실제 오류만 — 단순 '사용자 취소'는 제외해 스팸 방지).
+// 토스 failUrl이 넘겨주는 code/message를 그대로 전달받아 형식만 검증해 발송한다.
+const BENIGN_FAIL_CODES = new Set([
+  "PAY_PROCESS_CANCELED", // 사용자가 결제창에서 직접 취소
+  "USER_CANCEL",
+]);
+export async function reportPaymentFailure(
+  orderNumber: string,
+  code: string,
+  message: string
+): Promise<void> {
+  try {
+    const on = String(orderNumber ?? "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
+    const c = String(code ?? "").replace(/[^A-Za-z0-9_]/g, "").slice(0, 64);
+    const m = String(message ?? "").replace(/[\u0000-\u001f]/g, " ").slice(0, 300);
+    // 사용자가 스스로 취소한 경우는 오류가 아니므로 알리지 않는다.
+    if (BENIGN_FAIL_CODES.has(c)) return;
+    const { notifyKakaoWork } = await import("@/lib/notify");
+    await notifyKakaoWork(
+      `⚠️ 결제 실패\n주문번호: ${on || "-"}\n코드: ${c || "-"}\n사유: ${m || "-"}`
+    );
+  } catch {
+    /* 알림 실패는 무시 */
   }
 }
 

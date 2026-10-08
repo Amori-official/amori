@@ -3,19 +3,25 @@
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense, useEffect, useRef } from "react";
-import { releaseMyPendingOrder } from "@/app/actions/account";
+import { releaseMyPendingOrder, reportPaymentFailure } from "@/app/actions/account";
 
 function FailContent() {
   const searchParams = useSearchParams();
   const message = searchParams.get("message") ?? "결제에 실패했습니다.";
 
   // 토스 결제 실패/이탈로 돌아온 경우, 남은 미결제 주문을 해제해 쿠폰·적립금을 복원한다.
+  // 동시에 실제 오류라면 운영진에게 사유를 알린다(단순 사용자 취소는 제외).
   const releasedRef = useRef(false);
   useEffect(() => {
     const orderId = searchParams.get("orderId");
     if (!orderId || releasedRef.current) return;
     releasedRef.current = true;
     releaseMyPendingOrder(orderId).catch(() => {});
+    reportPaymentFailure(
+      orderId,
+      searchParams.get("code") ?? "",
+      searchParams.get("message") ?? ""
+    ).catch(() => {});
   }, [searchParams]);
 
   return (
