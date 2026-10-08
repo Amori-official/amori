@@ -381,6 +381,16 @@ export async function getAdminOrders(filters?: {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
 
+    // 조회 전 일괄 점검(실패해도 목록 조회는 계속 진행):
+    //  · 환불 기간(배송완료 +7일) 지난 주문 → 자동 '완료'
+    //  · 30분 넘게 방치된 미결제(pending) 주문 → 자동 해제(쿠폰·포인트 복원 + 결제대기 더미 정리)
+    try {
+      await supabase.rpc("auto_complete_orders");
+    } catch {}
+    try {
+      await supabase.rpc("release_all_stale_pending_orders", { p_minutes: 30 });
+    } catch {}
+
     let query = supabase
       .from("orders")
       .select(

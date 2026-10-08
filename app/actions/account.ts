@@ -569,6 +569,12 @@ export async function getUserCoupons(): Promise<UserCoupon[]> {
     } = await supabase.auth.getUser();
     if (!user) return [];
 
+    // 결제창에서 이탈해 방치된 본인 미결제 주문을 먼저 해제(쿠폰·포인트 복원).
+    // → 쿠폰함/체크아웃을 열면 사라졌던 쿠폰이 되살아난다. 실패해도 조회는 계속.
+    try {
+      await supabase.rpc("release_my_stale_pending_orders", { p_minutes: 2 });
+    } catch {}
+
     const { data, error } = await supabase
       .from("user_coupons")
       .select(
