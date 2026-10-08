@@ -66,6 +66,9 @@ export default function SectionHero() {
         ))}
       </motion.div>
 
+      {/* 텍스트 가독성용 그라데이션 — 우하단(텍스트 영역)만 살짝 밝게 해 겹침을 줄인다. */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tl from-white/55 via-white/10 to-transparent" />
+
       {/* 텍스트 레이어 (누끼: mix-blend-multiply) */}
       <div className="relative h-full flex flex-col">
         <div className="flex-1 max-w-screen-xl mx-auto w-full px-6 pt-20 pb-16 flex items-end justify-end">
