@@ -41,6 +41,14 @@ const ORDER_STATUS_OPTIONS = [
   { value: "completed", label: "완료" },
 ];
 
+// 취소 주체 라벨: 판매자(admin) / 구매자(customer) / 자동(system)
+function cancelActorLabel(by: string | null): string {
+  if (by === "admin") return "판매자";
+  if (by === "customer") return "구매자";
+  if (by === "system") return "자동";
+  return "";
+}
+
 export default function OrdersAdminClient({
   orders,
   total,
@@ -271,7 +279,12 @@ export default function OrdersAdminClient({
                         </Link>
                         <span className={`text-[12px] px-2 py-0.5 rounded-full ${pay.color}`}>{pay.label}</span>
                         {cancelled && (
-                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">주문 취소됨</span>
+                          <span
+                            className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500"
+                            title={o.cancelReason || undefined}
+                          >
+                            주문 취소됨{cancelActorLabel(o.cancelledBy) ? ` · ${cancelActorLabel(o.cancelledBy)}` : ""}
+                          </span>
                         )}
                         {o.returnStatus === "requested" && (
                           <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">반품 신청</span>

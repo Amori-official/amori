@@ -33,6 +33,14 @@ const FULFILLMENT_OPTIONS = [
   { value: "returned", label: "반품" },
 ];
 
+// 취소 주체 라벨: 판매자(admin) / 구매자(customer) / 자동(system)
+function cancelActorLabel(by: string | null): string {
+  if (by === "admin") return "판매자";
+  if (by === "customer") return "구매자";
+  if (by === "system") return "자동";
+  return "";
+}
+
 // 취소는 아래 '주문 취소' 버튼(쿠폰 복원 포함)으로만 처리한다 — 드롭다운에서는 제외.
 const ORDER_STATUS_OPTIONS = [
   { value: "pending", label: "대기" },
@@ -105,13 +113,19 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
           <span className={`text-[12px] px-2 py-0.5 rounded-full ${pay.color}`}>{pay.label}</span>
           {cancelled && (
             <span className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">
-              주문 취소됨
+              주문 취소됨{cancelActorLabel(order.cancelledBy) ? ` · ${cancelActorLabel(order.cancelledBy)}` : ""}
             </span>
           )}
         </div>
         <p className="text-[13px] text-brand-gray-mid mt-1">
           {new Date(order.createdAt).toLocaleString("ko-KR")}
         </p>
+        {cancelled && (order.cancelledBy || order.cancelReason) && (
+          <p className="text-[13px] text-red-600 mt-2 border border-red-200 bg-red-50 px-3 py-2 rounded">
+            취소 주체: <b>{cancelActorLabel(order.cancelledBy) || "알 수 없음"}</b>
+            {order.cancelReason ? ` · 사유: ${order.cancelReason}` : ""}
+          </p>
+        )}
       </div>
 
       {error && (

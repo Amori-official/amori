@@ -55,6 +55,10 @@ export interface AdminOrder {
   attribution: Attribution | null;
   /** 고객 배송 요청사항(메모) — orders.shipping_request */
   shippingRequest: string | null;
+  /** 취소 주체: 'admin'(판매자) | 'customer'(구매자) | 'system'(자동) | null */
+  cancelledBy: string | null;
+  /** 취소 사유 라벨 — orders.cancel_reason */
+  cancelReason: string | null;
 }
 
 /** 현재 세션이 관리자인지 (레이아웃 가드용 — throw 없이 boolean 반환). */
@@ -394,7 +398,7 @@ export async function getAdminOrders(filters?: {
     let query = supabase
       .from("orders")
       .select(
-        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, attribution, shipping_request, order_items(product_name, quantity, price)",
+        "id, order_number, buyer_name, recipient_name, total_amount, order_status, payment_status, fulfillment_status, return_status, created_at, attribution, shipping_request, cancelled_by, cancel_reason, order_items(product_name, quantity, price)",
         { count: "exact" }
       );
 
@@ -440,6 +444,8 @@ export async function getAdminOrders(filters?: {
         createdAt: String(o.created_at),
         attribution: toAttribution(o.attribution),
         shippingRequest: o.shipping_request ? String(o.shipping_request) : null,
+        cancelledBy: o.cancelled_by ? String(o.cancelled_by) : null,
+        cancelReason: o.cancel_reason ? String(o.cancel_reason) : null,
         items: (Array.isArray(o.order_items) ? o.order_items : []).map(
           (i: Record<string, unknown>) => ({
             productName: String(i.product_name ?? ""),
@@ -524,6 +530,8 @@ export interface AdminOrderDetail {
   returnStatus: string | null;
   returnReason: string;
   returnRequestedAt: string;
+  cancelledBy: string | null;
+  cancelReason: string;
   attribution: Attribution | null;
   items: { productName: string; variantLabel: string; quantity: number; price: number }[];
 }
@@ -583,6 +591,8 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
       returnStatus: d.return_status ? s(d.return_status) : null,
       returnReason: s(d.return_reason),
       returnRequestedAt: s(d.return_requested_at),
+      cancelledBy: d.cancelled_by ? s(d.cancelled_by) : null,
+      cancelReason: s(d.cancel_reason),
       attribution: toAttribution(d.attribution),
       items: (Array.isArray(d.order_items) ? (d.order_items as Record<string, unknown>[]) : []).map((i) => ({
         productName: s(i.product_name),
@@ -668,7 +678,12 @@ async function cancelOrderCore(
 
   const { error } = await supabase
     .from("orders")
-    .update({ order_status: "cancelled", payment_status: nextPaymentStatus })
+    .update({
+      order_status: "cancelled",
+      payment_status: nextPaymentStatus,
+      cancelled_by: "admin",
+      cancel_reason: "관리자 취소",
+    })
     .eq("id", id);
   if (error) {
     logSupabaseError("cancelOrder", error);
@@ -769,6 +784,8 @@ export async function approveReturn(id: string): Promise<{ error?: string }> {
         payment_status: "refunded",
         fulfillment_status: "returned",
         return_status: "approved",
+        cancelled_by: "admin",
+        cancel_reason: "반품 승인",
       })
       .eq("id", id);
     if (error) {
