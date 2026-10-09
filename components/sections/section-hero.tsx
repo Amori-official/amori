@@ -68,8 +68,8 @@ export default function SectionHero() {
 
       {/* 텍스트 레이어 (누끼: mix-blend-multiply) */}
       <div className="relative h-full flex flex-col">
-        <div className="flex-1 max-w-screen-xl mx-auto w-full px-6 pt-20 pb-16 flex items-end justify-end">
-          <div className="flex flex-col gap-5 sm:gap-8 mix-blend-multiply items-end text-right">
+        <div className="flex-1 max-w-screen-xl mx-auto w-full px-6 pt-20 pb-6 sm:pb-16 flex items-end justify-end">
+          <div className="flex flex-col gap-5 sm:gap-8 sm:mix-blend-multiply items-end text-right [text-shadow:0_1px_18px_rgba(255,255,255,0.9)] sm:[text-shadow:none]">
             <motion.h1
               {...fadeUp(0.15)}
               className="text-[2.25rem] sm:text-5xl md:text-7xl leading-[0.95] tracking-tight font-[family-name:var(--font-katibeh)] text-brand-black"
@@ -100,9 +100,9 @@ export default function SectionHero() {
           </div>
         </div>
 
-        {/* 스크롤 인디케이터 */}
+        {/* 스크롤 인디케이터 (모바일에선 숨겨 텍스트를 더 아래로) */}
         <motion.div
-          className="pb-10 text-center mix-blend-multiply"
+          className="hidden sm:block pb-10 text-center mix-blend-multiply"
           animate={{ y: [0, 7, 0] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
         >
