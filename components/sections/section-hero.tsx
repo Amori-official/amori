@@ -66,16 +66,13 @@ export default function SectionHero() {
         ))}
       </motion.div>
 
-      {/* 텍스트 가독성용 그라데이션 — 우하단(텍스트 영역)만 살짝 밝게 해 겹침을 줄인다. */}
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tl from-white/55 via-white/10 to-transparent" />
-
       {/* 텍스트 레이어 (누끼: mix-blend-multiply) */}
       <div className="relative h-full flex flex-col">
         <div className="flex-1 max-w-screen-xl mx-auto w-full px-6 pt-20 pb-16 flex items-end justify-end">
           <div className="flex flex-col gap-5 sm:gap-8 mix-blend-multiply items-end text-right">
             <motion.h1
               {...fadeUp(0.15)}
-              className="text-[2.75rem] sm:text-6xl md:text-8xl leading-[0.95] tracking-tight font-[family-name:var(--font-katibeh)] text-brand-black"
+              className="text-[2.25rem] sm:text-5xl md:text-7xl leading-[0.95] tracking-tight font-[family-name:var(--font-katibeh)] text-brand-black"
             >
               Things,
               <br />
