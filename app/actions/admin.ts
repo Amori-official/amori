@@ -371,6 +371,40 @@ export interface AdminOrdersResult {
   pageSize: number;
 }
 
+// 배송중 주문의 실제 배송완료 여부를 택배사 API(스마트택배)로 조회해 자동 전환한다.
+// SWEETTRACKER_API_KEY가 없으면 아무 것도 하지 않는다. 지연 방지를 위해 한 번에 소수만 처리.
+// ids를 주면 그 주문들만(상세 화면용), 없으면 오래된 배송중 순으로 최대 10건(목록용).
+async function syncShippedDelivery(supabase: SupabaseClient, ids?: string[]): Promise<void> {
+  if (!process.env.SWEETTRACKER_API_KEY) return;
+  try {
+    let q = supabase
+      .from("orders")
+      .select("id, courier, tracking_number")
+      .eq("fulfillment_status", "shipped")
+      .not("tracking_number", "is", null);
+    if (ids && ids.length > 0) q = q.in("id", ids);
+    else q = q.order("created_at", { ascending: true }).limit(10);
+    const { data } = await q;
+    if (!data || data.length === 0) return;
+
+    const { isDelivered } = await import("@/lib/sweettracker");
+    await Promise.all(
+      data.map(async (o) => {
+        const delivered = await isDelivered(
+          o.courier ? String(o.courier) : "",
+          o.tracking_number ? String(o.tracking_number) : ""
+        );
+        if (delivered === true) {
+          // delivered_at은 042 트리거가 자동 기록 → 7일 후 자동 '완료'로 이어짐.
+          await supabase.from("orders").update({ fulfillment_status: "delivered" }).eq("id", o.id);
+        }
+      })
+    );
+  } catch {
+    /* 조회 실패는 무시(수동 전환은 그대로 가능) */
+  }
+}
+
 export async function getAdminOrders(filters?: {
   fulfillment?: string;
   payment?: string;
@@ -388,6 +422,8 @@ export async function getAdminOrders(filters?: {
     // 조회 전 일괄 점검(실패해도 목록 조회는 계속 진행):
     //  · 환불 기간(배송완료 +7일) 지난 주문 → 자동 '완료'
     //  · 30분 넘게 방치된 미결제(pending) 주문 → 자동 해제(쿠폰·포인트 복원 + 결제대기 더미 정리)
+    //  · 배송중 주문의 실제 배송완료를 택배사 API로 조회해 자동 전환
+    await syncShippedDelivery(supabase);
     try {
       await supabase.rpc("auto_complete_orders");
     } catch {}
@@ -541,6 +577,8 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
   try {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
+    // 이 주문이 배송중이면 택배사 API로 실제 배송완료를 조회해 자동 전환(조회 전 1건만).
+    await syncShippedDelivery(supabase, [id]);
     const { data, error } = await supabase
       .from("orders")
       .select("*, order_items(product_name, variant_label, quantity, price)")
