@@ -17,10 +17,12 @@ function deriveOrderStatus(
   fulfillmentStatus: string
 ): Order["status"] {
   if (orderStatus === "cancelled") return "cancelled";
-  if (fulfillmentStatus === "delivered") return "delivered";
-  if (fulfillmentStatus === "preparing" || fulfillmentStatus === "shipped") return "shipped";
-  if (paymentStatus === "paid") return "paid";
-  return "pending";
+  if (orderStatus === "completed") return "completed"; // 구매확정(환불기간 종료 후 자동)
+  if (fulfillmentStatus === "delivered") return "delivered"; // 배송완료(택배사 추적 자동)
+  if (fulfillmentStatus === "shipped") return "shipped"; // 배송중(송장 입력)
+  if (fulfillmentStatus === "preparing") return "preparing"; // 배송준비중(관리자 전환)
+  if (paymentStatus === "paid") return "confirmed"; // 주문확인중(결제 직후)
+  return "pending"; // 결제 대기
 }
 
 // ── 주문 내역 ──────────────────────────────────────────────

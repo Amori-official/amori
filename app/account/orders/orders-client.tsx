@@ -9,18 +9,31 @@ import { useUIStore } from "@/store/ui";
 
 const REVIEW_POINT = 500; // 리뷰 작성 적립 포인트(문구용 — 실제 적립은 추후)
 
-// 고객에게 보여줄 배송/주문 상태. 핵심 규칙(요청): 결제 후 송장 입력 전에는
-// '배송 준비중', 송장 입력 후에는 '배송 중'으로 표시한다(송장 유무 기준).
+// 고객에게 보여줄 주문 상태(5단계):
+//  주문확인중 → 배송준비중 → 배송중 → 배송완료 → 구매확정 (+ 결제대기/취소/반품)
+const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  pending: { label: "결제 대기", color: "bg-gray-100 text-gray-600" },
+  confirmed: { label: "주문확인중", color: "bg-blue-50 text-blue-600" },
+  preparing: { label: "배송준비중", color: "bg-indigo-50 text-indigo-600" },
+  shipped: { label: "배송중", color: "bg-amber-50 text-amber-600" },
+  delivered: { label: "배송완료", color: "bg-green-50 text-green-600" },
+  completed: { label: "구매확정", color: "bg-brand-black text-white" },
+  cancelled: { label: "주문취소", color: "bg-red-50 text-red-500" },
+};
+
+// 주문내역 상단 '주문상태 가이드'(hover 시 노출)에 쓸 설명.
+const STATUS_GUIDE: { label: string; desc: string }[] = [
+  { label: "주문확인중", desc: "결제가 완료되어 주문이 접수된 상태예요." },
+  { label: "배송준비중", desc: "주문을 확인하고 상품을 포장·발송 준비 중이에요." },
+  { label: "배송중", desc: "운송장이 등록되어 택배가 출발했어요." },
+  { label: "배송완료", desc: "택배사 배송완료가 확인된 상태예요." },
+  { label: "구매확정", desc: "교환·환불 가능 기간이 지나 거래가 확정됐어요." },
+];
+
 function getDisplayStatus(order: Order): { label: string; color: string } {
-  if (order.status === "cancelled") return { label: "취소", color: "bg-red-50 text-red-500" };
+  if (order.status === "cancelled") return STATUS_LABEL.cancelled;
   if (order.fulfillmentStatus === "returned") return { label: "반품", color: "bg-red-50 text-red-500" };
-  if (order.fulfillmentStatus === "delivered") return { label: "배송 완료", color: "bg-green-50 text-green-600" };
-  if (order.paymentStatus === "paid") {
-    return order.trackingNumber
-      ? { label: "배송 중", color: "bg-amber-50 text-amber-600" }
-      : { label: "배송 준비중", color: "bg-blue-50 text-blue-600" };
-  }
-  return { label: "결제 대기", color: "bg-gray-100 text-gray-600" };
+  return STATUS_LABEL[order.status] ?? STATUS_LABEL.pending;
 }
 
 export default function OrdersClient({
@@ -35,7 +48,28 @@ export default function OrdersClient({
 
   return (
     <div id="account-orders" className="p-6 sm:p-8">
-      <h2 className="text-[14px] tracking-[0.3em] mb-6">주문 내역</h2>
+      <div className="flex items-center gap-2 mb-6">
+        <h2 className="text-[14px] tracking-[0.3em]">주문 내역</h2>
+        {/* 주문상태 가이드 — 커서를 올리면 단계별 설명이 보인다 */}
+        <span className="group relative inline-flex items-center">
+          <span className="cursor-help text-[11px] text-brand-gray-mid border border-brand-border rounded-full px-2 py-0.5 tracking-wide">
+            주문상태 가이드 ⓘ
+          </span>
+          <span
+            role="tooltip"
+            className="pointer-events-none absolute left-0 top-full mt-2 z-20 w-72 opacity-0 translate-y-1
+              group-hover:opacity-100 group-hover:translate-y-0 transition-all
+              bg-white border border-brand-border shadow-lg p-3 space-y-1.5"
+          >
+            {STATUS_GUIDE.map((g) => (
+              <span key={g.label} className="block text-[11px] leading-5">
+                <b className="text-brand-black">{g.label}</b>
+                <span className="text-brand-gray-mid"> · {g.desc}</span>
+              </span>
+            ))}
+          </span>
+        </span>
+      </div>
 
       {orders.length === 0 ? (
         <div className="py-20 text-center text-brand-gray-mid text-sm tracking-wide">

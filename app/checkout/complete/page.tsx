@@ -139,6 +139,15 @@ function CompleteContent() {
         주문번호: {orderNumber}
       </div>
 
+      {/* 리뷰 적립 안내 — 구매 직후 포인트 혜택을 알린다 */}
+      <div className="max-w-sm border border-brand-border bg-brand-gray-light px-5 py-3 text-[12px] tracking-wide text-brand-gray-mid leading-5">
+        <b className="text-brand-black">📝 리뷰 쓰면 포인트 적립!</b>
+        <br />
+        배송 완료 후 리뷰를 작성하면 <b className="text-brand-black">최대 500P</b>를 드려요.
+        <br />
+        적립금은 1,000P부터 결제 시 현금처럼 사용할 수 있어요.
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <Link
           href="/shop"

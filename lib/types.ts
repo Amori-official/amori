@@ -109,7 +109,17 @@ export interface Order {
   userId: string;
   items: OrderItem[];
   totalAmount: number;
-  status: "pending" | "paid" | "shipped" | "delivered" | "cancelled";
+  // 고객에게 보여줄 주문 흐름:
+  // pending(결제대기) → confirmed(주문확인중) → preparing(배송준비중)
+  // → shipped(배송중) → delivered(배송완료) → completed(구매확정) / cancelled(취소)
+  status:
+    | "pending"
+    | "confirmed"
+    | "preparing"
+    | "shipped"
+    | "delivered"
+    | "completed"
+    | "cancelled";
   /** 원시 상태 (버튼 조건 판단용) */
   fulfillmentStatus: string;
   paymentStatus: string;
