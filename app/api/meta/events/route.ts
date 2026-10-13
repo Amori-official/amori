@@ -11,6 +11,7 @@ const ALLOWED_EVENTS = new Set<MetaEventName>([
   "ViewContent",
   "AddToCart",
   "InitiateCheckout",
+  "AddPaymentInfo",
   "CompleteRegistration",
 ]);
 const EVENT_ID_REGEX = /^[A-Za-z0-9_-]{1,100}$/;

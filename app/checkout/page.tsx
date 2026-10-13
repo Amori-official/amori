@@ -424,6 +424,17 @@ export default function CheckoutPage() {
       contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: i.unitPrice })),
     });
 
+    // 퍼널 분석: '결제 시도'(결제창 진입) 지점. 이후 Purchase와 비교하면
+    // "결제창까지 갔다가 이탈"한 비율을 Meta 이벤트에서 볼 수 있다.
+    trackMeta("AddPaymentInfo", {
+      value: order.totalAmount,
+      currency: "KRW",
+      content_type: "product",
+      content_ids: items.map((i) => i.product.id),
+      contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: i.unitPrice })),
+      num_items: items.reduce((n, i) => n + i.quantity, 0),
+    });
+
     try {
       await widgetsRef.current.setAmount({ currency: "KRW", value: order.totalAmount });
       await widgetsRef.current.requestPayment({
