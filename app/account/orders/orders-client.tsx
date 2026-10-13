@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Order, OrderItem } from "@/lib/types";
 import { cancelMyOrder, requestReturn, createReview, releaseMyPendingOrder } from "@/app/actions/account";
 import { trackingUrl } from "@/lib/tracking";
+import { uploadReviewMedia, isVideo } from "@/lib/upload-review-media";
 import { useUIStore } from "@/store/ui";
 
 const REVIEW_POINT = 500; // 리뷰 작성 적립 포인트(문구용 — 실제 적립은 추후)
@@ -101,7 +102,7 @@ export default function OrdersClient({
                       order.status !== "cancelled" &&
                       order.items.some((it) => !reviewedSet.has(it.productId)) && (
                         <p className="text-[13px] text-amber-700 tracking-wide mt-1">
-                          ⭐ 리뷰 작성 시 {REVIEW_POINT}P 적립
+                          ⭐ 리뷰 작성 시 최대 {REVIEW_POINT}P 적립
                         </p>
                       )}
                   </div>
@@ -262,7 +263,7 @@ function OrderDetailModal({
                         리뷰 작성
                       </button>
                       <p className="text-[11px] text-amber-700 mt-1">
-                        리뷰 작성 시 {REVIEW_POINT}P 적립
+                        리뷰 작성 시 최대 {REVIEW_POINT}P 적립
                       </p>
                     </div>
                   ))}
@@ -393,12 +394,45 @@ function ReviewForm({
   const [rating, setRating] = useState(5);
   const [hover, setHover] = useState(0);
   const [content, setContent] = useState("");
+  const [media, setMedia] = useState<{ url: string; video: boolean }[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const hasMedia = media.length > 0;
+  const earnPoints = hasMedia ? 500 : 300;
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setError(null);
+    const room = 5 - media.length;
+    if (room <= 0) {
+      setError("사진/영상은 최대 5개까지 첨부할 수 있어요.");
+      return;
+    }
+    setUploading(true);
+    const picked = Array.from(files).slice(0, room);
+    for (const file of picked) {
+      const res = await uploadReviewMedia(file);
+      if (res.error) {
+        setError(res.error);
+        continue;
+      }
+      if (res.url) {
+        const url = res.url;
+        setMedia((prev) => [...prev, { url, video: isVideo(file) }]);
+      }
+    }
+    setUploading(false);
+  };
 
   const submit = () => {
     if (content.trim().length < 5) {
       setError("리뷰 내용을 5자 이상 입력해주세요.");
+      return;
+    }
+    if (uploading) {
+      setError("사진/영상 업로드가 끝난 뒤 등록해주세요.");
       return;
     }
     setError(null);
@@ -408,12 +442,13 @@ function ReviewForm({
         orderId,
         rating,
         content: content.trim(),
+        imageUrls: media.map((m) => m.url),
       });
       if (res.error) {
         setError(res.error);
         return;
       }
-      showToast(`리뷰가 등록되었습니다. ${REVIEW_POINT}P 적립 완료!`);
+      showToast(`리뷰가 등록되었습니다. ${earnPoints}P 적립 완료!`);
       onDone();
     });
   };
@@ -458,16 +493,60 @@ function ReviewForm({
           className="w-full border border-brand-border p-3 text-[14px] tracking-wide focus:outline-none focus:border-brand-black resize-none"
         />
 
+        {/* 사진/영상 첨부 */}
+        <div className="mt-4">
+          <div className="flex flex-wrap gap-2">
+            {media.map((m, i) => (
+              <div key={m.url} className="relative w-16 h-16 border border-brand-border overflow-hidden">
+                {m.video ? (
+                  <video src={m.url} className="w-full h-full object-cover" muted />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.url} alt="첨부" className="w-full h-full object-cover" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setMedia((prev) => prev.filter((_, idx) => idx !== i))}
+                  aria-label="삭제"
+                  className="absolute top-0 right-0 w-5 h-5 bg-black/60 text-white text-[12px] leading-5 text-center"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {media.length < 5 && (
+              <label className="w-16 h-16 border border-dashed border-brand-border flex flex-col items-center justify-center cursor-pointer text-brand-gray-mid hover:border-brand-black">
+                <span className="text-lg leading-none">＋</span>
+                <span className="text-[10px] mt-0.5">사진·영상</span>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    handleFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          {uploading && <p className="mt-1 text-[12px] text-brand-gray-mid">업로드 중...</p>}
+        </div>
+
         {error && <p className="mt-2 text-[13px] text-red-500 tracking-wide">{error}</p>}
 
-        <p className="mt-2 text-[12px] text-amber-700">리뷰 작성 시 {REVIEW_POINT}P 적립</p>
+        <p className="mt-3 text-[12px] text-amber-700">
+          글 리뷰 <b>300P</b> · 사진/영상 첨부 시 <b>500P</b> 적립
+          {hasMedia ? " — 현재 500P 대상 🎉" : " (사진·영상 추가하면 +200P)"}
+        </p>
 
         <button
           onClick={submit}
-          disabled={pending}
+          disabled={pending || uploading}
           className="mt-4 w-full h-11 bg-brand-black text-white text-[14px] tracking-widest hover:bg-brand-gray-mid transition-colors disabled:opacity-50"
         >
-          {pending ? "등록 중..." : "리뷰 등록"}
+          {pending ? "등록 중..." : `리뷰 등록 (${earnPoints}P 적립)`}
         </button>
       </div>
     </div>

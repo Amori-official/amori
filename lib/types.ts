@@ -149,6 +149,8 @@ export interface Review {
   userName: string;
   rating: number;
   content: string;
+  /** 사진/영상 공개 URL 목록 */
+  images: string[];
   createdAt: string;
 }
 

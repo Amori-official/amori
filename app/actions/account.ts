@@ -149,6 +149,7 @@ export async function createReview(input: {
   orderId: string;
   rating: number;
   content: string;
+  imageUrls?: string[];
 }): Promise<{ error?: string }> {
   if (!IS_CONFIGURED) return { error: "사용할 수 없습니다." };
   try {
@@ -157,11 +158,16 @@ export async function createReview(input: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "로그인이 필요합니다." };
 
+    const images = Array.isArray(input.imageUrls)
+      ? input.imageUrls.filter((u) => typeof u === "string" && u.length > 0).slice(0, 5)
+      : [];
+
     const { error } = await supabase.rpc("create_review", {
       p_product_id: input.productId,
       p_order_id: input.orderId,
       p_rating: input.rating,
       p_content: input.content,
+      p_image_urls: images.length > 0 ? images : null,
     });
     if (error) {
       // RPC가 raise한 한글 메시지를 그대로 전달(마지막 세그먼트만).

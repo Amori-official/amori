@@ -274,6 +274,7 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
           userName: (r.profiles as { name: string } | null)?.name ?? "익명",
           rating: Number(r.rating),
           content: String(r.content),
+          images: Array.isArray(r.image_urls) ? (r.image_urls as unknown[]).map(String) : [],
           createdAt: String(r.created_at),
         }));
       }

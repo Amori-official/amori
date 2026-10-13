@@ -42,6 +42,29 @@ export default function ProductReviews({ reviews }: Props) {
               <p className="text-xs text-brand-gray-mid tracking-wide leading-relaxed">
                 {review.content}
               </p>
+              {review.images.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {review.images.map((url) =>
+                    /\.(mp4|mov|webm)(\?|$)/i.test(url) ? (
+                      <video
+                        key={url}
+                        src={url}
+                        controls
+                        className="w-24 h-24 object-cover border border-brand-border"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={url}
+                        src={url}
+                        alt="리뷰 사진"
+                        loading="lazy"
+                        className="w-24 h-24 object-cover border border-brand-border"
+                      />
+                    )
+                  )}
+                </div>
+              )}
               <p className="text-[14px] text-brand-border">
                 {new Date(review.createdAt).toLocaleDateString("ko-KR")}
               </p>
