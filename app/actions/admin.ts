@@ -1714,6 +1714,7 @@ export async function getAdminReviews(filters?: {
       .select("id, product_id, rating, content, created_at, products(name, slug), profiles(name)", {
         count: "exact",
       })
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .range((page - 1) * pageSize, page * pageSize - 1);
 
@@ -1749,11 +1750,20 @@ export async function getAdminReviews(filters?: {
   }
 }
 
-export async function adminDeleteReview(id: string): Promise<{ error?: string }> {
+export async function adminDeleteReview(
+  id: string,
+  opts?: { reason?: string; recoverPoints?: boolean }
+): Promise<{ error?: string }> {
   try {
+    const reason = (opts?.reason ?? "").trim();
+    if (!reason) return { error: "삭제 사유를 입력해주세요." };
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
-    const { error } = await supabase.rpc("admin_delete_review", { p_review_id: id });
+    const { error } = await supabase.rpc("admin_delete_review", {
+      p_review_id: id,
+      p_reason: reason.slice(0, 300),
+      p_recover_points: !!opts?.recoverPoints,
+    });
     if (error) {
       logSupabaseError("adminDeleteReview", error);
       return { error: "리뷰 삭제에 실패했습니다." };

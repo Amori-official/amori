@@ -71,6 +71,10 @@ export default function OrdersAdminClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState(initialQuery);
+  // 낙관적 상태 반영 — 서버 저장/새로고침을 기다리지 않고 드롭다운을 즉시 바꾼다.
+  const [override, setOverride] = useState<
+    Record<string, { fulfillmentStatus?: string; orderStatus?: string }>
+  >({});
 
   // 선택/일괄 취소
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -140,13 +144,23 @@ export default function OrdersAdminClient({
   };
 
   const change = (orderId: string, patch: { fulfillmentStatus?: string; orderStatus?: string }) => {
-    setBusyId(orderId);
     setError(null);
+    // 즉시 화면 반영(낙관적). 저장 실패하면 되돌린다.
+    setOverride((prev) => ({ ...prev, [orderId]: { ...prev[orderId], ...patch } }));
+    setBusyId(orderId);
     startTransition(async () => {
       const res = await updateOrderStatus(orderId, patch);
       setBusyId(null);
-      if (res.error) setError(res.error);
-      else router.refresh();
+      if (res.error) {
+        setError(res.error);
+        setOverride((prev) => {
+          const next = { ...prev };
+          delete next[orderId];
+          return next;
+        });
+      } else {
+        router.refresh(); // 백그라운드 동기화(사용자는 이미 바뀐 값을 봄)
+      }
     });
   };
 
@@ -318,7 +332,7 @@ export default function OrdersAdminClient({
                       <label className="text-[12px] text-brand-gray-mid tracking-wide flex items-center gap-2">
                         배송
                         <select
-                          value={o.fulfillmentStatus}
+                          value={override[o.id]?.fulfillmentStatus ?? o.fulfillmentStatus}
                           disabled={busy || cancelled}
                           onChange={(e) => change(o.id, { fulfillmentStatus: e.target.value })}
                           className="h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black disabled:opacity-50"
@@ -334,7 +348,7 @@ export default function OrdersAdminClient({
                           <span className="h-9 inline-flex items-center px-2 text-[13px] text-red-500">취소됨</span>
                         ) : (
                           <select
-                            value={o.orderStatus}
+                            value={override[o.id]?.orderStatus ?? o.orderStatus}
                             disabled={busy}
                             onChange={(e) => change(o.id, { orderStatus: e.target.value })}
                             className="h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black disabled:opacity-50"

@@ -33,19 +33,39 @@ export default function ReviewsAdminClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 삭제 모달 상태
+  const [target, setTarget] = useState<AdminReview | null>(null);
+  const [reason, setReason] = useState("");
+  const [recover, setRecover] = useState(false);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const go = (p: number) => router.push(`/admin/reviews${p > 1 ? `?page=${p}` : ""}`);
 
-  const handleDelete = (r: AdminReview) => {
-    if (!confirm(`이 리뷰를 삭제하시겠습니까?\n[${r.productName}] ${r.userName}\n삭제 후 상품 평점이 다시 계산됩니다.`)) return;
-    setBusyId(r.id);
+  const openDelete = (r: AdminReview) => {
+    setTarget(r);
+    setReason("");
+    setRecover(false);
+    setError(null);
+  };
+
+  const confirmDelete = () => {
+    if (!target) return;
+    if (reason.trim().length < 2) {
+      setError("삭제 사유를 입력해주세요.");
+      return;
+    }
+    setBusyId(target.id);
     setError(null);
     startTransition(async () => {
-      const res = await adminDeleteReview(r.id);
+      const res = await adminDeleteReview(target.id, { reason: reason.trim(), recoverPoints: recover });
       setBusyId(null);
-      if (res.error) setError(res.error);
-      else router.refresh();
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+      setTarget(null);
+      router.refresh();
     });
   };
 
@@ -97,7 +117,7 @@ export default function ReviewsAdminClient({
                       </p>
                     </div>
                     <button
-                      onClick={() => handleDelete(r)}
+                      onClick={() => openDelete(r)}
                       disabled={busy}
                       className="h-9 px-3 border border-red-300 text-red-500 text-[13px] tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
                     >
@@ -131,6 +151,64 @@ export default function ReviewsAdminClient({
             </div>
           )}
         </>
+      )}
+
+      {/* 삭제 모달 — 사유 입력 + 포인트 회수 선택 */}
+      {target && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => !pending && setTarget(null)} />
+          <div className="relative bg-white w-full max-w-md p-6 space-y-4">
+            <h3 className="text-[14px] tracking-[0.3em]">리뷰 삭제</h3>
+            <p className="text-[13px] text-brand-gray-mid break-words">
+              [{target.productName}] {target.userName} · {target.rating}점
+            </p>
+            <div>
+              <label className="text-[12px] text-brand-gray-mid">삭제 사유 (필수)</label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={3}
+                maxLength={300}
+                placeholder="예: 비방·욕설, 광고·스팸, 상품과 무관한 내용 등"
+                className="mt-1 w-full border border-brand-border p-2 text-[13px] focus:outline-none focus:border-brand-black resize-none"
+              />
+            </div>
+            <label className="flex items-start gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={recover}
+                onChange={(e) => setRecover(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-brand-black"
+              />
+              <span>
+                <b>적립 포인트 회수</b>
+                <span className="block text-[12px] text-brand-gray-mid">
+                  이 리뷰로 지급된 포인트(글 300P·미디어 500P)를 고객 잔액에서 차감합니다. (불합리한 리뷰용)
+                </span>
+              </span>
+            </label>
+            {error && <p className="text-[13px] text-red-500">{error}</p>}
+            <p className="text-[12px] text-brand-gray-mid">
+              삭제하면 상품 페이지에서 숨겨지고, 평점이 다시 계산돼요. 같은 상품 재작성은 차단됩니다.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setTarget(null)}
+                disabled={pending}
+                className="h-9 px-4 border border-brand-border text-[13px] tracking-wide hover:border-brand-black disabled:opacity-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={pending}
+                className="h-9 px-4 bg-red-500 text-white text-[13px] tracking-widest hover:bg-red-600 disabled:opacity-50"
+              >
+                {pending ? "삭제 중..." : "삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

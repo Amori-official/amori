@@ -520,7 +520,7 @@ function ReviewForm({
                 <span className="text-[10px] mt-0.5">사진·영상</span>
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,.heic,.heif"
                   multiple
                   className="hidden"
                   onChange={(e) => {
