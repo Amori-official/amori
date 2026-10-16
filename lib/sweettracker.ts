@@ -48,13 +48,21 @@ export async function isDelivered(
       message?: string;
     };
     // 조회 자체 실패(잘못된 송장 등)는 null로 두어 상태를 건드리지 않는다.
-    if (data?.status === false) return null;
-    if (data?.completeYN === "Y") return true;
-    if (typeof data?.level === "number" && data.level >= 6) return true;
-    return false;
+    if ((data as { status?: unknown })?.status === false) return null;
+    return isDeliveredPayload(data);
   } catch {
     return null;
   }
+}
+
+// 스마트택배 응답에서 '배송완료' 판정. 응답마다 필드가 조금씩 달라(complete/completeYN/level)
+// 세 가지를 모두 본다. level 6 = 배송완료.
+function isDeliveredPayload(data: unknown): boolean {
+  const d = (data ?? {}) as { complete?: unknown; completeYN?: unknown; level?: unknown };
+  if (d.complete === true) return true;
+  if (d.completeYN === "Y") return true;
+  if (typeof d.level === "number" && d.level >= 6) return true;
+  return false;
 }
 
 export interface TrackingDiagnosis {
@@ -100,8 +108,13 @@ export async function diagnoseTracking(
     });
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     const level = typeof data.level === "number" ? (data.level as number) : undefined;
-    const completeYN = typeof data.completeYN === "string" ? (data.completeYN as string) : undefined;
-    const delivered = completeYN === "Y" || (typeof level === "number" && level >= 6);
+    const completeYN =
+      typeof data.completeYN === "string"
+        ? (data.completeYN as string)
+        : data.complete === true
+          ? "Y"
+          : undefined;
+    const delivered = isDeliveredPayload(data);
     return {
       ...base,
       httpOk: res.ok,
