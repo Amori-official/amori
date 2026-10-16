@@ -61,6 +61,8 @@ export interface TrackingDiagnosis {
   keySet: boolean;
   carrierCode: string | null;
   invoice: string;
+  /** 키 확인용 마스킹 미리보기(길이 + 앞3·뒤2글자). 전체 키는 노출하지 않음. */
+  keyPreview?: string;
   httpOk?: boolean;
   apiStatus?: unknown;
   msg?: string;
@@ -78,7 +80,10 @@ export async function diagnoseTracking(
   const key = process.env.SWEETTRACKER_API_KEY?.trim();
   const code = trackerCode(courier ?? "");
   const no = (invoice ?? "").replace(/[^0-9A-Za-z]/g, "");
-  const base: TrackingDiagnosis = { keySet: !!key, carrierCode: code, invoice: no };
+  const keyPreview = key
+    ? `${key.length}자 (${key.slice(0, 3)}…${key.slice(-2)})`
+    : undefined;
+  const base: TrackingDiagnosis = { keySet: !!key, carrierCode: code, invoice: no, keyPreview };
 
   if (!key) return { ...base, error: "API 키가 설정되지 않았어요 (SWEETTRACKER_API_KEY)." };
   if (!code) return { ...base, error: "지원하지 않는 택배사예요 (CJ·우체국·한진·롯데·로젠만 자동조회)." };

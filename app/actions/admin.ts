@@ -596,7 +596,12 @@ export async function adminDiagnoseTracking(orderId: string): Promise<{ message?
     if (d.error) return { message: `⚠️ 조회 오류: ${d.error}` };
 
     if (d.apiStatus === false) {
-      return { message: `⚠️ 스마트택배 응답: ${d.msg ?? "키/운송장 오류"}\n→ API 키가 유효한지, 운송장/택배사가 맞는지 확인해주세요.` };
+      return {
+        message:
+          `⚠️ 스마트택배 응답: ${d.msg ?? "키/운송장 오류"}\n` +
+          `현재 적용된 키: ${d.keyPreview ?? "(없음)"}\n` +
+          `→ 이용권번호(216-2201 등)가 아니라 'API KEY'(긴 문자열)여야 해요. 값을 다시 확인해주세요.`,
+      };
     }
     if (d.delivered) {
       return { message: `✅ 택배사 '배송완료' 확인! (completeYN=${d.completeYN ?? "-"}, level=${d.level ?? "-"})\n주문관리를 새로고침하면 자동으로 '배송완료'로 바뀝니다.` };
