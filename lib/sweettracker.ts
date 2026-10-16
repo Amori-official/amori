@@ -24,7 +24,7 @@ export async function isDelivered(
   courier: string | null | undefined,
   invoice: string | null | undefined
 ): Promise<boolean | null> {
-  const key = process.env.SWEETTRACKER_API_KEY;
+  const key = process.env.SWEETTRACKER_API_KEY?.trim();
   if (!key) return null;
 
   const code = trackerCode(courier ?? "");
@@ -75,7 +75,7 @@ export async function diagnoseTracking(
   courier: string | null | undefined,
   invoice: string | null | undefined
 ): Promise<TrackingDiagnosis> {
-  const key = process.env.SWEETTRACKER_API_KEY;
+  const key = process.env.SWEETTRACKER_API_KEY?.trim();
   const code = trackerCode(courier ?? "");
   const no = (invoice ?? "").replace(/[^0-9A-Za-z]/g, "");
   const base: TrackingDiagnosis = { keySet: !!key, carrierCode: code, invoice: no };
