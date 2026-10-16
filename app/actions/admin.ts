@@ -572,6 +572,41 @@ export interface AdminOrderDetail {
   items: { productName: string; variantLabel: string; quantity: number; price: number }[];
 }
 
+// 배송 자동조회 진단 — 관리자가 특정 주문의 택배 자동전환이 왜 안 되는지 눈으로 확인.
+export async function adminDiagnoseTracking(orderId: string): Promise<{ message?: string; error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { data } = await supabase
+      .from("orders")
+      .select("courier, tracking_number, fulfillment_status")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!data) return { error: "주문을 찾을 수 없습니다." };
+
+    const { diagnoseTracking } = await import("@/lib/sweettracker");
+    const d = await diagnoseTracking(
+      data.courier ? String(data.courier) : "",
+      data.tracking_number ? String(data.tracking_number) : ""
+    );
+
+    if (!d.keySet) return { message: "⚠️ 스마트택배 API 키가 설정되지 않았어요.\nVercel 환경변수 SWEETTRACKER_API_KEY를 확인해주세요." };
+    if (!d.carrierCode) return { message: `⚠️ ${d.error ?? "지원하지 않는 택배사예요."}\n(자동조회: CJ·우체국·한진·롯데·로젠)` };
+    if (!d.invoice) return { message: "⚠️ 운송장 번호가 없어요. 송장을 먼저 입력해주세요." };
+    if (d.error) return { message: `⚠️ 조회 오류: ${d.error}` };
+
+    if (d.apiStatus === false) {
+      return { message: `⚠️ 스마트택배 응답: ${d.msg ?? "키/운송장 오류"}\n→ API 키가 유효한지, 운송장/택배사가 맞는지 확인해주세요.` };
+    }
+    if (d.delivered) {
+      return { message: `✅ 택배사 '배송완료' 확인! (completeYN=${d.completeYN ?? "-"}, level=${d.level ?? "-"})\n주문관리를 새로고침하면 자동으로 '배송완료'로 바뀝니다.` };
+    }
+    return { message: `아직 '배송중'이에요. 택배사가 배송완료를 찍으면 자동 전환됩니다.\n(현재 진행단계 level=${d.level ?? "-"}, completeYN=${d.completeYN ?? "N"})` };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
 export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail | null> {
   if (!isSupabaseConfigured()) return null;
   try {

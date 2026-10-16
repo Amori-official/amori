@@ -10,6 +10,7 @@ import {
   cancelOrder,
   approveReturn,
   rejectReturn,
+  adminDiagnoseTracking,
   type AdminOrderDetail,
 } from "@/app/actions/admin";
 
@@ -79,6 +80,18 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
     });
   };
 
+  // 배송 자동조회 진단 — 택배사 응답을 그대로 보여준다(새로고침은 안 함).
+  const diagnose = () => {
+    setError(null);
+    setMsg(null);
+    startTransition(async () => {
+      const res = await adminDiagnoseTracking(order.id);
+      if (res.error) setError(res.error);
+      else if (res.message) setMsg(res.message);
+      router.refresh(); // 배송완료로 바뀌었으면 반영
+    });
+  };
+
   const saveTracking = () => {
     const courier = courierSel === "직접 입력" ? courierCustom : courierSel;
     run(() => setOrderTracking(order.id, courier, tracking), "송장 정보를 저장했습니다.");
@@ -134,7 +147,7 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
         </p>
       )}
       {msg && (
-        <p className="text-[13px] text-blue-600 tracking-wide border border-blue-200 bg-blue-50 px-3 py-2">
+        <p className="text-[13px] text-blue-600 tracking-wide border border-blue-200 bg-blue-50 px-3 py-2 whitespace-pre-line">
           {msg}
         </p>
       )}
@@ -261,18 +274,29 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
           </button>
         </div>
         {order.trackingNumber && (
-          <a
-            href={trackingUrl(order.courier, order.trackingNumber)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mt-3 text-[13px] text-blue-600 underline underline-offset-4 hover:text-blue-700"
-          >
-            배송 조회하기 ({order.courier ? `${order.courier} ` : ""}
-            {order.trackingNumber}) →
-          </a>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <a
+              href={trackingUrl(order.courier, order.trackingNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[13px] text-blue-600 underline underline-offset-4 hover:text-blue-700"
+            >
+              배송 조회하기 ({order.courier ? `${order.courier} ` : ""}
+              {order.trackingNumber}) →
+            </a>
+            <button
+              onClick={diagnose}
+              disabled={pending}
+              className="h-8 px-3 border border-brand-border text-[12px] tracking-wide hover:border-brand-black disabled:opacity-50"
+            >
+              배송 자동조회 테스트
+            </button>
+          </div>
         )}
-        <p className="text-[12px] text-brand-gray-mid mt-2">
-          송장 번호를 저장하면 배송 상태가 자동으로 &lsquo;배송 중&rsquo;으로 변경됩니다.
+        <p className="text-[12px] text-brand-gray-mid mt-2 whitespace-pre-line">
+          송장 번호를 저장하면 배송 상태가 자동으로 &lsquo;배송 중&rsquo;으로 변경되고,
+          택배사가 배송완료를 찍으면 &lsquo;배송 완료&rsquo;로 자동 전환돼요.
+          {"\n"}“배송 자동조회 테스트”로 지금 상태를 바로 확인할 수 있어요.
         </p>
       </Section>
 

@@ -56,3 +56,57 @@ export async function isDelivered(
     return null;
   }
 }
+
+export interface TrackingDiagnosis {
+  keySet: boolean;
+  carrierCode: string | null;
+  invoice: string;
+  httpOk?: boolean;
+  apiStatus?: unknown;
+  msg?: string;
+  completeYN?: string;
+  level?: number;
+  delivered?: boolean;
+  error?: string;
+}
+
+/** 진단용 — 실제 응답을 그대로 반환해 자동전환이 왜 안 되는지 눈으로 확인한다. */
+export async function diagnoseTracking(
+  courier: string | null | undefined,
+  invoice: string | null | undefined
+): Promise<TrackingDiagnosis> {
+  const key = process.env.SWEETTRACKER_API_KEY;
+  const code = trackerCode(courier ?? "");
+  const no = (invoice ?? "").replace(/[^0-9A-Za-z]/g, "");
+  const base: TrackingDiagnosis = { keySet: !!key, carrierCode: code, invoice: no };
+
+  if (!key) return { ...base, error: "API 키가 설정되지 않았어요 (SWEETTRACKER_API_KEY)." };
+  if (!code) return { ...base, error: "지원하지 않는 택배사예요 (CJ·우체국·한진·롯데·로젠만 자동조회)." };
+  if (!no) return { ...base, error: "운송장 번호가 없어요." };
+
+  try {
+    const url =
+      `https://info.sweettracker.co.kr/api/v1/trackingInfo` +
+      `?t_key=${encodeURIComponent(key)}&t_code=${code}&t_invoice=${encodeURIComponent(no)}`;
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store",
+    });
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const level = typeof data.level === "number" ? (data.level as number) : undefined;
+    const completeYN = typeof data.completeYN === "string" ? (data.completeYN as string) : undefined;
+    const delivered = completeYN === "Y" || (typeof level === "number" && level >= 6);
+    return {
+      ...base,
+      httpOk: res.ok,
+      apiStatus: data.status,
+      msg: typeof data.msg === "string" ? data.msg : typeof data.message === "string" ? (data.message as string) : undefined,
+      completeYN,
+      level,
+      delivered,
+    };
+  } catch (e) {
+    return { ...base, error: e instanceof Error ? e.message : "조회 실패" };
+  }
+}
