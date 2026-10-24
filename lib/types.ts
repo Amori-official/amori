@@ -98,6 +98,8 @@ export interface CartItem {
 export interface OrderItem {
   productId: string;
   productName: string;
+  /** 옵션명(예: 색상) — order_items.variant_label */
+  variantLabel?: string | null;
   quantity: number;
   price: number;
 }

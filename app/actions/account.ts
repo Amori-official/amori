@@ -66,6 +66,7 @@ export async function getOrders(): Promise<Order[]> {
         ? o.order_items.map((i: Record<string, unknown>) => ({
             productId: String(i.product_id),
             productName: String(i.product_name),
+            variantLabel: i.variant_label ? String(i.variant_label) : null,
             quantity: Number(i.quantity),
             price: Number(i.price),
           }))

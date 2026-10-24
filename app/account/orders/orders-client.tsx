@@ -246,7 +246,10 @@ function OrderDetailModal({
             return (
               <div key={i} className="space-y-1.5">
                 <div className="flex justify-between text-xs">
-                  <span className="text-brand-black">{item.productName} × {item.quantity}</span>
+                  <span className="text-brand-black">
+                    {item.productName}
+                    {item.variantLabel ? <span className="text-brand-gray-mid"> · {item.variantLabel}</span> : ""} × {item.quantity}
+                  </span>
                   <span className="text-brand-gray-mid">
                     ₩{(item.price * item.quantity).toLocaleString("ko-KR")}
                   </span>
@@ -464,7 +467,10 @@ function ReviewForm({
           </button>
         </div>
 
-        <p className="text-sm font-medium mb-4">{item.productName}</p>
+        <p className="text-sm font-medium mb-4">
+          {item.productName}
+          {item.variantLabel ? <span className="text-brand-gray-mid font-normal"> · {item.variantLabel}</span> : ""}
+        </p>
 
         {/* 별점 */}
         <div className="flex items-center gap-1 mb-4">
