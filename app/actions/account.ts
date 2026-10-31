@@ -217,7 +217,8 @@ export async function reportPaymentFailure(
 // 결제 실패마다 운영진 알림이 쏟아지는 것을 막는다.
 export async function releaseMyPendingOrder(
   orderNumber: string,
-  notify = false
+  notify = false,
+  reason?: string
 ): Promise<{ error?: string }> {
   if (!IS_CONFIGURED) return {};
   try {
@@ -232,7 +233,11 @@ export async function releaseMyPendingOrder(
       .eq("user_id", user.id)
       .maybeSingle();
     if (!order) return {};
-    const { error } = await supabase.rpc("release_pending_order", { p_order_id: order.id });
+    const cleanReason = (reason ?? "").trim().slice(0, 200) || null;
+    const { error } = await supabase.rpc("release_pending_order", {
+      p_order_id: order.id,
+      p_reason: cleanReason,
+    });
     if (error) return { error: "주문 해제에 실패했습니다." };
 
     // 운영진 알림 — 회원이 직접 '결제 대기' 주문을 취소한 경우에만.
@@ -240,7 +245,7 @@ export async function releaseMyPendingOrder(
       try {
         const { notifyKakaoWork, won } = await import("@/lib/notify");
         await notifyKakaoWork(
-          `❌ 주문 취소 (고객·결제대기)\n주문번호: ${orderNumber}\n주문자: ${order.buyer_name ?? "-"}\n금액: ${won(Number(order.total_amount ?? 0))}`
+          `❌ 주문 취소 (고객·결제대기)\n주문번호: ${orderNumber}\n주문자: ${order.buyer_name ?? "-"}\n금액: ${won(Number(order.total_amount ?? 0))}${cleanReason ? `\n사유: ${cleanReason}` : ""}`
         );
       } catch {}
     }
@@ -254,7 +259,7 @@ export async function releaseMyPendingOrder(
 
 // ── 고객 자가 취소 / 반품 (PC3) ────────────────────────────
 // 취소(배송 준비 전): Toss 환불 선 처리 → cancel_my_order RPC로 상태/쿠폰 반영.
-export async function cancelMyOrder(orderId: string): Promise<{ error?: string }> {
+export async function cancelMyOrder(orderId: string, reason?: string): Promise<{ error?: string }> {
   if (!IS_CONFIGURED) return { error: "사용할 수 없습니다." };
   try {
     const { createServerSideClient } = await import("@/lib/supabase-server");
@@ -286,7 +291,11 @@ export async function cancelMyOrder(orderId: string): Promise<{ error?: string }
     const { cancelTossPayment } = await import("@/lib/toss");
     await cancelTossPayment(String(pay.payment_key), "고객 주문 취소");
 
-    const { error: rpcErr } = await supabase.rpc("cancel_my_order", { p_order_id: orderId });
+    const cleanReason = (reason ?? "").trim().slice(0, 200) || null;
+    const { error: rpcErr } = await supabase.rpc("cancel_my_order", {
+      p_order_id: orderId,
+      p_reason: cleanReason,
+    });
     if (rpcErr) {
       return { error: "환불은 처리됐지만 주문 반영에 실패했습니다. 고객센터로 문의해주세요." };
     }
@@ -295,7 +304,7 @@ export async function cancelMyOrder(orderId: string): Promise<{ error?: string }
     try {
       const { notifyKakaoWork, won } = await import("@/lib/notify");
       await notifyKakaoWork(
-        `❌ 주문 취소 (고객)\n주문번호: ${order.order_number}\n주문자: ${order.buyer_name ?? "-"}\n환불금액: ${won(Number(order.total_amount ?? 0))}`
+        `❌ 주문 취소 (고객)\n주문번호: ${order.order_number}\n주문자: ${order.buyer_name ?? "-"}\n환불금액: ${won(Number(order.total_amount ?? 0))}${cleanReason ? `\n사유: ${cleanReason}` : ""}`
       );
     } catch {}
 

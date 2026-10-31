@@ -10,6 +10,16 @@ import { useUIStore } from "@/store/ui";
 
 const REVIEW_POINT = 500; // 리뷰 작성 적립 포인트(문구용 — 실제 적립은 추후)
 
+// 주문 취소 사유(고객 선택). '기타'는 직접 입력.
+const CANCEL_REASONS = [
+  "단순 변심",
+  "옵션(색상·사이즈) 변경",
+  "배송이 늦어서",
+  "다른 상품으로 재주문",
+  "주문 실수",
+  "기타",
+];
+
 // 고객에게 보여줄 주문 상태(5단계):
 //  주문확인중 → 배송준비중 → 배송중 → 배송완료 → 구매확정 (+ 결제대기/취소/반품)
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -160,6 +170,10 @@ function OrderDetailModal({
   const { showToast } = useUIStore();
   const [pending, startTransition] = useTransition();
   const [reviewItem, setReviewItem] = useState<OrderItem | null>(null);
+  // 취소 사유 입력 플로우
+  const [cancelFlow, setCancelFlow] = useState<null | "paid" | "pending">(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelEtc, setCancelEtc] = useState("");
   // 취소/반품된 주문은 리뷰 불가 — 배송완료 + 미취소만 리뷰 대상.
   const isDelivered = order.fulfillmentStatus === "delivered" && order.status !== "cancelled";
 
@@ -190,14 +204,25 @@ function OrderDetailModal({
     });
   };
 
-  const handleCancel = () => {
-    if (!confirm("주문을 취소하시겠습니까?\n결제하신 금액은 자동으로 환불됩니다.")) return;
-    run(() => cancelMyOrder(order.orderId), "주문이 취소되고 환불이 접수되었습니다.");
+  const openCancel = (flow: "paid" | "pending") => {
+    setCancelReason("");
+    setCancelEtc("");
+    setCancelFlow(flow);
   };
 
-  const handleCancelPending = () => {
-    if (!confirm("결제 대기 중인 주문을 취소하시겠습니까?\n사용한 쿠폰·적립금은 복원됩니다.")) return;
-    run(() => releaseMyPendingOrder(order.id, true), "주문이 취소되었습니다.");
+  const submitCancel = () => {
+    const reason = (cancelReason === "기타" ? cancelEtc : cancelReason).trim();
+    if (!reason) {
+      showToast("취소 사유를 선택해주세요.");
+      return;
+    }
+    const flow = cancelFlow;
+    setCancelFlow(null);
+    if (flow === "paid") {
+      run(() => cancelMyOrder(order.orderId, reason), "주문이 취소되고 환불이 접수되었습니다.");
+    } else if (flow === "pending") {
+      run(() => releaseMyPendingOrder(order.id, true, reason), "주문이 취소되었습니다.");
+    }
   };
 
   const handleReturn = () => {
@@ -318,7 +343,7 @@ function OrderDetailModal({
         <div className="mt-5 space-y-2">
           {canCancelPending && (
             <button
-              onClick={handleCancelPending}
+              onClick={() => openCancel("pending")}
               disabled={pending}
               className="w-full h-10 border border-red-300 text-red-500 text-[14px] tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
             >
@@ -327,7 +352,7 @@ function OrderDetailModal({
           )}
           {canCancel && (
             <button
-              onClick={handleCancel}
+              onClick={() => openCancel("paid")}
               disabled={pending}
               className="w-full h-10 border border-red-300 text-red-500 text-[14px] tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
             >
@@ -376,6 +401,62 @@ function OrderDetailModal({
             router.refresh();
           }}
         />
+      )}
+
+      {/* 취소 사유 선택 모달 */}
+      {cancelFlow && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !pending && setCancelFlow(null)} />
+          <div className="relative bg-white w-full max-w-sm p-6 space-y-4">
+            <h3 className="text-[14px] tracking-[0.3em]">주문 취소</h3>
+            <p className="text-[13px] text-brand-gray-mid">취소 사유를 선택해주세요.</p>
+            <div className="space-y-2">
+              {CANCEL_REASONS.map((r) => (
+                <label key={r} className="flex items-center gap-2 text-[14px] cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cancelReason"
+                    checked={cancelReason === r}
+                    onChange={() => setCancelReason(r)}
+                    className="w-4 h-4 accent-brand-black"
+                  />
+                  {r}
+                </label>
+              ))}
+            </div>
+            {cancelReason === "기타" && (
+              <textarea
+                value={cancelEtc}
+                onChange={(e) => setCancelEtc(e.target.value)}
+                rows={2}
+                maxLength={200}
+                placeholder="사유를 입력해주세요."
+                className="w-full border border-brand-border p-2 text-[13px] focus:outline-none focus:border-brand-black resize-none"
+              />
+            )}
+            <p className="text-[12px] text-brand-gray-mid">
+              {cancelFlow === "paid"
+                ? "결제하신 금액은 자동으로 환불됩니다."
+                : "사용한 쿠폰·적립금은 복원됩니다."}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setCancelFlow(null)}
+                disabled={pending}
+                className="h-9 px-4 border border-brand-border text-[13px] tracking-wide hover:border-brand-black disabled:opacity-50"
+              >
+                닫기
+              </button>
+              <button
+                onClick={submitCancel}
+                disabled={pending}
+                className="h-9 px-4 bg-red-500 text-white text-[13px] tracking-widest hover:bg-red-600 disabled:opacity-50"
+              >
+                {pending ? "처리 중..." : "취소하기"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
