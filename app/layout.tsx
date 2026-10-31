@@ -22,6 +22,20 @@ const CompAuthModal = dynamic(() => import("@/components/comp-auth-modal"), { ss
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://amori.kr";
 
+// 검증 코드만 추출 — 사용자가 <meta …> 태그 전체나 'google-site-verification=' 접두사째
+// 붙여넣어도 content의 '코드'만 뽑아낸다(흔한 실수 방어).
+function verificationToken(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  let v = raw.trim();
+  const m = v.match(/content=["']([^"']+)["']/i);
+  if (m) v = m[1].trim();
+  v = v.replace(/^(google|naver)-site-verification[=:]\s*/i, "").trim();
+  return v || undefined;
+}
+
+const GOOGLE_VERIFICATION = verificationToken(process.env.GOOGLE_SITE_VERIFICATION);
+const NAVER_VERIFICATION = verificationToken(process.env.NAVER_SITE_VERIFICATION);
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -34,10 +48,8 @@ export const metadata: Metadata = {
   authors: [{ name: "아모리 AMORI" }],
   alternates: { canonical: SITE_URL },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
-    other: process.env.NAVER_SITE_VERIFICATION
-      ? { "naver-site-verification": process.env.NAVER_SITE_VERIFICATION }
-      : {},
+    google: GOOGLE_VERIFICATION,
+    other: NAVER_VERIFICATION ? { "naver-site-verification": NAVER_VERIFICATION } : {},
   },
   openGraph: {
     type: "website",
