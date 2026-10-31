@@ -25,13 +25,20 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://amori.kr";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "AMORI — 아기를 위한 패브릭 브랜드",
-    template: "%s | AMORI",
+    default: "아모리 AMORI — 아기를 위한 패브릭 브랜드",
+    template: "%s | 아모리 AMORI",
   },
   description:
-    "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드. 어린이제품 안전기준 시험을 완료했습니다.",
-  keywords: ["아기 패브릭", "거즈", "유아 의류", "아기 침구", "AMORI"],
-  authors: [{ name: "AMORI" }],
+    "아모리(AMORI) — 국내산 면 100% 거즈로 만든 아기 패브릭 브랜드. 어린이제품 안전기준 시험을 완료했습니다.",
+  keywords: ["아모리", "AMORI", "amori", "아모리 거즈", "아모리 빕", "아기 패브릭", "거즈", "유아 의류", "아기 침구"],
+  authors: [{ name: "아모리 AMORI" }],
+  alternates: { canonical: SITE_URL },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.NAVER_SITE_VERIFICATION
+      ? { "naver-site-verification": process.env.NAVER_SITE_VERIFICATION }
+      : {},
+  },
   openGraph: {
     type: "website",
     locale: "ko_KR",
@@ -67,9 +74,39 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const site = await getSiteSettings();
   const popupActive = isPopupActive(site);
 
+  // 브랜드 인식용 구조화 데이터(Organization + WebSite) — '아모리' 검색 시 브랜드/사이트링크 노출에 도움.
+  const brandJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        name: "아모리",
+        alternateName: "AMORI",
+        url: SITE_URL,
+        logo: `${SITE_URL}/logo.png`,
+        description: "국내산 면 100% 거즈로 만든 아기 패브릭 브랜드 아모리(AMORI).",
+        sameAs: ["https://www.instagram.com/amori_atelier", "https://pf.kakao.com/_dDmTX"],
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        name: "아모리 AMORI",
+        alternateName: "아모리",
+        url: SITE_URL,
+        inLanguage: "ko-KR",
+        publisher: { "@id": `${SITE_URL}/#organization` },
+      },
+    ],
+  };
+
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }}
+        />
         <AuthProvider initialUser={user}>
           <div className="sticky top-0 z-50">
             <SectionMarquee items={site.marqueeItems} />
