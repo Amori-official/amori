@@ -294,6 +294,17 @@ export default function CompAuthModal() {
 
             <button
               type="button"
+              onClick={() => {
+                setAuthModalOpen(false);
+                router.push("/auth/forgot");
+              }}
+              className="text-[13px] text-brand-gray-mid tracking-wide underline underline-offset-2 hover:text-brand-black -mt-1"
+            >
+              아이디·비밀번호를 잊으셨나요?
+            </button>
+
+            <button
+              type="button"
               onClick={handleGuestCheckout}
               className="rounded-none border border-brand-border h-11 text-[14px] tracking-widest text-brand-black hover:bg-brand-gray-light transition-colors"
             >

@@ -155,6 +155,29 @@ export async function signOut(): Promise<void> {
   }
 }
 
+// ── 이메일(아이디) 찾기 — 이름 + 연락처로 마스킹된 이메일 반환 ─────────
+export async function findMyEmail(
+  name: string,
+  phone: string
+): Promise<{ email?: string | null; error?: string }> {
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED_ERROR };
+  try {
+    const supabase = createActionClient();
+    const { data, error } = await supabase.rpc("find_member_email", {
+      p_name: name.trim(),
+      p_phone: phone.trim(),
+    });
+    if (error) {
+      logSupabaseError("findMyEmail", error);
+      return { error: GENERIC_AUTH_ERROR };
+    }
+    return { email: (data as string | null) ?? null };
+  } catch (error) {
+    logSupabaseError("findMyEmail", error);
+    return { error: GENERIC_AUTH_ERROR };
+  }
+}
+
 // ── 카카오 OAuth — URL 반환 (클라이언트에서 redirect) ─────────
 export async function getKakaoOAuthUrl(): Promise<{
   url?: string;
