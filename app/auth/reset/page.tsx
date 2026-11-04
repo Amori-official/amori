@@ -50,7 +50,16 @@ export default function ResetPage() {
     const { error: err } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (err) {
-      setError("변경에 실패했어요. 링크가 만료됐을 수 있어요. 다시 요청해주세요.");
+      const m = (err.message || "").toLowerCase();
+      if (/different from the old|should be different|same.?password/.test(m)) {
+        setError("이전과 같은 비밀번호예요. 새로운 비밀번호로 설정해주세요.");
+      } else if (/session|expired|missing|invalid|token|jwt|not.?authenticated/.test(m)) {
+        setError("재설정 링크가 만료되었거나 로그인 세션이 종료됐어요. 아래 ‘재설정 다시 요청하기’로 메일을 다시 받아주세요.");
+      } else if (/at least|characters|weak|short|length/.test(m)) {
+        setError("비밀번호는 6자 이상으로 설정해주세요.");
+      } else {
+        setError("비밀번호 변경에 실패했어요. 잠시 후 다시 시도하거나, 재설정을 다시 요청해주세요.");
+      }
       return;
     }
     showToast("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해주세요.");
@@ -100,7 +109,16 @@ export default function ResetPage() {
             placeholder="새 비밀번호 확인"
             className="w-full h-11 border border-brand-border px-3 text-[14px] focus:outline-none focus:border-brand-black"
           />
-          {error && <p className="text-[13px] text-red-500">{error}</p>}
+          {error && (
+            <div className="text-[13px] text-red-500 space-y-1">
+              <p>{error}</p>
+              {/(만료|세션)/.test(error) && (
+                <Link href="/auth/forgot" className="inline-block underline underline-offset-2">
+                  재설정 다시 요청하기
+                </Link>
+              )}
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -108,6 +126,9 @@ export default function ResetPage() {
           >
             {loading ? "변경 중..." : "비밀번호 변경"}
           </button>
+          <p className="text-[12px] text-brand-gray-mid leading-5 pt-1">
+            · 이전과 <b>다른 비밀번호</b>로 설정해주세요. · 링크는 일정 시간 뒤 만료돼요(만료 시 다시 요청).
+          </p>
         </form>
       )}
     </div>
