@@ -17,6 +17,20 @@ import { signIn, signUp, getKakaoOAuthUrl } from "@/app/actions/auth";
 import { trackMeta } from "@/lib/meta-pixel";
 
 const EMPTY_LOGIN = { email: "", password: "" };
+
+// 가입 이메일 도메인 선택지 — 오타(@naver.con 등) 방지용. 'custom' = 직접입력.
+const EMAIL_DOMAINS = [
+  "naver.com",
+  "gmail.com",
+  "daum.net",
+  "hanmail.net",
+  "nate.com",
+  "kakao.com",
+  "hotmail.com",
+  "outlook.com",
+  "icloud.com",
+];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMPTY_SIGNUP = {
   name: "",
   email: "",
@@ -51,6 +65,19 @@ export default function CompAuthModal() {
   const [tab, setTab] = useState<"login" | "signup">(authTab);
   const [loginForm, setLoginForm] = useState(EMPTY_LOGIN);
   const [signupForm, setSignupForm] = useState(EMPTY_SIGNUP);
+  // 이메일 = [아이디]@[도메인]. 도메인은 선택 또는 직접입력('custom').
+  const [emailId, setEmailId] = useState("");
+  const [emailDomain, setEmailDomain] = useState("naver.com");
+  const [emailCustom, setEmailCustom] = useState("");
+  const syncEmail = (id: string, domain: string, custom: string) => {
+    const d = domain === "custom" ? custom.trim() : domain;
+    setSignupForm((f) => ({ ...f, email: id.trim() && d ? `${id.trim()}@${d}` : "" }));
+  };
+  const resetEmailFields = () => {
+    setEmailId("");
+    setEmailDomain("naver.com");
+    setEmailCustom("");
+  };
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,6 +104,7 @@ export default function CompAuthModal() {
       setNotice(null);
       setLoginForm(EMPTY_LOGIN);
       setSignupForm(EMPTY_SIGNUP);
+      resetEmailFields();
       setGuestPrompt(false);
     }
   };
@@ -128,6 +156,14 @@ export default function CompAuthModal() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!emailId.trim() || (emailDomain === "custom" && !emailCustom.trim())) {
+      setError("이메일을 입력해주세요.");
+      return;
+    }
+    if (!EMAIL_RE.test(signupForm.email)) {
+      setError("이메일 형식이 올바르지 않습니다. (예: hong@naver.com)");
+      return;
+    }
     if (signupForm.password.length < 6) {
       setError("비밀번호는 6자 이상이어야 합니다.");
       return;
@@ -160,6 +196,7 @@ export default function CompAuthModal() {
     if (result.error) { setError(result.error); return; }
     trackMeta("CompleteRegistration", { content_name: "email_signup" });
     setSignupForm(EMPTY_SIGNUP);
+    resetEmailFields();
     setError(null);
     if (result.needsConfirmation) {
       // 이메일 확인이 켜진 경우: 로그인 탭으로 전환하고 인증 안내.
@@ -350,14 +387,49 @@ export default function CompAuthModal() {
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-[14px] tracking-widest">EMAIL</Label>
-              <Input
-                type="email"
-                placeholder="email@example.com"
-                required
-                value={signupForm.email}
-                onChange={(e) => setSignupForm((f) => ({ ...f, email: e.target.value }))}
-                className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
-              />
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="text"
+                  placeholder="이메일 아이디"
+                  required
+                  value={emailId}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\s/g, "");
+                    setEmailId(v);
+                    syncEmail(v, emailDomain, emailCustom);
+                  }}
+                  className="rounded-none border-brand-border text-sm h-11 flex-1 min-w-0 focus-visible:ring-0 focus-visible:border-brand-black"
+                />
+                <span className="text-brand-gray-mid shrink-0">@</span>
+                <select
+                  value={emailDomain}
+                  onChange={(e) => {
+                    setEmailDomain(e.target.value);
+                    syncEmail(emailId, e.target.value, emailCustom);
+                  }}
+                  className="rounded-none border border-brand-border text-sm h-11 px-2 bg-white shrink-0 focus:outline-none focus:border-brand-black"
+                >
+                  {EMAIL_DOMAINS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                  <option value="custom">직접입력</option>
+                </select>
+              </div>
+              {emailDomain === "custom" && (
+                <Input
+                  type="text"
+                  placeholder="도메인 직접입력 (예: company.com)"
+                  value={emailCustom}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\s/g, "");
+                    setEmailCustom(v);
+                    syncEmail(emailId, "custom", v);
+                  }}
+                  className="rounded-none border-brand-border text-sm h-11 focus-visible:ring-0 focus-visible:border-brand-black"
+                />
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-[14px] tracking-widest">PASSWORD</Label>
