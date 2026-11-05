@@ -38,6 +38,7 @@ function CompleteContent() {
 
     // 경로 B: 결제 비활성 — 주문번호만 확인 표시
     if (!paymentKey && orderParam) {
+      try { sessionStorage.removeItem("amori_checkout_draft"); } catch {}
       setOrderNumber(orderParam);
       setStatus("success");
       return;
@@ -72,6 +73,7 @@ function CompleteContent() {
             );
           }
           clear();
+          try { sessionStorage.removeItem("amori_checkout_draft"); } catch {}
           setOrderNumber(result.orderNumber);
           setStatus("success");
         })

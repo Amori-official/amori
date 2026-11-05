@@ -22,6 +22,8 @@ import {
 } from "@/app/actions/account";
 
 const MIN_POINTS_USE = 1000; // 포인트 최소 사용 단위(정책)
+// 결제 실패/뒤로가기로 돌아왔을 때 재입력하지 않도록 입력값을 임시 보관하는 키.
+const CHECKOUT_DRAFT_KEY = "amori_checkout_draft";
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? "";
 
@@ -143,6 +145,68 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   useEffect(() => setMounted(true), []);
+
+  // 입력값 복원(결제 실패/뒤로가기로 돌아온 경우) — 마운트 후 1회.
+  const draftRestored = useRef(false);
+  const [draftReady, setDraftReady] = useState(false);
+  useEffect(() => {
+    if (!mounted || draftRestored.current) return;
+    draftRestored.current = true;
+    try {
+      const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (!raw) {
+        setDraftReady(true);
+        return;
+      }
+      const d = JSON.parse(raw) as Record<string, unknown>;
+      if (!d || typeof d !== "object") {
+        setDraftReady(true);
+        return;
+      }
+      const s = (v: unknown) => (typeof v === "string" ? v : "");
+      if (s(d.buyerName)) setBuyerName(s(d.buyerName));
+      if (s(d.buyerEmail)) setBuyerEmail(s(d.buyerEmail));
+      if (s(d.buyerPhone)) setBuyerPhone(s(d.buyerPhone));
+      if (s(d.recipientName)) setRecipientName(s(d.recipientName));
+      if (s(d.recipientPhone)) setRecipientPhone(s(d.recipientPhone));
+      if (s(d.postalCode)) setPostalCode(s(d.postalCode));
+      if (s(d.addressLine1)) setAddressLine1(s(d.addressLine1));
+      if (s(d.addressLine2)) setAddressLine2(s(d.addressLine2));
+      if (s(d.deliveryRequest)) setDeliveryRequest(s(d.deliveryRequest));
+      if (typeof d.sameAsBuyer === "boolean") setSameAsBuyer(d.sameAsBuyer);
+      if (d.recipientDraft && typeof d.recipientDraft === "object") {
+        const rd = d.recipientDraft as { name?: unknown; phone?: unknown };
+        setRecipientDraft({ name: s(rd.name), phone: s(rd.phone) });
+      }
+      if (typeof d.giftWrapping === "boolean") setGiftWrapping(d.giftWrapping);
+      if (s(d.giftMessage)) setGiftMessage(s(d.giftMessage));
+    } catch {
+      /* 저장소 접근 불가 시 무시 */
+    } finally {
+      setDraftReady(true);
+    }
+  }, [mounted]);
+
+  // 입력값이 바뀔 때마다 임시 저장(주문 완료 시 삭제). 복원이 끝난 뒤에만 저장한다.
+  useEffect(() => {
+    if (!mounted || !draftReady) return;
+    try {
+      sessionStorage.setItem(
+        CHECKOUT_DRAFT_KEY,
+        JSON.stringify({
+          buyerName, buyerEmail, buyerPhone,
+          recipientName, recipientPhone, postalCode, addressLine1, addressLine2,
+          deliveryRequest, sameAsBuyer, recipientDraft, giftWrapping, giftMessage,
+        })
+      );
+    } catch {
+      /* 무시 */
+    }
+  }, [
+    mounted, draftReady, buyerName, buyerEmail, buyerPhone, recipientName, recipientPhone,
+    postalCode, addressLine1, addressLine2, deliveryRequest, sameAsBuyer,
+    recipientDraft, giftWrapping, giftMessage,
+  ]);
   // 배송비 정책 로드(비회원 포함 전원). 표시용 — 최종 금액은 서버가 재계산.
   useEffect(() => {
     getSiteSettings()
@@ -406,6 +470,7 @@ export default function CheckoutPage() {
     // ② 결제 비활성(로컬 기본): 주문만 생성하고 완료 페이지로 이동한다.
     if (!PAYMENT_INTEGRATION_ENABLED) {
       orderPlacedRef.current = true;
+      try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch {}
       clear();
       router.push(`/checkout/complete?order=${encodeURIComponent(order.orderNumber)}`);
       return;
