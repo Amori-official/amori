@@ -22,8 +22,14 @@ test("50,000원 제주·도서산간 → 무료", () => {
   assert.equal(fee, 0);
 });
 
-test("할인 전 50,000원, 할인 후 49,000원 일반 지역 → 3,000원", () => {
+test("상품 합계 50,000원, 쿠폰 할인 후 49,000원 일반 지역 → 무료(상품 합계 기준)", () => {
+  // 무료배송은 상품 합계(할인 전) 기준이므로 쿠폰을 써도 무료배송이다.
   const fee = calculateShippingFee({ subtotalAmount: 50000, discountAmount: 1000, remoteArea: false });
+  assert.equal(fee, 0);
+});
+
+test("상품 합계 49,000원(미달), 할인 0 일반 지역 → 3,000원", () => {
+  const fee = calculateShippingFee({ subtotalAmount: 49000, discountAmount: 0, remoteArea: false });
   assert.equal(fee, 3000);
 });
 

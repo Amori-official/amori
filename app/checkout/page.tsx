@@ -535,8 +535,8 @@ export default function CheckoutPage() {
   const selectedCoupons = coupons.filter((c) => selectedCouponIds.includes(c.id));
   // 여러 쿠폰은 순차(복리)로 적용. (서버 create_order가 최종 재계산)
   const couponDiscount = Math.min(cartTotal, computeStackedDiscount(selectedCoupons, cartTotal));
-  // 배송비 무료 기준은 할인 적용 후 금액 기준(create_order RPC와 동일).
-  const shipping = cartTotal - couponDiscount >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
+  // 배송비 무료 기준은 "상품 합계(쿠폰 할인 전)" 기준(create_order RPC와 동일).
+  const shipping = cartTotal >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
   // 포인트: 1,000P 이상·잔액 이내·결제액 한도 내에서만 적용(서버 create_order와 동일 규칙).
   const maxPointsUsable = Math.max(0, cartTotal - couponDiscount + shipping);
   const parsedPoints = parseInt(pointsInput, 10) || 0;

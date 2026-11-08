@@ -187,7 +187,7 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
         </div>
         <p className="text-[12px] text-brand-gray-mid">
           저장하면 실제 주문 결제금액, 장바구니·주문서 표시, FAQ·배송안내·상품상세 문구에 모두 반영됩니다.
-          (무료배송 기준은 쿠폰 할인 적용 후 상품금액 기준)
+          (무료배송 기준은 쿠폰 할인 전 상품 합계 기준)
         </p>
       </section>
 

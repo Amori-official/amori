@@ -5,7 +5,9 @@
 // 확정된 운영정책(2026-07-21):
 //   - 일반 배송비 3,000원
 //   - 제주·도서산간 배송비 6,000원
-//   - 상품금액(할인 적용 후) 50,000원 이상 무료배송, 제주·도서산간도 동일 기준 적용
+//   - 상품 합계(쿠폰 할인 전) 50,000원 이상 무료배송, 제주·도서산간도 동일 기준 적용
+//     (2026-11-06 변경: 이전엔 할인 후 금액 기준이었으나, 5만원 이상 담고 쿠폰을
+//      쓰면 배송비가 붙는 문제로 상품 합계 기준으로 전환)
 //   - 여러 상품은 한 주문에서 묶음배송 1회로 계산(주문 단위 1회 계산, 상품별 배송비 없음)
 //   - 반품·교환 배송비는 아직 사업자 정책 미확정 — 이 모듈에서 다루지 않는다
 //
@@ -24,7 +26,7 @@ export const REMOTE_AREA_SHIPPING_FEE = 6000;
 export const FREE_SHIPPING_THRESHOLD = 50000;
 
 export interface ShippingPolicy {
-  /** 무료배송 기준금액(할인 적용 후) */
+  /** 무료배송 기준금액(상품 합계·쿠폰 할인 전) */
   threshold: number;
   /** 기본 배송비 */
   baseFee: number;
@@ -84,15 +86,15 @@ function assertValidMoneyInputs(subtotalAmount: number, discountAmount: number):
   }
 }
 
-/** 할인 적용 후 상품금액과 지역 여부만으로 배송비를 계산한다. */
+/** 상품 합계(쿠폰 할인 전)와 지역 여부만으로 배송비를 계산한다.
+ *  무료배송 기준은 담은 상품 합계로 판정하며, 쿠폰 할인은 영향을 주지 않는다. */
 export function calculateShippingFee(
   { subtotalAmount, discountAmount, remoteArea }: ShippingFeeInput,
   policy: ShippingPolicy = DEFAULT_SHIPPING_POLICY
 ): number {
   assertValidMoneyInputs(subtotalAmount, discountAmount);
 
-  const amountAfterDiscount = subtotalAmount - discountAmount;
-  if (amountAfterDiscount >= policy.threshold) {
+  if (subtotalAmount >= policy.threshold) {
     return 0;
   }
   return remoteArea ? policy.remoteFee : policy.baseFee;
