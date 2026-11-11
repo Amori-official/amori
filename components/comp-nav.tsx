@@ -83,6 +83,12 @@ export default function CompNav() {
             >
               <Search size={17} strokeWidth={1.5} />
             </button>
+            <Link
+              href="/order-lookup"
+              className="hidden md:block text-[13px] tracking-widest text-brand-gray-mid hover:text-brand-black px-2.5 py-1.5 rounded-full hover:bg-brand-gray-light transition"
+            >
+              주문조회
+            </Link>
             {mounted && user ? (
               <div className="hidden md:flex items-center gap-1">
                 <Link
@@ -172,6 +178,13 @@ export default function CompNav() {
             </ul>
 
             <div className="px-8 pb-12 flex gap-6 border-t border-brand-border pt-6">
+              <Link
+                href="/order-lookup"
+                className="text-[15px] tracking-widest text-brand-gray-mid"
+                onClick={() => setMobileOpen(false)}
+              >
+                주문조회
+              </Link>
               {user ? (
                 <>
                   <Link
