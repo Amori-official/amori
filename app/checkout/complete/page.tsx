@@ -141,6 +141,19 @@ function CompleteContent() {
         주문번호: {orderNumber}
       </div>
 
+      {/* 비회원 주문조회 안내 — 로그인 없이 주문번호+이메일로 조회 */}
+      <div className="max-w-sm border border-brand-border px-5 py-3 text-[12px] tracking-wide text-brand-gray-mid leading-5">
+        <b className="text-brand-black">📦 주문 조회 방법</b>
+        <br />
+        비회원으로 주문하셨다면 위 <b className="text-brand-black">주문번호</b>와 주문 시 입력한{" "}
+        <b className="text-brand-black">이메일</b>을 꼭 기억해주세요.
+        <br />
+        <Link href="/order-lookup" className="underline underline-offset-2 text-brand-black">
+          비회원 주문조회
+        </Link>
+        에서 주문상태·배송을 확인할 수 있어요.
+      </div>
+
       {/* 리뷰 적립 안내 — 구매 직후 포인트 혜택을 알린다 */}
       <div className="max-w-sm border border-brand-border bg-brand-gray-light px-5 py-3 text-[12px] tracking-wide text-brand-gray-mid leading-5">
         <b className="text-brand-black">📝 리뷰 쓰면 포인트 적립!</b>

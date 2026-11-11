@@ -6,6 +6,7 @@ const menuLinks = [
   { href: "/shop", label: "Shop All" },
   { href: "/faq", label: "FAQ" },
   { href: "/care", label: "Care Guide" },
+  { href: "/order-lookup", label: "주문조회" },
 ];
 
 const snsLinks = [

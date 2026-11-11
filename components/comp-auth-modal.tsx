@@ -329,16 +329,29 @@ export default function CompAuthModal() {
               {loading ? "처리 중..." : "LOGIN"}
             </Button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setAuthModalOpen(false);
-                router.push("/auth/forgot");
-              }}
-              className="text-[13px] text-brand-gray-mid tracking-wide underline underline-offset-2 hover:text-brand-black -mt-1"
-            >
-              아이디·비밀번호를 잊으셨나요?
-            </button>
+            <div className="flex items-center justify-center gap-3 -mt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthModalOpen(false);
+                  router.push("/auth/forgot");
+                }}
+                className="text-[13px] text-brand-gray-mid tracking-wide underline underline-offset-2 hover:text-brand-black"
+              >
+                아이디·비밀번호를 잊으셨나요?
+              </button>
+              <span className="text-brand-border">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthModalOpen(false);
+                  router.push("/order-lookup");
+                }}
+                className="text-[13px] text-brand-gray-mid tracking-wide underline underline-offset-2 hover:text-brand-black"
+              >
+                비회원 주문조회
+              </button>
+            </div>
 
             <button
               type="button"
