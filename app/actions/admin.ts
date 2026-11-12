@@ -11,7 +11,7 @@ import { isSupabaseConfigured, logSupabaseError } from "@/lib/supabase-config";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SiteSettings } from "@/lib/site";
-import { toAttribution, type Attribution } from "@/lib/attribution";
+import { toAttribution, attributionLabel, type Attribution } from "@/lib/attribution";
 
 export interface AdminProductVariant {
   id: string;
@@ -1816,43 +1816,110 @@ export async function adminDeleteReview(
 }
 
 // ── 통계 (Phase 2-C) ────────────────────────────────────────
+export type SalesGranularity = "day" | "week" | "month";
+
 export interface SalesStats {
-  days: number;
+  granularity: SalesGranularity;
+  rangeLabel: string;
   totalSales: number;
   orderCount: number;
   avgOrder: number;
   newMembers: number;
-  daily: { label: string; sales: number; orders: number }[];
-  topProducts: { name: string; qty: number; revenue: number }[];
+  // 매출·주문 추이(선택한 단위로 묶은 버킷)
+  buckets: { label: string; sales: number; orders: number }[];
+  // 상품+옵션(색상) 조합별 판매량 랭킹
+  productOptions: { product: string; option: string | null; qty: number; revenue: number }[];
+  // 유입 경로별 집계
+  sources: { source: string; orders: number; sales: number }[];
 }
 
 // KST 기준 날짜키(YYYY-MM-DD).
 function kstDateKey(iso: string): string {
   return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
 }
+function kstTodayKey(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+}
+// 'YYYY-MM-DD'(KST 달력일)을 UTC 자정 Date로 — 요일/주 계산용(시프트 없음).
+function dateFromKey(key: string): Date {
+  return new Date(key + "T00:00:00Z");
+}
+function keyOfDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+// KST 달력일이 속한 주의 월요일 키.
+function mondayKey(dayKey: string): string {
+  const d = dateFromKey(dayKey);
+  const off = (d.getUTCDay() + 6) % 7; // 월요일까지 되돌릴 일수(월=0 … 일=6)
+  d.setUTCDate(d.getUTCDate() - off);
+  return keyOfDate(d);
+}
+// KST 달력일 → 선택 단위의 버킷 키.
+function bucketKeyOf(dayKey: string, g: SalesGranularity): string {
+  if (g === "month") return dayKey.slice(0, 7); // YYYY-MM
+  if (g === "week") return mondayKey(dayKey);
+  return dayKey;
+}
+// 단위별 연속 버킷(빈 구간도 0으로 표시) + 라벨 + 시작 KST 달력일.
+function buildBuckets(g: SalesGranularity): { keys: string[]; labels: string[]; startKstKey: string } {
+  const today = kstTodayKey();
+  const keys: string[] = [];
+  const labels: string[] = [];
+  if (g === "day") {
+    const base = dateFromKey(today);
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(base.getTime());
+      d.setUTCDate(d.getUTCDate() - i);
+      const k = keyOfDate(d);
+      keys.push(k);
+      labels.push(`${k.slice(5, 7)}/${k.slice(8, 10)}`);
+    }
+    return { keys, labels, startKstKey: keys[0] };
+  }
+  if (g === "week") {
+    const base = dateFromKey(mondayKey(today));
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(base.getTime());
+      d.setUTCDate(d.getUTCDate() - i * 7);
+      const k = keyOfDate(d);
+      keys.push(k);
+      labels.push(`${k.slice(5, 7)}/${k.slice(8, 10)}`);
+    }
+    return { keys, labels, startKstKey: keys[0] };
+  }
+  // month: 최근 12개월
+  const y = Number(today.slice(0, 4));
+  const m = Number(today.slice(5, 7));
+  for (let i = 11; i >= 0; i--) {
+    const dt = new Date(Date.UTC(y, m - 1 - i, 1));
+    const k = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}`;
+    keys.push(k);
+    labels.push(`${String(dt.getUTCFullYear()).slice(2)}.${dt.getUTCMonth() + 1}`);
+  }
+  return { keys, labels, startKstKey: keys[0] + "-01" };
+}
 
-export async function getSalesStats(days: number = 30): Promise<SalesStats> {
-  const period = days === 7 ? 7 : 30; // 허용값만
+export async function getSalesStats(granularity: SalesGranularity = "day"): Promise<SalesStats> {
+  const g: SalesGranularity =
+    granularity === "week" || granularity === "month" ? granularity : "day";
+  const rangeLabel = g === "day" ? "최근 30일" : g === "week" ? "최근 12주" : "최근 12개월";
   const empty: SalesStats = {
-    days: period, totalSales: 0, orderCount: 0, avgOrder: 0, newMembers: 0, daily: [], topProducts: [],
+    granularity: g, rangeLabel, totalSales: 0, orderCount: 0, avgOrder: 0, newMembers: 0,
+    buckets: [], productOptions: [], sources: [],
   };
   if (!isSupabaseConfigured()) return empty;
   try {
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
 
-    // 기간 시작(KST 자정 기준 period-1일 전)
-    const now = new Date();
-    const kst = new Date(now.getTime() + 9 * 3600 * 1000);
-    const todayStartUtcMs =
-      Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) - 9 * 3600 * 1000;
-    const startUtcMs = todayStartUtcMs - (period - 1) * 86400000;
-    const startISO = new Date(startUtcMs).toISOString();
+    const { keys, labels, startKstKey } = buildBuckets(g);
+    // 시작 KST 자정의 실제 UTC 시각(= KST 자정 − 9h)
+    const startISO = new Date(dateFromKey(startKstKey).getTime() - 9 * 3600 * 1000).toISOString();
 
-    // 결제완료 주문(기간)
+    // 결제완료 주문(기간) — 추이 + 유입경로 공용
     const { data: paid } = await supabase
       .from("orders")
-      .select("total_amount, created_at")
+      .select("total_amount, created_at, attribution")
       .eq("payment_status", "paid")
       .gte("created_at", startISO);
     const rows = paid ?? [];
@@ -1860,26 +1927,33 @@ export async function getSalesStats(days: number = 30): Promise<SalesStats> {
     const orderCount = rows.length;
     const avgOrder = orderCount ? Math.round(totalSales / orderCount) : 0;
 
-    // 일별 버킷 초기화(연속된 날짜)
-    const buckets = new Map<string, { sales: number; orders: number }>();
-    const order: string[] = [];
-    for (let i = 0; i < period; i++) {
-      const key = kstDateKey(new Date(startUtcMs + i * 86400000).toISOString());
-      buckets.set(key, { sales: 0, orders: 0 });
-      order.push(key);
-    }
+    // 단위별 버킷 집계
+    const bucket = new Map<string, { sales: number; orders: number }>();
+    keys.forEach((k) => bucket.set(k, { sales: 0, orders: 0 }));
     for (const o of rows) {
-      const key = kstDateKey(String(o.created_at));
-      const b = buckets.get(key);
+      const bk = bucketKeyOf(kstDateKey(String(o.created_at)), g);
+      const b = bucket.get(bk);
       if (b) {
         b.sales += Number(o.total_amount ?? 0);
         b.orders += 1;
       }
     }
-    const daily = order.map((key) => {
-      const [, m, d] = key.split("-");
-      return { label: `${m}/${d}`, sales: buckets.get(key)!.sales, orders: buckets.get(key)!.orders };
-    });
+    const buckets = keys.map((k, i) => ({
+      label: labels[i], sales: bucket.get(k)!.sales, orders: bucket.get(k)!.orders,
+    }));
+
+    // 유입 경로 집계(유입원 = utm_source ?? referrer ?? 직접/미상)
+    const srcMap = new Map<string, { orders: number; sales: number }>();
+    for (const o of rows) {
+      const src = attributionLabel(toAttribution(o.attribution)) ?? "직접/미상";
+      const cur = srcMap.get(src) ?? { orders: 0, sales: 0 };
+      cur.orders += 1;
+      cur.sales += Number(o.total_amount ?? 0);
+      srcMap.set(src, cur);
+    }
+    const sources = Array.from(srcMap.entries())
+      .map(([source, v]) => ({ source, orders: v.orders, sales: v.sales }))
+      .sort((a, b) => b.sales - a.sales);
 
     // 신규 회원(기간)
     const { count: newMembers } = await supabase
@@ -1887,28 +1961,33 @@ export async function getSalesStats(days: number = 30): Promise<SalesStats> {
       .select("*", { count: "exact", head: true })
       .gte("created_at", startISO);
 
-    // 인기 상품(기간 내 결제완료 주문의 품목 집계)
+    // 상품 + 옵션(색상) 조합별 판매 집계
     const { data: items } = await supabase
       .from("order_items")
-      .select("product_name, quantity, price, orders!inner(payment_status, created_at)")
+      .select("product_name, variant_label, quantity, price, orders!inner(payment_status, created_at)")
       .eq("orders.payment_status", "paid")
       .gte("orders.created_at", startISO);
-    const prodMap = new Map<string, { qty: number; revenue: number }>();
+    const poMap = new Map<string, { product: string; option: string | null; qty: number; revenue: number }>();
     for (const it of items ?? []) {
-      const name = String((it as Record<string, unknown>).product_name ?? "-");
-      const qty = Number((it as Record<string, unknown>).quantity ?? 0);
-      const price = Number((it as Record<string, unknown>).price ?? 0);
-      const cur = prodMap.get(name) ?? { qty: 0, revenue: 0 };
+      const r = it as Record<string, unknown>;
+      const product = String(r.product_name ?? "-");
+      const option = r.variant_label ? String(r.variant_label) : null;
+      const qty = Number(r.quantity ?? 0);
+      const price = Number(r.price ?? 0);
+      const key = `${product}||${option ?? ""}`;
+      const cur = poMap.get(key) ?? { product, option, qty: 0, revenue: 0 };
       cur.qty += qty;
       cur.revenue += price * qty;
-      prodMap.set(name, cur);
+      poMap.set(key, cur);
     }
-    const topProducts = Array.from(prodMap.entries())
-      .map(([name, v]) => ({ name, qty: v.qty, revenue: v.revenue }))
+    const productOptions = Array.from(poMap.values())
       .sort((a, b) => b.qty - a.qty)
-      .slice(0, 8);
+      .slice(0, 20);
 
-    return { days: period, totalSales, orderCount, avgOrder, newMembers: newMembers ?? 0, daily, topProducts };
+    return {
+      granularity: g, rangeLabel, totalSales, orderCount, avgOrder,
+      newMembers: newMembers ?? 0, buckets, productOptions, sources,
+    };
   } catch {
     return empty;
   }
