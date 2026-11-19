@@ -20,6 +20,11 @@ export interface SiteSettings {
   freeShippingThreshold: number;
   shippingBaseFee: number;
   shippingRemoteFee: number;
+  // 전품목 기간 세일(상품별 세일가는 products.sale_price). 토글 + 기간 + 라벨.
+  saleEnabled: boolean;
+  saleStartsAt: string | null;
+  saleEndsAt: string | null;
+  saleLabel: string;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -35,7 +40,31 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   freeShippingThreshold: 50000,
   shippingBaseFee: 3000,
   shippingRemoteFee: 6000,
+  saleEnabled: false,
+  saleStartsAt: null,
+  saleEndsAt: null,
+  saleLabel: "",
 };
+
+// 세일을 지금 적용해야 하는지(토글 ON + 기간 내). create_order RPC와 동일 규칙.
+export function isSaleActive(s: SiteSettings, now: number = Date.now()): boolean {
+  if (!s.saleEnabled) return false;
+  if (s.saleStartsAt && new Date(s.saleStartsAt).getTime() > now) return false;
+  if (s.saleEndsAt && new Date(s.saleEndsAt).getTime() < now) return false;
+  return true;
+}
+
+// 세일가 적용 결과. 활성이고 세일가가 정가 미만일 때만 onSale.
+export function effectivePrice(
+  basePrice: number,
+  salePrice: number | null | undefined,
+  saleActive: boolean
+): { price: number; original: number; onSale: boolean } {
+  if (saleActive && salePrice != null && salePrice >= 0 && salePrice < basePrice) {
+    return { price: salePrice, original: basePrice, onSale: true };
+  }
+  return { price: basePrice, original: basePrice, onSale: false };
+}
 
 // 팝업을 지금 노출해야 하는지(활성 + 기간 내).
 export function isPopupActive(s: SiteSettings, now: number = Date.now()): boolean {

@@ -8,6 +8,7 @@ import {
   setVariantActive,
   setProductStock,
   setProductCategory,
+  setProductSalePrice,
   deleteProduct,
   type AdminProduct,
 } from "@/app/actions/admin";
@@ -104,7 +105,11 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                     )}
                   </div>
                   <p className="text-[13px] text-brand-gray-mid mt-1">
-                    {p.category ?? "-"} · ₩{p.price.toLocaleString("ko-KR")} · 재고 {p.stock.toLocaleString("ko-KR")} · /{p.slug}
+                    {p.category ?? "-"} · ₩{p.price.toLocaleString("ko-KR")}
+                    {p.salePrice != null && (
+                      <span className="text-red-600"> → 세일 ₩{p.salePrice.toLocaleString("ko-KR")}</span>
+                    )}
+                    {" "}· 재고 {p.stock.toLocaleString("ko-KR")} · /{p.slug}
                   </p>
                 </div>
 
@@ -193,13 +198,18 @@ function InventoryEditor({
 }) {
   const [stock, setStock] = useState(String(product.stock));
   const [category, setCategory] = useState(product.category ?? "");
+  const [salePriceInput, setSalePriceInput] = useState(
+    product.salePrice != null ? String(product.salePrice) : ""
+  );
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const stockChanged = stock.trim() !== "" && Number(stock) !== product.stock;
   const categoryChanged = category.trim() !== (product.category ?? "");
-  const dirty = stockChanged || categoryChanged;
+  const salePriceParsed = salePriceInput.trim() === "" ? null : Number(salePriceInput);
+  const salePriceChanged = salePriceParsed !== (product.salePrice ?? null);
+  const dirty = stockChanged || categoryChanged || salePriceChanged;
 
   const save = () => {
     setErr(null);
@@ -214,6 +224,13 @@ function InventoryEditor({
       }
       if (categoryChanged) {
         const res = await setProductCategory(product.id, category);
+        if (res.error) {
+          setErr(res.error);
+          return;
+        }
+      }
+      if (salePriceChanged) {
+        const res = await setProductSalePrice(product.id, salePriceParsed);
         if (res.error) {
           setErr(res.error);
           return;
@@ -236,6 +253,20 @@ function InventoryEditor({
             value={stock}
             onChange={(e) => setStock(e.target.value.replace(/[^0-9]/g, ""))}
             className="h-9 w-24 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[12px] tracking-widest text-brand-gray-mid">
+            세일가 (정가 ₩{product.price.toLocaleString("ko-KR")})
+          </span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={salePriceInput}
+            onChange={(e) => setSalePriceInput(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="세일 제외"
+            className="h-9 w-28 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -264,7 +295,10 @@ function InventoryEditor({
         {msg && <span className="text-[12px] text-green-600">{msg}</span>}
         {err && <span className="text-[12px] text-red-500">{err}</span>}
       </div>
-      <p className="text-[12px] text-brand-gray-mid mt-2">재고를 0으로 두면 상품이 &lsquo;품절&rsquo;로 표시됩니다.</p>
+      <p className="text-[12px] text-brand-gray-mid mt-2">
+        재고를 0으로 두면 상품이 &lsquo;품절&rsquo;로 표시됩니다. 세일가는 비우면 세일 제외, 입력하면
+        세일 기간(콘텐츠 관리에서 설정)에 그 가격으로 판매됩니다.
+      </p>
     </div>
   );
 }

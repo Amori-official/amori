@@ -3,16 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useCartStore, type CartItem } from "@/store/cart";
+import { useCartStore, type CartItem, cartSaleTotal, cartLineUnitPrice } from "@/store/cart";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { getSiteSettings } from "@/app/actions/site";
+import { useSale } from "@/components/providers/sale-provider";
+import CompCartBenefits from "@/components/comp-cart-benefits";
 
 export default function CartPage() {
   const [mounted, setMounted] = useState(false);
   // 배송비 정책(관리자 설정). 로드 전에는 기본값으로 표시.
   const [FREE_SHIPPING, setFreeShipping] = useState(50000);
   const [SHIPPING_FEE, setShippingFee] = useState(3000);
-  const { items, updateQty, remove, total } = useCartStore();
+  const { items, updateQty, remove } = useCartStore();
+  const { active: saleActive } = useSale();
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -26,7 +29,7 @@ export default function CartPage() {
 
   // zustand persist 하이드레이션 전에는 빈 상태로 렌더해 SSR 불일치를 피한다.
   const displayItems: CartItem[] = mounted ? items : [];
-  const cartTotal = mounted ? total() : 0;
+  const cartTotal = mounted ? cartSaleTotal(items, saleActive) : 0;
   const remaining = Math.max(0, FREE_SHIPPING - cartTotal);
   const progress = Math.min(100, (cartTotal / FREE_SHIPPING) * 100);
   const shipping = cartTotal >= FREE_SHIPPING ? 0 : SHIPPING_FEE;
@@ -111,6 +114,8 @@ export default function CartPage() {
                 </p>
               )}
 
+              <CompCartBenefits tone="white" />
+
               {hasInvalidItems ? (
                 <button
                   disabled
@@ -152,6 +157,9 @@ function CartItemRow({
   onUpdateQty: (id: string, qty: number, selectedColor?: string, selectedSize?: string) => void;
   onRemove: (id: string, selectedColor?: string, selectedSize?: string) => void;
 }) {
+  const { active: saleActive } = useSale();
+  const unit = cartLineUnitPrice(item, saleActive);
+  const onSale = unit < item.unitPrice;
   const colorHex = item.product.colors?.find((c) => c.name === item.selectedColor)?.hex;
   const variantLabel = [item.selectedSize, item.selectedColor].filter(Boolean).join(" · ");
   const orderable = isCartItemOrderable(item);
@@ -217,8 +225,15 @@ function CartItemRow({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs font-medium">
-              ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
+            <span className="text-xs font-medium flex items-center gap-1">
+              {onSale && (
+                <span className="text-brand-gray-mid line-through font-normal">
+                  ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
+                </span>
+              )}
+              <span className={onSale ? "text-red-600" : ""}>
+                ₩{(unit * item.quantity).toLocaleString("ko-KR")}
+              </span>
             </span>
             <button
               onClick={() => onRemove(item.product.id, item.selectedColor, item.selectedSize)}

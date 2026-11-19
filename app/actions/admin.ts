@@ -27,6 +27,7 @@ export interface AdminProduct {
   nameKo: string | null;
   category: string | null;
   price: number;
+  salePrice: number | null;
   stock: number;
   isPublished: boolean;
   saleStatus: string;
@@ -211,7 +212,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, name_ko, category, price, stock, is_published, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
+        "id, slug, name, name_ko, category, price, sale_price, stock, is_published, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
       )
       .order("created_at", { ascending: true });
 
@@ -227,6 +228,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
       nameKo: (p.name_ko as string | null) ?? null,
       category: (p.category as string | null) ?? null,
       price: Number(p.price),
+      salePrice: p.sale_price != null ? Number(p.sale_price) : null,
       stock: Number(p.stock ?? 0),
       isPublished: Boolean(p.is_published),
       saleStatus: String(p.sale_status ?? "active"),
@@ -307,6 +309,38 @@ export async function setProductStock(
     if (error) {
       logSupabaseError("setProductStock", error);
       return { error: "재고 변경에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    revalidatePath("/shop");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 상품별 세일가 설정. null이면 세일 제외. 음수/정가 초과는 거부.
+export async function setProductSalePrice(
+  productId: string,
+  salePrice: number | null
+): Promise<{ error?: string }> {
+  try {
+    if (salePrice !== null && (!Number.isInteger(salePrice) || salePrice < 0 || salePrice > 100000000)) {
+      return { error: "세일가가 올바르지 않습니다." };
+    }
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    // 정가(price) 미만인지 확인(정가 이상이면 세일 의미 없음 → 거부).
+    if (salePrice !== null) {
+      const { data: prod } = await supabase.from("products").select("price").eq("id", productId).maybeSingle();
+      const base = Number((prod as { price?: unknown } | null)?.price ?? 0);
+      if (base > 0 && salePrice >= base) {
+        return { error: `세일가는 정가(${base.toLocaleString("ko-KR")}원)보다 낮아야 합니다.` };
+      }
+    }
+    const { error } = await supabase.from("products").update({ sale_price: salePrice }).eq("id", productId);
+    if (error) {
+      logSupabaseError("setProductSalePrice", error);
+      return { error: "세일가 변경에 실패했습니다." };
     }
     revalidatePath("/admin/products");
     revalidatePath("/shop");
@@ -2137,6 +2171,10 @@ export async function updateSiteSettings(input: SiteSettings): Promise<{ error?:
         free_shipping_threshold: clampFee(input.freeShippingThreshold, 50000),
         shipping_base_fee: clampFee(input.shippingBaseFee, 3000),
         shipping_remote_fee: clampFee(input.shippingRemoteFee, 6000),
+        sale_enabled: !!input.saleEnabled,
+        sale_starts_at: toTsOrNull(input.saleStartsAt),
+        sale_ends_at: toTsOrNull(input.saleEndsAt),
+        sale_label: input.saleLabel?.slice(0, 40) || "",
       })
       .eq("id", "default");
 

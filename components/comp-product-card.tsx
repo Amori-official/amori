@@ -7,6 +7,8 @@ import { useCartStore } from "@/store/cart";
 import { useUIStore } from "@/store/ui";
 import { CARD_DEFAULT_IMAGE } from "@/lib/mock-data";
 import type { Product } from "@/lib/types";
+import { useSale } from "@/components/providers/sale-provider";
+import { effectivePrice } from "@/lib/site";
 
 interface Props {
   product: Product;
@@ -21,6 +23,8 @@ export default function CompProductCard({ product, comingSoon }: Props) {
   const [hoveredImage, setHoveredImage] = useState<string | undefined>(undefined);
   const { add } = useCartStore();
   const { setCartOpen, showToast } = useUIStore();
+  const { active: saleActive } = useSale();
+  const sale = effectivePrice(product.price, product.salePrice, saleActive);
 
   const displayImage = hoveredImage ?? CARD_DEFAULT_IMAGE[product.slug] ?? product.imageUrl;
 
@@ -124,11 +128,22 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         )}
 
         <div className="flex items-center justify-between pt-0.5">
-          <p className="text-sm">
-            {product.sizes && product.sizes.length > 0
-              ? `₩${Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~`
-              : `₩${product.price.toLocaleString("ko-KR")}`}
-          </p>
+          {product.sizes && product.sizes.length > 0 ? (
+            <p className="text-sm">
+              ₩{Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~
+            </p>
+          ) : sale.onSale ? (
+            <p className="text-sm flex items-center gap-1.5">
+              <span className="text-brand-gray-mid line-through text-[13px]">
+                ₩{sale.original.toLocaleString("ko-KR")}
+              </span>
+              <span className="text-red-600 font-medium">
+                ₩{sale.price.toLocaleString("ko-KR")}
+              </span>
+            </p>
+          ) : (
+            <p className="text-sm">₩{product.price.toLocaleString("ko-KR")}</p>
+          )}
           {(product.reviewCount ?? 0) > 0 && (
             <p className="text-[14px] text-brand-gray-mid">
               ★ {product.rating?.toFixed(1)} ({product.reviewCount})

@@ -9,6 +9,8 @@ import { useWishlistStore } from "@/store/wishlist";
 import { resolveVariant, isSplitAxisProduct } from "@/lib/resolve-variant";
 import type { Product } from "@/lib/types";
 import { trackMeta, productContent } from "@/lib/meta-pixel";
+import { useSale } from "@/components/providers/sale-provider";
+import { effectivePrice } from "@/lib/site";
 
 interface Props {
   product: Product;
@@ -67,6 +69,8 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
   const displayPrice = selectedSize
     ? (product.sizes?.find((s) => s.name === selectedSize)?.price ?? product.price)
     : product.price;
+  const { active: saleActive, label: saleLabel } = useSale();
+  const sale = effectivePrice(displayPrice, product.salePrice, saleActive);
 
   const stockLabel = () => {
     if (isSplitAxis) {
@@ -132,9 +136,23 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
       {belowTagline}
 
       {/* 가격 */}
-      <p className="text-xl tracking-wide">
-        ₩{displayPrice.toLocaleString("ko-KR")}
-      </p>
+      {sale.onSale ? (
+        <div className="flex items-center gap-2.5">
+          {saleLabel && (
+            <span className="text-[11px] tracking-widest bg-red-600 text-white px-2 py-0.5">
+              {saleLabel}
+            </span>
+          )}
+          <span className="text-base text-brand-gray-mid line-through">
+            ₩{sale.original.toLocaleString("ko-KR")}
+          </span>
+          <span className="text-xl tracking-wide text-red-600 font-medium">
+            ₩{sale.price.toLocaleString("ko-KR")}
+          </span>
+        </div>
+      ) : (
+        <p className="text-xl tracking-wide">₩{displayPrice.toLocaleString("ko-KR")}</p>
+      )}
 
       {/* 사이즈 선택 (사이즈별 가격이 다른 상품만) */}
       {product.sizes && product.sizes.length > 0 && (

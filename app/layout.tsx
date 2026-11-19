@@ -13,7 +13,8 @@ import CompSitePopup from "@/components/comp-site-popup";
 import CompKakaoFab from "@/components/comp-kakao-fab";
 import CompVisitTracker from "@/components/comp-visit-tracker";
 import { getSiteSettings } from "@/app/actions/site";
-import { isPopupActive } from "@/lib/site";
+import { isPopupActive, isSaleActive } from "@/lib/site";
+import { SaleProvider } from "@/components/providers/sale-provider";
 import MetaPixel from "@/components/meta-pixel";
 
 // 클라이언트 전용 무거운 컴포넌트는 dynamic import로 코드 분할
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   const site = await getSiteSettings();
   const popupActive = isPopupActive(site);
+  const saleActive = isSaleActive(site);
 
   // 브랜드 인식용 구조화 데이터(Organization + WebSite) — '아모리' 검색 시 브랜드/사이트링크 노출에 도움.
   const brandJsonLd = {
@@ -120,6 +122,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(brandJsonLd) }}
         />
         <AuthProvider initialUser={user}>
+         <SaleProvider value={{ active: saleActive, label: site.saleLabel }}>
           <div className="sticky top-0 z-50">
             <SectionMarquee items={site.marqueeItems} />
             <CompNav />
@@ -148,6 +151,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Suspense fallback={null}>
             <CompVisitTracker />
           </Suspense>
+         </SaleProvider>
         </AuthProvider>
       </body>
     </html>

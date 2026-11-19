@@ -25,6 +25,10 @@ function mapRow(row: Record<string, unknown>): SiteSettings {
     freeShippingThreshold: Number(row.free_shipping_threshold ?? DEFAULT_SITE_SETTINGS.freeShippingThreshold),
     shippingBaseFee: Number(row.shipping_base_fee ?? DEFAULT_SITE_SETTINGS.shippingBaseFee),
     shippingRemoteFee: Number(row.shipping_remote_fee ?? DEFAULT_SITE_SETTINGS.shippingRemoteFee),
+    saleEnabled: Boolean(row.sale_enabled),
+    saleStartsAt: row.sale_starts_at ? String(row.sale_starts_at) : null,
+    saleEndsAt: row.sale_ends_at ? String(row.sale_ends_at) : null,
+    saleLabel: row.sale_label ? String(row.sale_label) : "",
   };
 }
 

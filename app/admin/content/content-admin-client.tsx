@@ -35,6 +35,12 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
   const [baseFee, setBaseFee] = useState(String(initial.shippingBaseFee ?? 3000));
   const [remoteFee, setRemoteFee] = useState(String(initial.shippingRemoteFee ?? 6000));
 
+  // 세일(전품목 기간할인) — 상품별 세일가는 상품관리에서 설정.
+  const [saleEnabled, setSaleEnabled] = useState(initial.saleEnabled);
+  const [saleLabel, setSaleLabel] = useState(initial.saleLabel);
+  const [saleStart, setSaleStart] = useState(toLocalInput(initial.saleStartsAt));
+  const [saleEnd, setSaleEnd] = useState(toLocalInput(initial.saleEndsAt));
+
   const updateItem = (i: number, patch: Partial<MarqueeItem>) =>
     setMarquee((prev) => prev.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
   const addItem = () => setMarquee((prev) => [...prev, { text: "", href: "", action: null }]);
@@ -56,6 +62,10 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
         freeShippingThreshold: Math.max(0, parseInt(freeThreshold, 10) || 0),
         shippingBaseFee: Math.max(0, parseInt(baseFee, 10) || 0),
         shippingRemoteFee: Math.max(0, parseInt(remoteFee, 10) || 0),
+        saleEnabled,
+        saleStartsAt: saleStart || null,
+        saleEndsAt: saleEnd || null,
+        saleLabel: saleLabel.trim(),
       });
       if (res.error) setMsg({ ok: false, text: res.error });
       else {
@@ -188,6 +198,42 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
         <p className="text-[12px] text-brand-gray-mid">
           저장하면 실제 주문 결제금액, 장바구니·주문서 표시, FAQ·배송안내·상품상세 문구에 모두 반영됩니다.
           (무료배송 기준은 쿠폰 할인 전 상품 합계 기준)
+        </p>
+      </section>
+
+      {/* 세일(전품목 기간할인) 설정 */}
+      <section className="border border-brand-border p-5 space-y-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={saleEnabled}
+            onChange={(e) => setSaleEnabled(e.target.checked)}
+            className="w-4 h-4 accent-brand-black"
+          />
+          <span className="text-[13px] tracking-widest font-medium">세일 켜기 (전품목 기간 세일)</span>
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Field label="세일 라벨 (예: BLACK FRIDAY)">
+            <input
+              value={saleLabel}
+              onChange={(e) => setSaleLabel(e.target.value)}
+              placeholder="BLACK FRIDAY"
+              maxLength={40}
+              className="w-full h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
+            />
+          </Field>
+          <Field label="세일 시작">
+            <input type="datetime-local" value={saleStart} onChange={(e) => setSaleStart(e.target.value)} className="w-full h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black" />
+          </Field>
+          <Field label="세일 종료">
+            <input type="datetime-local" value={saleEnd} onChange={(e) => setSaleEnd(e.target.value)} className="w-full h-9 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black" />
+          </Field>
+        </div>
+        <p className="text-[12px] text-brand-gray-mid leading-relaxed">
+          · 세일가는 <b>상품관리</b>에서 상품별로 입력합니다. 세일이 켜져 있고 기간 내이며 상품에 세일가가 있으면,
+          해당 상품이 자동으로 세일가로 표시·결제됩니다.
+          <br />· 세일 기간에는 <b>쿠폰 사용이 중지</b>되고(적립금은 사용 가능), 무료배송 기준은 세일가 기준으로 계산됩니다.
+          <br />· 시작/종료를 비워두면 그쪽은 제한 없음(켜는 즉시 / 끌 때까지)으로 동작합니다.
         </p>
       </section>
 

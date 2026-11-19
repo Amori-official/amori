@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import Image from "next/image";
-import { useCartStore } from "@/store/cart";
+import { useCartStore, cartSaleTotal, cartLineUnitPrice } from "@/store/cart";
+import { useSale } from "@/components/providers/sale-provider";
 import { useAuthStore } from "@/store/auth";
 import { isCartItemOrderable } from "@/lib/resolve-variant";
 import { createOrderSecure } from "@/app/actions/create-order";
@@ -140,7 +141,8 @@ export default function CheckoutPage() {
   // 튕기는 경쟁이 발생한다. 주문 완료 중임을 이 ref로 표시해 가드를 건너뛴다.
   const orderPlacedRef = useRef(false);
 
-  const { items, total, clear } = useCartStore();
+  const { items, clear } = useCartStore();
+  const { active: saleActive } = useSale();
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
 
@@ -231,14 +233,14 @@ export default function CheckoutPage() {
     if (!mounted || items.length === 0 || checkoutTrackedRef.current) return;
     checkoutTrackedRef.current = true;
     trackMeta("InitiateCheckout", {
-      value: total(),
+      value: cartSaleTotal(items, saleActive),
       currency: "KRW",
       content_type: "product",
       content_ids: items.map((i) => i.product.id),
-      contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: i.unitPrice })),
+      contents: items.map((i) => ({ id: i.product.id, quantity: i.quantity, item_price: cartLineUnitPrice(i, saleActive) })),
       num_items: items.reduce((n, i) => n + i.quantity, 0),
     });
-  }, [mounted, items, total]);
+  }, [mounted, items, saleActive]);
 
   // 로그인 사용자의 사용 가능한 쿠폰을 불러온다(비회원은 쿠폰 없음).
   useEffect(() => {
@@ -348,7 +350,7 @@ export default function CheckoutPage() {
     let cancelled = false;
     setTossReady(false);
     widgetsRef.current = null;
-    const cartTotal = total();
+    const cartTotal = cartSaleTotal(items, saleActive);
     const amount = cartTotal >= FREE_SHIPPING ? cartTotal : cartTotal + SHIPPING_FEE;
 
     import("@tosspayments/tosspayments-sdk")
@@ -380,7 +382,7 @@ export default function CheckoutPage() {
       });
 
     return () => { cancelled = true; };
-  }, [mounted, user, items.length, total, widgetReloadKey]);
+  }, [mounted, user, items.length, saleActive, widgetReloadKey]);
 
   // 모바일에서 팝업(.open())이 차단되거나 페이지를 리로드해 입력값이 초기화되는 문제를 피하기 위해
   // 화면 내 오버레이에 임베드(.embed())하는 방식으로 띄운다.
@@ -455,7 +457,7 @@ export default function CheckoutPage() {
         addressLine2: addressLine2 || null,
         deliveryRequest: deliveryRequest || null,
         userCouponId: null,
-        userCouponIds: selectedCouponIds.length > 0 ? selectedCouponIds : null,
+        userCouponIds: !saleActive && selectedCouponIds.length > 0 ? selectedCouponIds : null,
         pointsToUse,
         attribution: getAttribution(),
       });
@@ -531,8 +533,9 @@ export default function CheckoutPage() {
 
   if (!mounted) return null;
 
-  const cartTotal = total();
-  const selectedCoupons = coupons.filter((c) => selectedCouponIds.includes(c.id));
+  const cartTotal = cartSaleTotal(items, saleActive);
+  // 세일 기간에는 쿠폰을 사용할 수 없다(중복 불가). 서버 create_order도 동일하게 무시.
+  const selectedCoupons = saleActive ? [] : coupons.filter((c) => selectedCouponIds.includes(c.id));
   // 여러 쿠폰은 순차(복리)로 적용. (서버 create_order가 최종 재계산)
   const couponDiscount = Math.min(cartTotal, computeStackedDiscount(selectedCoupons, cartTotal));
   // 배송비 무료 기준은 "상품 합계(쿠폰 할인 전)" 기준(create_order RPC와 동일).
@@ -796,6 +799,8 @@ export default function CheckoutPage() {
                   {items.map((item) => {
                     const variantLabel = [item.selectedSize, item.selectedColor].filter(Boolean).join(" · ");
                     const orderable = isCartItemOrderable(item);
+                    const lineUnit = cartLineUnitPrice(item, saleActive);
+                    const lineOnSale = lineUnit < item.unitPrice;
                     return (
                       <li
                         key={`${item.product.id}-${item.selectedColor ?? "default"}-${item.selectedSize ?? "default"}`}
@@ -818,8 +823,15 @@ export default function CheckoutPage() {
                           </p>
                           <div className="flex justify-between mt-1.5">
                             <span className="text-[14px] text-brand-gray-mid">×{item.quantity}</span>
-                            <span className="text-xs">
-                              ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
+                            <span className="text-xs flex items-center gap-1">
+                              {lineOnSale && (
+                                <span className="text-brand-gray-mid line-through">
+                                  ₩{(item.unitPrice * item.quantity).toLocaleString("ko-KR")}
+                                </span>
+                              )}
+                              <span className={lineOnSale ? "text-red-600" : ""}>
+                                ₩{(lineUnit * item.quantity).toLocaleString("ko-KR")}
+                              </span>
                             </span>
                           </div>
                           {!orderable && (
@@ -841,7 +853,13 @@ export default function CheckoutPage() {
                   })}
                 </ul>
 
-                {user && coupons.length > 0 && (
+                {saleActive && (
+                  <div className="border-t border-brand-border pt-3 text-[12px] text-red-600 tracking-wide">
+                    세일 기간에는 전 상품이 세일가로 적용되며, 쿠폰은 함께 사용할 수 없어요. (적립금은 사용 가능)
+                  </div>
+                )}
+
+                {!saleActive && user && coupons.length > 0 && (
                   <div className="border-t border-brand-border pt-3">
                     <label className="text-xs tracking-wide text-brand-gray-mid block mb-1.5">
                       쿠폰 {selectedCouponIds.length > 0 && `(${selectedCouponIds.length}장 적용)`}
