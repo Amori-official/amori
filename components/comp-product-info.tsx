@@ -154,13 +154,14 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
         <p className="text-xl tracking-wide">₩{displayPrice.toLocaleString("ko-KR")}</p>
       )}
 
-      {/* 사이즈 선택 (사이즈별 가격이 다른 상품만) */}
+      {/* 사이즈/옵션 선택 (옵션별 가격이 다른 상품만) */}
       {product.sizes && product.sizes.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-[14px] tracking-widest text-brand-gray-mid">
-            SIZE{selectedSize ? ` · ${selectedSize}` : ""}
+            {(product.sizes.some((s) => s.name.includes("·")) ? "옵션" : "SIZE")}
+            {selectedSize ? ` · ${selectedSize}` : ""}
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {product.sizes.map((s) => (
               <button
                 key={s.name}
