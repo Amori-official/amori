@@ -43,6 +43,9 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   const product = await getProductBySlug(params.slug);
 
   if (!product) notFound();
+  // 출시 예정(coming soon) 상품은 목록에 노출되되 상세 열람·구매는 막는다.
+  // (목록 카드도 coming soon이면 상세로 링크하지 않음)
+  if (product.isComingSoon) notFound();
 
   const productReviews = await getProductReviews(product.id);
 

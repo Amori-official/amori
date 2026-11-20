@@ -9,6 +9,7 @@ import {
   setProductStock,
   setProductCategory,
   setProductSalePrice,
+  setProductComingSoon,
   deleteProduct,
   type AdminProduct,
 } from "@/app/actions/admin";
@@ -29,6 +30,17 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
     setError(null);
     startTransition(async () => {
       const res = await setProductPublished(p.id, !p.isPublished);
+      setBusyId(null);
+      if (res.error) setError(res.error);
+      else router.refresh();
+    });
+  };
+
+  const toggleComingSoon = (p: AdminProduct) => {
+    setBusyId(p.id);
+    setError(null);
+    startTransition(async () => {
+      const res = await setProductComingSoon(p.id, !p.isComingSoon);
       setBusyId(null);
       if (res.error) setError(res.error);
       else router.refresh();
@@ -100,6 +112,9 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                       <span className="text-[13px] text-brand-gray-mid">{p.nameKo}</span>
                     )}
                     <StatusBadge published={p.isPublished} />
+                    {p.isComingSoon && (
+                      <span className="text-[12px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">출시예정</span>
+                    )}
                     {p.stock === 0 && (
                       <span className="text-[12px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">품절</span>
                     )}
@@ -131,6 +146,19 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                     }`}
                   >
                     {p.isPublished ? "게시 내리기" : "게시하기"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleComingSoon(p)}
+                    disabled={pending && busyId === p.id}
+                    title="켜면 목록엔 보이지만 상세·구매는 막힙니다"
+                    className={`px-4 h-9 text-[13px] tracking-widest transition-colors disabled:opacity-50 ${
+                      p.isComingSoon
+                        ? "bg-amber-500 text-white hover:bg-amber-600"
+                        : "border border-brand-border text-brand-gray-mid hover:border-brand-black hover:text-brand-black"
+                    }`}
+                  >
+                    {p.isComingSoon ? "출시하기" : "출시예정"}
                   </button>
                   <button
                     type="button"

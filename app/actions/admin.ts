@@ -30,6 +30,7 @@ export interface AdminProduct {
   salePrice: number | null;
   stock: number;
   isPublished: boolean;
+  isComingSoon: boolean;
   saleStatus: string;
   variants: AdminProductVariant[];
 }
@@ -212,7 +213,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, name_ko, category, price, sale_price, stock, is_published, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
+        "id, slug, name, name_ko, category, price, sale_price, stock, is_published, is_coming_soon, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
       )
       .order("created_at", { ascending: true });
 
@@ -231,6 +232,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
       salePrice: p.sale_price != null ? Number(p.sale_price) : null,
       stock: Number(p.stock ?? 0),
       isPublished: Boolean(p.is_published),
+      isComingSoon: Boolean(p.is_coming_soon),
       saleStatus: String(p.sale_status ?? "active"),
       variants: (Array.isArray(p.product_variants) ? p.product_variants : [])
         .slice()
@@ -266,6 +268,31 @@ export async function setProductPublished(
       return { error: "상태 변경에 실패했습니다." };
     }
     revalidatePath("/admin/products");
+    return {};
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// 출시예정(coming soon) 토글. 켜면 목록엔 노출되지만 상세 열람·구매는 막힌다.
+export async function setProductComingSoon(
+  productId: string,
+  isComingSoon: boolean
+): Promise<{ error?: string }> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+    const { error } = await supabase
+      .from("products")
+      .update({ is_coming_soon: isComingSoon })
+      .eq("id", productId);
+    if (error) {
+      logSupabaseError("setProductComingSoon", error);
+      return { error: "상태 변경에 실패했습니다." };
+    }
+    revalidatePath("/admin/products");
+    revalidatePath("/shop");
+    revalidatePath("/");
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
