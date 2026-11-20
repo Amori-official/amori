@@ -318,29 +318,46 @@ function RenewalNotice({
             {renderEmphasis(body)}
           </p>
         )}
-        {images && images.length > 0 && (
-          <div className="mt-8 flex flex-col gap-6">
-            {images.map((img) => (
-              <figure key={img.src}>
-                <div className="relative w-full bg-brand-gray-light">
+        {images && images.length > 0 &&
+          (images.length > 2 ? (
+            // 3장 이상: 2단 그리드로 한눈에(설명이 이미지에 포함된 경우를 위해 캡션 없음, 모바일도 2열)
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+              {images.map((img) => (
+                <div key={img.src} className="relative w-full bg-brand-gray-light">
                   <Image
                     src={img.src}
                     alt={img.alt}
-                    width={1500}
+                    width={1000}
                     height={1000}
                     className="w-full h-auto"
-                    sizes="(min-width: 768px) 640px, 100vw"
+                    sizes="(min-width: 768px) 320px, 50vw"
                   />
                 </div>
-                {img.alt && (
-                  <figcaption className="mt-2.5 text-[12px] sm:text-[13px] text-brand-gray-mid tracking-wide">
-                    {img.alt}
-                  </figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 flex flex-col gap-6">
+              {images.map((img) => (
+                <figure key={img.src}>
+                  <div className="relative w-full bg-brand-gray-light">
+                    <Image
+                      src={img.src}
+                      alt={img.alt}
+                      width={1500}
+                      height={1000}
+                      className="w-full h-auto"
+                      sizes="(min-width: 768px) 640px, 100vw"
+                    />
+                  </div>
+                  {img.alt && (
+                    <figcaption className="mt-2.5 text-[12px] sm:text-[13px] text-brand-gray-mid tracking-wide">
+                      {img.alt}
+                    </figcaption>
+                  )}
+                </figure>
+              ))}
+            </div>
+          ))}
       </div>
     </section>
   );
