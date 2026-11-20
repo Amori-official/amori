@@ -72,6 +72,22 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
   const { active: saleActive, label: saleLabel } = useSale();
   const sale = effectivePrice(displayPrice, product.salePrice, saleActive);
 
+  // 옵션이 "종류 · 색상" 조합(세컨드 등)이면 2단(종류→색상)으로 나눠 보여준다.
+  const comboOptions =
+    (product.sizes?.length ?? 0) > 0 && product.sizes!.every((s) => s.name.includes(" · "));
+  const parseOpt = (name: string) => {
+    const i = name.indexOf(" · ");
+    return i < 0 ? { type: name, color: "" } : { type: name.slice(0, i), color: name.slice(i + 3) };
+  };
+  const comboTypes = comboOptions
+    ? Array.from(new Set(product.sizes!.map((s) => parseOpt(s.name).type)))
+    : [];
+  const selOpt = selectedSize ? parseOpt(selectedSize) : null;
+  const comboColors =
+    comboOptions && selOpt
+      ? product.sizes!.filter((s) => parseOpt(s.name).type === selOpt.type).map((s) => parseOpt(s.name).color)
+      : [];
+
   const stockLabel = () => {
     if (isSplitAxis) {
       return { text: "상품 옵션을 정비 중입니다. 잠시 후 다시 이용해 주세요.", color: "text-amber-600" };
@@ -154,31 +170,63 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
         <p className="text-xl tracking-wide">₩{displayPrice.toLocaleString("ko-KR")}</p>
       )}
 
-      {/* 사이즈/옵션 선택 (옵션별 가격이 다른 상품만) */}
-      {product.sizes && product.sizes.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-[14px] tracking-widest text-brand-gray-mid">
-            {(product.sizes.some((s) => s.name.includes("·")) ? "옵션" : "SIZE")}
-            {selectedSize ? ` · ${selectedSize}` : ""}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {product.sizes.map((s) => (
-              <button
-                key={s.name}
-                type="button"
-                onClick={() => setSelectedSize(s.name)}
-                aria-pressed={selectedSize === s.name}
-                className={`h-10 px-4 border text-[14px] tracking-widest transition-all ${
-                  selectedSize === s.name
-                    ? "border-brand-black bg-brand-black text-white"
-                    : "border-brand-border text-brand-black hover:border-brand-gray-mid"
-                }`}
-              >
-                {s.name}
-              </button>
-            ))}
+      {/* 옵션이 "종류 · 색상" 조합이면 2단 드롭다운(종류 → 색상)으로 */}
+      {comboOptions ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] tracking-widest text-brand-gray-mid">옵션 1 · 종류</label>
+            <select
+              value={selOpt?.type ?? ""}
+              onChange={(e) => {
+                const first = product.sizes!.find((s) => parseOpt(s.name).type === e.target.value);
+                if (first) setSelectedSize(first.name);
+              }}
+              className="h-11 border border-brand-border px-3 text-[14px] bg-white text-brand-black focus:outline-none focus:border-brand-black cursor-pointer"
+            >
+              {comboTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] tracking-widest text-brand-gray-mid">옵션 2 · 색상</label>
+            <select
+              value={selOpt?.color ?? ""}
+              onChange={(e) => setSelectedSize(`${selOpt?.type} · ${e.target.value}`)}
+              className="h-11 border border-brand-border px-3 text-[14px] bg-white text-brand-black focus:outline-none focus:border-brand-black cursor-pointer"
+            >
+              {comboColors.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
         </div>
+      ) : (
+        product.sizes &&
+        product.sizes.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-[14px] tracking-widest text-brand-gray-mid">
+              SIZE{selectedSize ? ` · ${selectedSize}` : ""}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {product.sizes.map((s) => (
+                <button
+                  key={s.name}
+                  type="button"
+                  onClick={() => setSelectedSize(s.name)}
+                  aria-pressed={selectedSize === s.name}
+                  className={`h-10 px-4 border text-[14px] tracking-widest transition-all ${
+                    selectedSize === s.name
+                      ? "border-brand-black bg-brand-black text-white"
+                      : "border-brand-border text-brand-black hover:border-brand-gray-mid"
+                  }`}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
       )}
 
       {/* 평점 · 리뷰 바로가기 (클릭 시 하단 리뷰 섹션으로 스크롤) */}
