@@ -3,8 +3,11 @@ export const revalidate = 60;
 
 import { Suspense } from "react";
 import { getProducts } from "@/app/actions/products";
+import { getSiteSettings } from "@/app/actions/site";
+import { isSaleActive } from "@/lib/site";
 import CompShopFilters from "@/components/comp-shop-filters";
 import CompProductCard from "@/components/comp-product-card";
+import type { Product } from "@/lib/types";
 
 interface SearchParams {
   category?: string | string[];
@@ -23,15 +26,24 @@ export default async function ShopPage({
 
   // 전체 게시 상품을 먼저 불러와 "상품이 있는 카테고리"만 탭에 노출한다
   // (빈 카테고리 숨김 — 카드사 심사 요구사항).
-  const everything = await getProducts({ sort });
+  const [everything, site] = await Promise.all([getProducts({ sort }), getSiteSettings()]);
   const availableCategories = Array.from(
     new Set(everything.map((p) => p.category).filter((c): c is string => !!c))
   );
 
+  // SALE 탭 대상: 세컨드(클리어런스) + 세일 기간에 세일가가 걸린 상품.
+  const saleActive = isSaleActive(site);
+  const isOnSale = (p: Product) =>
+    p.slug === "second" ||
+    (saleActive && p.salePrice != null && p.salePrice < p.price);
+  const hasSale = everything.some(isOnSale);
+
   const inCategory =
-    category && category !== "all"
-      ? everything.filter((p) => p.category === category)
-      : everything;
+    category === "sale"
+      ? everything.filter(isOnSale)
+      : category && category !== "all"
+        ? everything.filter((p) => p.category === category)
+        : everything;
   // 출시예정(coming soon) 상품을 목록 맨 앞에 배치하고, 그 뒤로 일반 상품.
   const soon = inCategory.filter((p) => p.isComingSoon);
   const main = inCategory.filter((p) => !p.isComingSoon);
@@ -49,7 +61,7 @@ export default async function ShopPage({
         </div>
 
         <Suspense fallback={null}>
-          <CompShopFilters category={category} sort={sort} availableCategories={availableCategories} />
+          <CompShopFilters category={category} sort={sort} availableCategories={availableCategories} hasSale={hasSale} />
         </Suspense>
       </section>
 

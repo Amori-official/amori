@@ -21,15 +21,21 @@ interface Props {
   category?: string;
   sort?: string;
   availableCategories?: string[];
+  /** 세일/클리어런스 상품이 있어 SALE 탭을 노출할지 */
+  hasSale?: boolean;
 }
 
-export default function CompShopFilters({ category = "all", sort = "new", availableCategories }: Props) {
+export default function CompShopFilters({ category = "all", sort = "new", availableCategories, hasSale }: Props) {
   const router = useRouter();
 
   // 상품이 있는 카테고리만 노출한다("all"은 항상). availableCategories가 없으면 전체 표시.
-  const visibleCategories = availableCategories
+  const baseCategories = availableCategories
     ? CATEGORIES.filter((c) => c.value === "all" || availableCategories.includes(c.value))
     : CATEGORIES;
+  // SALE은 특별 탭 — 세일/클리어런스 상품이 있을 때만, 맨 끝에 추가.
+  const visibleCategories = hasSale
+    ? [...baseCategories, { value: "sale", label: "SALE" }]
+    : baseCategories;
 
   const update = (key: "category" | "sort", value: string) => {
     const params = new URLSearchParams();
@@ -47,20 +53,28 @@ export default function CompShopFilters({ category = "all", sort = "new", availa
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-6 pb-5 border-b border-brand-border">
       {/* 카테고리 탭 (모바일에서도 가로 스크롤 없이 한눈에 보이도록 줄바꿈) */}
       <div className="flex flex-wrap gap-x-1 gap-y-1">
-        {visibleCategories.map((cat) => (
-          <button
-            key={cat.value}
-            onClick={() => update("category", cat.value)}
-            className={[
-              "text-[13px] sm:text-[14px] tracking-widest px-3 sm:px-4 py-2 transition-all shrink-0",
-              category === cat.value
-                ? "font-bold text-brand-black"
-                : "font-normal text-brand-gray-mid hover:font-bold hover:text-brand-black",
-            ].join(" ")}
-          >
-            {cat.label}
-          </button>
-        ))}
+        {visibleCategories.map((cat) => {
+          const isSale = cat.value === "sale";
+          const active = category === cat.value;
+          return (
+            <button
+              key={cat.value}
+              onClick={() => update("category", cat.value)}
+              className={[
+                "text-[13px] sm:text-[14px] tracking-widest px-3 sm:px-4 py-2 transition-all shrink-0",
+                isSale
+                  ? active
+                    ? "font-bold text-[#9f2d2d]"
+                    : "font-semibold text-[#a8484a] hover:text-[#9f2d2d]"
+                  : active
+                    ? "font-bold text-brand-black"
+                    : "font-normal text-brand-gray-mid hover:font-bold hover:text-brand-black",
+              ].join(" ")}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* 정렬 드롭다운 */}

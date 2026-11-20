@@ -73,10 +73,12 @@ export default function CompProductCard({ product, comingSoon }: Props) {
           </div>
         )}
 
-        {/* COMING SOON 오버레이 */}
+        {/* COMING SOON 오버레이 — 배경 대비를 위해 살짝 어둡게 깔고 다크 칩+흰 볼드 */}
         {isComingSoon && (
-          <div className="absolute inset-0 bg-white/55 flex items-center justify-center">
-            <span className="text-[15px] tracking-[0.35em] text-brand-black">COMING SOON</span>
+          <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+            <span className="bg-black/75 text-white font-bold text-[13px] sm:text-[14px] tracking-[0.3em] px-4 py-2">
+              COMING SOON
+            </span>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug, getProductReviews, getGiftBoxAddon } from "@/app/actions/products";
+import { isCurrentUserAdmin } from "@/app/actions/admin";
 import { getSiteSettings } from "@/app/actions/site";
 import ProductDetailHero from "./product-detail-hero";
 import ProductDetailSections from "./product-detail-sections";
@@ -43,9 +44,12 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   const product = await getProductBySlug(params.slug);
 
   if (!product) notFound();
-  // 출시 예정(coming soon) 상품은 목록에 노출되되 상세 열람·구매는 막는다.
-  // 직접 URL 접근 시 404 대신 쇼핑 목록으로 돌려보낸다(카드는 이미 상세로 링크 안 함).
-  if (product.isComingSoon) redirect("/shop");
+  // 출시 예정(coming soon) 상품은 일반 고객에겐 상세 열람·구매를 막고 /shop으로
+  // 돌려보낸다. 단, 관리자(로그인)는 출시 전 미리보기를 위해 그대로 열람할 수 있다.
+  if (product.isComingSoon) {
+    const isAdmin = await isCurrentUserAdmin();
+    if (!isAdmin) redirect("/shop");
+  }
 
   const productReviews = await getProductReviews(product.id);
 
