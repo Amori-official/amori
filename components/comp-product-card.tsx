@@ -16,13 +16,12 @@ interface Props {
 }
 
 export default function CompProductCard({ product, comingSoon }: Props) {
-  const [notifyDone, setNotifyDone] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     product.colors?.[0]?.name
   );
   const [hoveredImage, setHoveredImage] = useState<string | undefined>(undefined);
   const { add } = useCartStore();
-  const { setCartOpen, showToast } = useUIStore();
+  const { setCartOpen } = useUIStore();
   const { active: saleActive } = useSale();
   const sale = effectivePrice(product.price, product.salePrice, saleActive);
 
@@ -50,12 +49,6 @@ export default function CompProductCard({ product, comingSoon }: Props) {
     setSelectedColor(colorName);
   };
 
-  const handleNotify = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setNotifyDone(true);
-    showToast("출시 알림이 신청되었습니다!");
-  };
 
   return (
     <Link
@@ -77,6 +70,13 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         {isSoldOut && (
           <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
             <span className="text-[14px] tracking-[0.3em] text-brand-gray-mid">SOLD OUT</span>
+          </div>
+        )}
+
+        {/* COMING SOON 오버레이 */}
+        {isComingSoon && (
+          <div className="absolute inset-0 bg-white/55 flex items-center justify-center">
+            <span className="text-[15px] tracking-[0.35em] text-brand-black">COMING SOON</span>
           </div>
         )}
 
@@ -127,38 +127,33 @@ export default function CompProductCard({ product, comingSoon }: Props) {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-0.5">
-          {product.sizes && product.sizes.length > 0 ? (
-            <p className="text-sm">
-              ₩{Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~
-            </p>
-          ) : sale.onSale ? (
-            <p className="text-sm flex items-center gap-1.5">
-              <span className="text-brand-gray-mid line-through text-[13px]">
-                ₩{sale.original.toLocaleString("ko-KR")}
-              </span>
-              <span className="text-red-600 font-medium">
-                ₩{sale.price.toLocaleString("ko-KR")}
-              </span>
-            </p>
-          ) : (
-            <p className="text-sm">₩{product.price.toLocaleString("ko-KR")}</p>
-          )}
-          {(product.reviewCount ?? 0) > 0 && (
-            <p className="text-[14px] text-brand-gray-mid">
-              ★ {product.rating?.toFixed(1)} ({product.reviewCount})
-            </p>
-          )}
-        </div>
-
-        {/* 출시 알림 신청 */}
-        {isComingSoon && (
-          <button
-            onClick={handleNotify}
-            className="text-[14px] tracking-wide underline text-brand-gray-mid pt-0.5 block"
-          >
-            {notifyDone ? "알림 신청 완료" : "출시 알림 신청"}
-          </button>
+        {/* 가격 (출시예정 상품은 숨김) */}
+        {isComingSoon ? (
+          <p className="text-sm tracking-[0.2em] text-brand-gray-mid pt-0.5">COMING SOON</p>
+        ) : (
+          <div className="flex items-center justify-between pt-0.5">
+            {product.sizes && product.sizes.length > 0 ? (
+              <p className="text-sm">
+                ₩{Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~
+              </p>
+            ) : sale.onSale ? (
+              <p className="text-sm flex items-center gap-1.5">
+                <span className="text-brand-gray-mid line-through text-[13px]">
+                  ₩{sale.original.toLocaleString("ko-KR")}
+                </span>
+                <span className="text-red-600 font-medium">
+                  ₩{sale.price.toLocaleString("ko-KR")}
+                </span>
+              </p>
+            ) : (
+              <p className="text-sm">₩{product.price.toLocaleString("ko-KR")}</p>
+            )}
+            {(product.reviewCount ?? 0) > 0 && (
+              <p className="text-[14px] text-brand-gray-mid">
+                ★ {product.rating?.toFixed(1)} ({product.reviewCount})
+              </p>
+            )}
+          </div>
         )}
       </div>
     </Link>

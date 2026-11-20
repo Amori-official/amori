@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getProductBySlug, getProductReviews, getGiftBoxAddon } from "@/app/actions/products";
 import { getSiteSettings } from "@/app/actions/site";
@@ -44,8 +44,8 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
 
   if (!product) notFound();
   // 출시 예정(coming soon) 상품은 목록에 노출되되 상세 열람·구매는 막는다.
-  // (목록 카드도 coming soon이면 상세로 링크하지 않음)
-  if (product.isComingSoon) notFound();
+  // 직접 URL 접근 시 404 대신 쇼핑 목록으로 돌려보낸다(카드는 이미 상세로 링크 안 함).
+  if (product.isComingSoon) redirect("/shop");
 
   const productReviews = await getProductReviews(product.id);
 

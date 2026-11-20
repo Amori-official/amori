@@ -32,8 +32,10 @@ export default async function ShopPage({
     category && category !== "all"
       ? everything.filter((p) => p.category === category)
       : everything;
-  const products = inCategory.filter((p) => !p.isComingSoon);
-  const comingSoon = inCategory.filter((p) => p.isComingSoon);
+  // 출시예정(coming soon) 상품을 목록 맨 앞에 배치하고, 그 뒤로 일반 상품.
+  const soon = inCategory.filter((p) => p.isComingSoon);
+  const main = inCategory.filter((p) => !p.isComingSoon);
+  const products = [...soon, ...main];
 
   return (
     <div className="pt-[60px] min-h-screen">
@@ -68,27 +70,6 @@ export default async function ShopPage({
           </div>
         )}
       </section>
-
-      {/* ── Coming Soon ──────────────────────────────────────── */}
-      {comingSoon.length > 0 && (
-        <section
-          id="shop-coming-soon"
-          className="px-4 sm:px-8 lg:px-16 py-14 border-t border-brand-border"
-        >
-          <div className="mb-8">
-            <h2 className="text-[14px] tracking-[0.3em] text-brand-gray-mid">COMING SOON</h2>
-            <p className="text-xs text-brand-gray-mid tracking-wide mt-1">
-              곧 출시될 새로운 제품들입니다
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-12">
-            {comingSoon.map((product) => (
-              <CompProductCard key={product.id} product={product} comingSoon />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
