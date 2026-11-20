@@ -158,7 +158,12 @@ function mapRow(row: Record<string, unknown>): Product {
     relatedProductSlugs: Array.isArray(row.related_product_slugs) ? (row.related_product_slugs as string[]) : undefined,
     lineup: Array.isArray(row.lineup)
       ? (row.lineup as Record<string, unknown>[])
-          .map((l) => ({ image: String(l.image ?? ""), title: String(l.title ?? ""), desc: String(l.desc ?? "") }))
+          .map((l) => ({
+            image: String(l.image ?? ""),
+            title: String(l.title ?? ""),
+            desc: String(l.desc ?? ""),
+            ...(l.href ? { href: String(l.href) } : {}),
+          }))
           .filter((l) => l.image)
       : undefined,
     imageAlts: gallery.length > 0 ? gallery.map((i) => i.alt_text ?? "") : undefined,

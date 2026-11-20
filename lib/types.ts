@@ -78,8 +78,8 @@ export interface Product {
   certificationText?: string;
   /** SIZE/SAFETY CERTIFICATION/CARE 외 상품별 추가 아코디언 항목 */
   accordionItems?: { title: string; content: string }[];
-  /** 구성 상품 소개(세컨드 등 여러 제품을 한 상품으로 파는 경우) — 사진+이름+한줄설명 */
-  lineup?: { image: string; title: string; desc: string }[];
+  /** 구성 상품 소개(세컨드 등 여러 제품을 한 상품으로 파는 경우) — 사진+이름+한줄설명(+링크) */
+  lineup?: { image: string; title: string; desc: string; href?: string }[];
   /** You May Also Like에 노출할 관련 상품 slug (표시 순서 그대로) */
   relatedProductSlugs?: string[];
   /** 상단 갤러리 images[] 순서에 대응하는 alt 텍스트 */

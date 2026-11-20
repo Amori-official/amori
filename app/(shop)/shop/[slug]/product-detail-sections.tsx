@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import CompProductCard from "@/components/comp-product-card";
 import { AccordionItem } from "./product-accordion";
 import ProductReviews from "./product-reviews";
@@ -58,26 +59,40 @@ export default function ProductDetailSections({ product, reviews, relatedProduct
         <section className="px-4 sm:px-8 lg:px-16 pt-16 lg:pt-20 pb-4">
           <p className={sectionTitle}>구성 상품</p>
           <p className="text-sm text-brand-gray-mid tracking-wide leading-7 mb-8 max-w-3xl">
-            아래 제품들이 세컨드·구버전으로 준비되어 있어요. 정상 제품은 이런 모습이에요.
+            아모리의 제품들을 소개합니다. 정상 제품도 블랙프라이데이 기간 할인 중이니, 궁금하시다면 아래에서 각
+            제품의 상세페이지를 확인해보세요.
           </p>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {product.lineup.map((item) => (
-              <div key={item.image} className="flex flex-col">
-                <div className="relative w-full aspect-[4/5] bg-brand-gray-light overflow-hidden">
-                  <Image
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 30vw, 50vw"
-                  />
+            {product.lineup.map((item) => {
+              const inner = (
+                <>
+                  <div className="relative w-full aspect-[4/5] bg-brand-gray-light overflow-hidden">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(min-width: 1024px) 30vw, 50vw"
+                    />
+                  </div>
+                  <p className="mt-2.5 text-[14px] tracking-wide text-brand-black group-hover:underline underline-offset-2">
+                    {item.title}
+                  </p>
+                  {item.desc && (
+                    <p className="mt-0.5 text-[12px] sm:text-[13px] text-brand-gray-mid leading-5">{item.desc}</p>
+                  )}
+                </>
+              );
+              return item.href ? (
+                <Link key={item.image} href={item.href} className="group flex flex-col">
+                  {inner}
+                </Link>
+              ) : (
+                <div key={item.image} className="group flex flex-col">
+                  {inner}
                 </div>
-                <p className="mt-2.5 text-[14px] tracking-wide text-brand-black">{item.title}</p>
-                {item.desc && (
-                  <p className="mt-0.5 text-[12px] sm:text-[13px] text-brand-gray-mid leading-5">{item.desc}</p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
