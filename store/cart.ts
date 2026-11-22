@@ -32,11 +32,14 @@ interface CartStore {
 const isSameLine = (i: CartItem, productId: string, selectedColor?: string, selectedSize?: string) =>
   i.product.id === productId && i.selectedColor === selectedColor && i.selectedSize === selectedSize;
 
-// 세일 반영 단가(표시용). 세일 활성 + 상품 세일가(정가 미만)면 세일가.
-// 실제 결제액은 서버 create_order가 동일 규칙으로 재계산한다.
+// 세일 반영 단가(표시용). 세일 활성이면 할인율(%)을 각 라인 단가에 적용.
+// 실제 결제액은 서버 create_order가 동일 규칙(round(단가×(100-%)/100))으로 재계산.
 export function cartLineUnitPrice(item: CartItem, saleActive: boolean): number {
-  const sp = item.product.salePrice;
-  if (saleActive && sp != null && sp >= 0 && sp < item.unitPrice) return sp;
+  const pct = item.product.salePercent;
+  if (saleActive && pct != null && pct > 0 && pct <= 100) {
+    const p = Math.round((item.unitPrice * (100 - pct)) / 100);
+    if (p < item.unitPrice) return p;
+  }
   return item.unitPrice;
 }
 // 세일 반영 장바구니 합계(표시용).

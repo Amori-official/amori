@@ -70,7 +70,7 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
     ? (product.sizes?.find((s) => s.name === selectedSize)?.price ?? product.price)
     : product.price;
   const { active: saleActive, label: saleLabel } = useSale();
-  const sale = effectivePrice(displayPrice, product.salePrice, saleActive);
+  const sale = effectivePrice(displayPrice, product.salePercent, saleActive);
 
   // 옵션이 "종류 · 색상" 조합(세컨드 등)이면 2단(종류→색상)으로 나눠 보여준다.
   const comboOptions =

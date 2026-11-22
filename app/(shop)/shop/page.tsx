@@ -35,7 +35,7 @@ export default async function ShopPage({
   const saleActive = isSaleActive(site);
   const isOnSale = (p: Product) =>
     p.slug === "second" ||
-    (saleActive && p.salePrice != null && p.salePrice < p.price);
+    (saleActive && p.salePercent != null && p.salePercent > 0);
   const hasSale = everything.some(isOnSale);
 
   const inCategory =

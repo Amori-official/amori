@@ -54,14 +54,16 @@ export function isSaleActive(s: SiteSettings, now: number = Date.now()): boolean
   return true;
 }
 
-// 세일가 적용 결과. 활성이고 세일가가 정가 미만일 때만 onSale.
+// 세일 적용 결과(할인율 %방식). 활성이고 할인율이 1~100이면 각 가격에 적용.
+// 서버 create_order와 동일하게 round(정가 × (100-%) / 100)로 반올림한다.
 export function effectivePrice(
   basePrice: number,
-  salePrice: number | null | undefined,
+  salePercent: number | null | undefined,
   saleActive: boolean
 ): { price: number; original: number; onSale: boolean } {
-  if (saleActive && salePrice != null && salePrice >= 0 && salePrice < basePrice) {
-    return { price: salePrice, original: basePrice, onSale: true };
+  if (saleActive && salePercent != null && salePercent > 0 && salePercent <= 100) {
+    const price = Math.round((basePrice * (100 - salePercent)) / 100);
+    if (price < basePrice) return { price, original: basePrice, onSale: true };
   }
   return { price: basePrice, original: basePrice, onSale: false };
 }

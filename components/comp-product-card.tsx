@@ -23,7 +23,7 @@ export default function CompProductCard({ product, comingSoon }: Props) {
   const { add } = useCartStore();
   const { setCartOpen } = useUIStore();
   const { active: saleActive } = useSale();
-  const sale = effectivePrice(product.price, product.salePrice, saleActive);
+  const sale = effectivePrice(product.price, product.salePercent, saleActive);
 
   const displayImage = hoveredImage ?? CARD_DEFAULT_IMAGE[product.slug] ?? product.imageUrl;
 
