@@ -31,10 +31,12 @@ export default async function ShopPage({
     new Set(everything.map((p) => p.category).filter((c): c is string => !!c))
   );
 
-  // SALE 탭 대상: 세컨드(클리어런스) + 세일 기간에 세일가가 걸린 상품.
+  // SALE 탭 대상: 세컨드/클리어런스(blackfriday) + 세일 기간에 할인율이 걸린 상품.
+  // 클리어런스 상품은 옵션가가 이미 세일가라 slug로 지정(이름/slug 바뀌면 여기 갱신).
+  const CLEARANCE_SLUGS = ["blackfriday", "second"];
   const saleActive = isSaleActive(site);
   const isOnSale = (p: Product) =>
-    p.slug === "second" ||
+    CLEARANCE_SLUGS.includes(p.slug) ||
     (saleActive && p.salePercent != null && p.salePercent > 0);
   const hasSale = everything.some(isOnSale);
 
