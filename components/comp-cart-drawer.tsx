@@ -126,6 +126,11 @@ export default function CompCartDrawer() {
                   <span>배송비</span>
                   <span>{remaining > 0 ? `₩${SHIPPING_FEE.toLocaleString("ko-KR")}` : "무료"}</span>
                 </div>
+                {saleActive && (
+                  <p className="text-[12px] text-red-600 tracking-wide leading-5">
+                    세일 상품은 쿠폰 중복 적용이 되지 않아요. (적립금은 사용 가능)
+                  </p>
+                )}
                 <CompCartBenefits onNavigate={() => setCartOpen(false)} />
                 <Link
                   href="/checkout"
