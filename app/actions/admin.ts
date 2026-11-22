@@ -18,6 +18,7 @@ export interface AdminProductVariant {
   colorName: string | null;
   optionName: string | null;
   isActive: boolean;
+  stock: number | null;
 }
 
 export interface AdminProduct {
@@ -213,7 +214,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, name_ko, category, price, sale_percent, stock, is_published, is_coming_soon, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
+        "id, slug, name, name_ko, category, price, sale_percent, stock, is_published, is_coming_soon, sale_status, product_variants(id, color_name, option_name, is_active, display_order, stock)"
       )
       .order("created_at", { ascending: true });
 
@@ -245,6 +246,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
           colorName: (v.color_name as string | null) ?? null,
           optionName: (v.option_name as string | null) ?? null,
           isActive: Boolean(v.is_active),
+          stock: v.stock == null ? null : Number(v.stock),
         })),
     }));
   } catch {
@@ -1226,6 +1228,7 @@ export interface AdminVariantDetail {
   priceOverride: number | null;
   isActive: boolean;
   displayOrder: number;
+  stock: number | null;
 }
 export interface AdminProductImage {
   id: string;
@@ -1339,6 +1342,7 @@ export async function getAdminProductDetail(id: string): Promise<AdminProductDet
           priceOverride: v.price_override == null ? null : Number(v.price_override),
           isActive: Boolean(v.is_active),
           displayOrder: Number(v.display_order ?? 0),
+          stock: v.stock == null ? null : Number(v.stock),
         })),
     };
   } catch {
@@ -1413,6 +1417,8 @@ export interface VariantInput {
   priceOverride: number | null;
   isActive: boolean;
   displayOrder: number;
+  /** 옵션별 재고. null=재고 미추적 */
+  stock: number | null;
 }
 
 function variantRow(v: VariantInput) {
@@ -1425,6 +1431,7 @@ function variantRow(v: VariantInput) {
     price_override: v.priceOverride == null || Number.isNaN(v.priceOverride) ? null : Math.round(v.priceOverride),
     is_active: v.isActive,
     display_order: Math.round(v.displayOrder) || 0,
+    stock: v.stock == null || Number.isNaN(v.stock) ? null : Math.max(0, Math.round(v.stock)),
   };
 }
 

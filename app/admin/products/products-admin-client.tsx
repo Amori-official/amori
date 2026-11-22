@@ -186,6 +186,7 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                   <div className="flex flex-wrap gap-2">
                     {p.variants.map((v) => {
                       const label = [v.colorName, v.optionName].filter(Boolean).join(" · ") || "기본";
+                      const outOfStock = v.stock != null && v.stock <= 0;
                       return (
                         <button
                           key={v.id}
@@ -194,18 +195,22 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                           disabled={pending && busyId === v.id}
                           title={v.isActive ? "클릭 시 품절 처리" : "클릭 시 판매 재개"}
                           className={`px-3 h-8 text-[12px] tracking-wide border transition-colors disabled:opacity-50 ${
-                            v.isActive
-                              ? "border-brand-border text-brand-black hover:bg-brand-gray-light"
-                              : "border-red-200 bg-red-50 text-red-500 line-through"
+                            !v.isActive
+                              ? "border-red-200 bg-red-50 text-red-500 line-through"
+                              : outOfStock
+                                ? "border-amber-300 bg-amber-50 text-amber-700"
+                                : "border-brand-border text-brand-black hover:bg-brand-gray-light"
                           }`}
                         >
                           {label}
+                          {v.stock != null && <span className="ml-1 opacity-70">· {v.stock}개</span>}
                         </button>
                       );
                     })}
                   </div>
                   <p className="text-[12px] text-brand-gray-mid mt-2">
-                    옵션을 클릭하면 판매/품절이 전환됩니다. (품절 = 빨간 취소선)
+                    옵션을 클릭하면 판매/품절이 전환됩니다. (빨간 취소선=품절 처리, 노란색=재고 0) · 옵션별 재고·가격은
+                    &lsquo;수정&rsquo;에서 입력하세요.
                   </p>
                 </div>
               )}

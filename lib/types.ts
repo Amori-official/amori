@@ -18,6 +18,8 @@ export interface ProductVariant {
   imageUrl?: string;
   priceOverride?: number;
   isActive: boolean;
+  /** 옵션별 재고. null=재고 미추적(무제한), 0=품절 */
+  stock?: number | null;
 }
 
 export interface Product {

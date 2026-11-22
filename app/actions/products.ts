@@ -20,6 +20,7 @@ interface VariantRow {
   price_override: number | null;
   is_active: boolean;
   display_order: number;
+  stock: number | null;
 }
 
 interface ImageRow {
@@ -101,6 +102,7 @@ function mapRow(row: Record<string, unknown>): Product {
     ...(v.image_url ? { imageUrl: v.image_url } : {}),
     ...(v.price_override !== null ? { priceOverride: v.price_override } : {}),
     isActive: v.is_active,
+    stock: v.stock ?? null,
   }));
 
   return {
