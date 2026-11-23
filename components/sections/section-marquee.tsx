@@ -12,8 +12,11 @@ const FALLBACK: MarqueeItem[] = [
   { text: "카카오톡 채널 추가 시, 3,000원 할인 쿠폰 증정", href: "https://pf.kakao.com/_dDmTX/friend", action: null },
 ];
 
-const cls =
-  "text-[13px] font-semibold tracking-widest text-brand-black hover:text-brand-gray-mid transition-colors underline-offset-2 hover:underline";
+const BASE_CLS =
+  "text-[13px] font-semibold tracking-widest transition-colors underline-offset-2 hover:underline";
+// 강조 체크 시 SALE 라벨과 같은 짙은 빨강으로.
+const colorCls = (highlight?: boolean) =>
+  highlight ? "text-[#9f2d2d] hover:text-[#7f2424]" : "text-brand-black hover:text-brand-gray-mid";
 
 export default function SectionMarquee({ items }: { items?: MarqueeItem[] }) {
   const list = items && items.length > 0 ? items : FALLBACK;
@@ -30,6 +33,7 @@ export default function SectionMarquee({ items }: { items?: MarqueeItem[] }) {
   if (!item) return null;
 
   const isExternal = /^https?:\/\//.test(item.href);
+  const cls = `${BASE_CLS} ${colorCls(item.highlight)}`;
 
   return (
     <section id="marquee" className="bg-brand-gray-light py-1 overflow-hidden">

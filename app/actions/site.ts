@@ -10,6 +10,7 @@ function mapRow(row: Record<string, unknown>): SiteSettings {
     text: String(i.text ?? ""),
     href: i.href ? String(i.href) : "",
     action: i.action === "signup" ? "signup" : null,
+    highlight: Boolean(i.highlight),
   }));
   return {
     marqueeItems,

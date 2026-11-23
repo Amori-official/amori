@@ -4,6 +4,8 @@ export interface MarqueeItem {
   text: string;
   href: string;
   action: "signup" | null;
+  /** true면 상단 공지바에서 짙은 빨강(#9f2d2d, SALE 라벨 색)으로 강조 표시 */
+  highlight?: boolean;
 }
 
 export interface SiteSettings {

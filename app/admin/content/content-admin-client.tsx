@@ -125,13 +125,23 @@ export default function ContentAdminClient({ initial }: { initial: SiteSettings 
                 />
                 가입모달
               </label>
+              <label className="flex items-center gap-1.5 text-[12px] shrink-0" style={{ color: it.highlight ? "#9f2d2d" : undefined }}>
+                <input
+                  type="checkbox"
+                  checked={!!it.highlight}
+                  onChange={(e) => updateItem(i, { highlight: e.target.checked })}
+                  className="w-4 h-4"
+                  style={{ accentColor: "#9f2d2d" }}
+                />
+                강조(빨강)
+              </label>
               <button onClick={() => removeItem(i)} className="h-9 px-3 text-[12px] text-red-500 border border-red-200 hover:bg-red-50 shrink-0">
                 삭제
               </button>
             </div>
           ))}
         </div>
-        <p className="text-[12px] text-brand-gray-mid">‘가입모달’ 체크 시 클릭하면 회원가입 창이 열립니다(링크 무시).</p>
+        <p className="text-[12px] text-brand-gray-mid">‘가입모달’ 체크 시 클릭하면 회원가입 창이 열립니다(링크 무시). ‘강조(빨강)’ 체크 시 해당 문구가 짙은 빨강으로 표시됩니다.</p>
       </section>
 
       {/* 팝업 공지 */}

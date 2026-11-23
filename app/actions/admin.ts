@@ -2182,6 +2182,7 @@ export async function updateSiteSettings(input: SiteSettings): Promise<{ error?:
         text: String(i.text ?? "").slice(0, 200),
         href: String(i.href ?? "").slice(0, 500),
         action: i.action === "signup" ? "signup" : null,
+        highlight: !!i.highlight,
       }))
       .filter((i) => i.text.trim().length > 0)
       .slice(0, 10);
