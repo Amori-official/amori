@@ -153,16 +153,19 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
 
       {/* 가격 */}
       {sale.onSale ? (
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {saleLabel && (
-            <span className="text-[11px] tracking-widest bg-red-600 text-white px-2 py-0.5">
+            <span className="text-[11px] tracking-widest bg-[#9f2d2d] text-white px-2 py-0.5">
               {saleLabel}
             </span>
           )}
+          <span className="text-[13px] font-semibold text-white bg-[#9f2d2d] px-1.5 py-0.5 leading-none">
+            {Math.round((1 - sale.price / sale.original) * 100)}%
+          </span>
           <span className="text-base text-brand-gray-mid line-through">
             ₩{sale.original.toLocaleString("ko-KR")}
           </span>
-          <span className="text-xl tracking-wide text-red-600 font-medium">
+          <span className="text-xl tracking-wide text-[#9f2d2d] font-medium">
             ₩{sale.price.toLocaleString("ko-KR")}
           </span>
         </div>

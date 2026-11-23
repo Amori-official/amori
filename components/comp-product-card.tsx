@@ -23,7 +23,12 @@ export default function CompProductCard({ product, comingSoon }: Props) {
   const { add } = useCartStore();
   const { setCartOpen } = useUIStore();
   const { active: saleActive } = useSale();
-  const sale = effectivePrice(product.price, product.salePrice, saleActive);
+  // 사이즈 상품은 최저가(from) 기준, 그 외는 기본가 기준으로 세일 계산.
+  const isSized = !!product.sizes && product.sizes.length > 0;
+  const basePrice = isSized ? Math.min(...product.sizes!.map((s) => s.price)) : product.price;
+  const priceSuffix = isSized ? "~" : "";
+  const sale = effectivePrice(basePrice, product.salePrice, saleActive);
+  const salePct = sale.onSale ? Math.round((1 - sale.price / sale.original) * 100) : 0;
 
   const displayImage = hoveredImage ?? CARD_DEFAULT_IMAGE[product.slug] ?? product.imageUrl;
 
@@ -133,25 +138,24 @@ export default function CompProductCard({ product, comingSoon }: Props) {
         {isComingSoon ? (
           <p className="text-sm tracking-[0.2em] text-brand-gray-mid pt-0.5">COMING SOON</p>
         ) : (
-          <div className="flex items-center justify-between pt-0.5">
-            {product.sizes && product.sizes.length > 0 ? (
-              <p className="text-sm">
-                ₩{Math.min(...product.sizes.map((s) => s.price)).toLocaleString("ko-KR")}~
-              </p>
-            ) : sale.onSale ? (
-              <p className="text-sm flex items-center gap-1.5">
-                <span className="text-brand-gray-mid line-through text-[13px]">
-                  ₩{sale.original.toLocaleString("ko-KR")}
+          <div className="flex items-center justify-between pt-0.5 gap-2">
+            {sale.onSale ? (
+              <p className="text-sm flex items-center gap-1.5 flex-wrap min-w-0">
+                <span className="text-[11px] font-semibold text-white bg-[#9f2d2d] px-1.5 py-0.5 leading-none">
+                  {salePct}%
                 </span>
-                <span className="text-red-600 font-medium">
-                  ₩{sale.price.toLocaleString("ko-KR")}
+                <span className="text-brand-gray-mid line-through text-[13px]">
+                  ₩{sale.original.toLocaleString("ko-KR")}{priceSuffix}
+                </span>
+                <span className="text-[#9f2d2d] font-medium">
+                  ₩{sale.price.toLocaleString("ko-KR")}{priceSuffix}
                 </span>
               </p>
             ) : (
-              <p className="text-sm">₩{product.price.toLocaleString("ko-KR")}</p>
+              <p className="text-sm">₩{basePrice.toLocaleString("ko-KR")}{priceSuffix}</p>
             )}
             {(product.reviewCount ?? 0) > 0 && (
-              <p className="text-[14px] text-brand-gray-mid">
+              <p className="text-[14px] text-brand-gray-mid shrink-0">
                 ★ {product.rating?.toFixed(1)} ({product.reviewCount})
               </p>
             )}
