@@ -92,6 +92,17 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
       ? product.sizes!.filter((s) => parseOpt(s.name).type === selOpt.type).map((s) => parseOpt(s.name).color)
       : [];
 
+  // 품절 판정(옵션별 재고). stock이 null이면 미추적=재고 있음, 0 이하면 품절.
+  // 품절이어도 옵션은 선택자에 "품절"로 남겨 희소성을 보여준다(숨기지 않음).
+  const isSizeSoldOut = (optionName: string) => {
+    const v = product.variants?.find((x) => x.optionName === optionName && x.isActive);
+    return !!v && v.stock != null && v.stock <= 0;
+  };
+  const isColorSoldOut = (colorName: string) => {
+    const vs = product.variants?.filter((x) => x.colorName === colorName && x.isActive) ?? [];
+    return vs.length > 0 && vs.every((x) => x.stock != null && x.stock <= 0);
+  };
+
   const stockLabel = () => {
     if (isSplitAxis) {
       return { text: "상품 옵션을 정비 중입니다. 잠시 후 다시 이용해 주세요.", color: "text-amber-600" };
@@ -202,9 +213,14 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
               onChange={(e) => setSelectedSize(`${selOpt?.type} · ${e.target.value}`)}
               className="h-11 border border-brand-border px-3 text-[14px] bg-white text-brand-black focus:outline-none focus:border-brand-black cursor-pointer"
             >
-              {comboColors.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
+              {comboColors.map((c) => {
+                const so = selOpt ? isSizeSoldOut(`${selOpt.type} · ${c}`) : false;
+                return (
+                  <option key={c} value={c} disabled={so}>
+                    {c}{so ? " — 품절" : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -216,21 +232,27 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
               SIZE{selectedSize ? ` · ${selectedSize}` : ""}
             </p>
             <div className="flex flex-wrap gap-2">
-              {product.sizes.map((s) => (
-                <button
-                  key={s.name}
-                  type="button"
-                  onClick={() => setSelectedSize(s.name)}
-                  aria-pressed={selectedSize === s.name}
-                  className={`h-10 px-4 border text-[14px] tracking-widest transition-all ${
-                    selectedSize === s.name
-                      ? "border-brand-black bg-brand-black text-white"
-                      : "border-brand-border text-brand-black hover:border-brand-gray-mid"
-                  }`}
-                >
-                  {s.name}
-                </button>
-              ))}
+              {product.sizes.map((s) => {
+                const so = isSizeSoldOut(s.name);
+                return (
+                  <button
+                    key={s.name}
+                    type="button"
+                    disabled={so}
+                    onClick={() => !so && setSelectedSize(s.name)}
+                    aria-pressed={selectedSize === s.name}
+                    className={`h-10 px-4 border text-[14px] tracking-widest transition-all ${
+                      so
+                        ? "border-brand-border text-brand-gray-mid line-through opacity-50 cursor-not-allowed"
+                        : selectedSize === s.name
+                          ? "border-brand-black bg-brand-black text-white"
+                          : "border-brand-border text-brand-black hover:border-brand-gray-mid"
+                    }`}
+                  >
+                    {s.name}{so ? " 품절" : ""}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )
@@ -265,21 +287,34 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
             COLOR{selectedColor ? ` · ${selectedColor}` : ""}
           </p>
           <div className="flex gap-2">
-            {product.colors.map((c) => (
-              <button
-                key={c.name}
-                type="button"
-                onClick={() => setSelectedColor(c.name)}
-                aria-label={c.name}
-                aria-pressed={selectedColor === c.name}
-                className={`w-8 h-8 rounded-full border transition-all ${
-                  selectedColor === c.name
-                    ? "border-brand-black ring-1 ring-brand-black ring-offset-2"
-                    : "border-brand-border hover:border-brand-gray-mid"
-                }`}
-                style={{ backgroundColor: c.hex }}
-              />
-            ))}
+            {product.colors.map((c) => {
+              const so = isColorSoldOut(c.name);
+              return (
+                <button
+                  key={c.name}
+                  type="button"
+                  disabled={so}
+                  onClick={() => !so && setSelectedColor(c.name)}
+                  aria-label={so ? `${c.name} 품절` : c.name}
+                  aria-pressed={selectedColor === c.name}
+                  title={so ? `${c.name} (품절)` : c.name}
+                  className={`relative w-8 h-8 rounded-full border transition-all ${
+                    so
+                      ? "opacity-40 cursor-not-allowed border-brand-border"
+                      : selectedColor === c.name
+                        ? "border-brand-black ring-1 ring-brand-black ring-offset-2"
+                        : "border-brand-border hover:border-brand-gray-mid"
+                  }`}
+                  style={{ backgroundColor: c.hex }}
+                >
+                  {so && (
+                    <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <span className="block w-[1.5px] h-9 bg-brand-gray-mid/80 rotate-45" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
