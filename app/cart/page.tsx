@@ -105,6 +105,11 @@ export default function CartPage() {
                     <span className="tracking-wide">최종 결제금액</span>
                     <span>₩{grandTotal.toLocaleString("ko-KR")}</span>
                   </div>
+                  {saleActive && (
+                    <p className="text-[12px] text-red-600 tracking-wide leading-5 pt-1">
+                      세일 상품은 쿠폰 중복 적용이 되지 않아요. (적립금은 사용 가능)
+                    </p>
+                  )}
                 </div>
               </div>
 

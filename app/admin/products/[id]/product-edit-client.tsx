@@ -29,6 +29,7 @@ const EMPTY_VARIANT: VariantInput = {
   priceOverride: null,
   isActive: true,
   displayOrder: 0,
+  stock: null,
 };
 
 export default function ProductEditClient({ product }: { product: AdminProductDetail }) {
@@ -332,6 +333,7 @@ function VariantFields({ value, onChange }: { value: VariantInput; onChange: (v:
       <Mini label="옵션(사이즈)"><Input value={value.optionName} onChange={(x) => u({ optionName: x })} placeholder="S / L" /></Mini>
       <Mini label="노출순서"><Input type="number" value={String(value.displayOrder)} onChange={(x) => u({ displayOrder: Number(x) })} /></Mini>
       <Mini label="옵션가격(선택)"><Input type="number" value={value.priceOverride == null ? "" : String(value.priceOverride)} onChange={(x) => u({ priceOverride: x === "" ? null : Number(x) })} placeholder="기본가와 다를 때만" /></Mini>
+      <Mini label="재고(비우면 무제한)"><Input type="number" value={value.stock == null ? "" : String(value.stock)} onChange={(x) => u({ stock: x === "" ? null : Number(x) })} placeholder="무제한" /></Mini>
       <Mini label="SKU"><Input value={value.sku} onChange={(x) => u({ sku: x })} /></Mini>
       <Mini label="옵션 이미지 (URL 또는 업로드)">
         <div className="flex items-center gap-1.5">

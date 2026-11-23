@@ -18,6 +18,7 @@ export interface AdminProductVariant {
   colorName: string | null;
   optionName: string | null;
   isActive: boolean;
+  stock: number | null;
 }
 
 export interface AdminProduct {
@@ -27,7 +28,7 @@ export interface AdminProduct {
   nameKo: string | null;
   category: string | null;
   price: number;
-  salePrice: number | null;
+  salePercent: number | null;
   stock: number;
   isPublished: boolean;
   isComingSoon: boolean;
@@ -213,7 +214,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
     const { data, error } = await supabase
       .from("products")
       .select(
-        "id, slug, name, name_ko, category, price, sale_price, stock, is_published, is_coming_soon, sale_status, product_variants(id, color_name, option_name, is_active, display_order)"
+        "id, slug, name, name_ko, category, price, sale_percent, stock, is_published, is_coming_soon, sale_status, product_variants(id, color_name, option_name, is_active, display_order, stock)"
       )
       .order("created_at", { ascending: true });
 
@@ -229,7 +230,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
       nameKo: (p.name_ko as string | null) ?? null,
       category: (p.category as string | null) ?? null,
       price: Number(p.price),
-      salePrice: p.sale_price != null ? Number(p.sale_price) : null,
+      salePercent: p.sale_percent != null ? Number(p.sale_percent) : null,
       stock: Number(p.stock ?? 0),
       isPublished: Boolean(p.is_published),
       isComingSoon: Boolean(p.is_coming_soon),
@@ -245,6 +246,7 @@ export async function getAdminProducts(): Promise<AdminProduct[]> {
           colorName: (v.color_name as string | null) ?? null,
           optionName: (v.option_name as string | null) ?? null,
           isActive: Boolean(v.is_active),
+          stock: v.stock == null ? null : Number(v.stock),
         })),
     }));
   } catch {
@@ -345,29 +347,22 @@ export async function setProductStock(
   }
 }
 
-// 상품별 세일가 설정. null이면 세일 제외. 음수/정가 초과는 거부.
-export async function setProductSalePrice(
+// 상품별 세일 할인율(%) 설정. null/0이면 세일 제외. 할인율은 각 옵션 가격에 적용된다.
+export async function setProductSalePercent(
   productId: string,
-  salePrice: number | null
+  salePercent: number | null
 ): Promise<{ error?: string }> {
   try {
-    if (salePrice !== null && (!Number.isInteger(salePrice) || salePrice < 0 || salePrice > 100000000)) {
-      return { error: "세일가가 올바르지 않습니다." };
+    if (salePercent !== null && (!Number.isInteger(salePercent) || salePercent < 0 || salePercent > 100)) {
+      return { error: "할인율은 0~100 사이로 입력해주세요." };
     }
     const supabase = createServerSideClient();
     await requireAdmin(supabase);
-    // 정가(price) 미만인지 확인(정가 이상이면 세일 의미 없음 → 거부).
-    if (salePrice !== null) {
-      const { data: prod } = await supabase.from("products").select("price").eq("id", productId).maybeSingle();
-      const base = Number((prod as { price?: unknown } | null)?.price ?? 0);
-      if (base > 0 && salePrice >= base) {
-        return { error: `세일가는 정가(${base.toLocaleString("ko-KR")}원)보다 낮아야 합니다.` };
-      }
-    }
-    const { error } = await supabase.from("products").update({ sale_price: salePrice }).eq("id", productId);
+    const value = salePercent && salePercent > 0 ? salePercent : null;
+    const { error } = await supabase.from("products").update({ sale_percent: value }).eq("id", productId);
     if (error) {
-      logSupabaseError("setProductSalePrice", error);
-      return { error: "세일가 변경에 실패했습니다." };
+      logSupabaseError("setProductSalePercent", error);
+      return { error: "세일 할인율 변경에 실패했습니다." };
     }
     revalidatePath("/admin/products");
     revalidatePath("/shop");
@@ -1233,6 +1228,7 @@ export interface AdminVariantDetail {
   priceOverride: number | null;
   isActive: boolean;
   displayOrder: number;
+  stock: number | null;
 }
 export interface AdminProductImage {
   id: string;
@@ -1346,6 +1342,7 @@ export async function getAdminProductDetail(id: string): Promise<AdminProductDet
           priceOverride: v.price_override == null ? null : Number(v.price_override),
           isActive: Boolean(v.is_active),
           displayOrder: Number(v.display_order ?? 0),
+          stock: v.stock == null ? null : Number(v.stock),
         })),
     };
   } catch {
@@ -1420,6 +1417,8 @@ export interface VariantInput {
   priceOverride: number | null;
   isActive: boolean;
   displayOrder: number;
+  /** 옵션별 재고. null=재고 미추적 */
+  stock: number | null;
 }
 
 function variantRow(v: VariantInput) {
@@ -1432,6 +1431,7 @@ function variantRow(v: VariantInput) {
     price_override: v.priceOverride == null || Number.isNaN(v.priceOverride) ? null : Math.round(v.priceOverride),
     is_active: v.isActive,
     display_order: Math.round(v.displayOrder) || 0,
+    stock: v.stock == null || Number.isNaN(v.stock) ? null : Math.max(0, Math.round(v.stock)),
   };
 }
 

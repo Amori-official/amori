@@ -18,6 +18,8 @@ export interface ProductVariant {
   imageUrl?: string;
   priceOverride?: number;
   isActive: boolean;
+  /** 옵션별 재고. null=재고 미추적(무제한), 0=품절 */
+  stock?: number | null;
 }
 
 export interface Product {
@@ -29,8 +31,8 @@ export interface Product {
   shortDescription?: string;
   /** 사이즈별 가격 차이가 없는 상품의 기본가. sizes가 있으면 sizes[].price가 실제 판매가로 우선 적용됨 */
   price: number;
-  /** 상품별 세일가(원). 세일 기간(site_settings)에 활성이고 이 값이 정가 미만이면 세일가로 판매. null이면 세일 제외 */
-  salePrice?: number | null;
+  /** 상품별 세일 할인율(%). 세일 기간(site_settings)에 활성이면 각 옵션 가격에 적용. null/0이면 세일 제외 */
+  salePercent?: number | null;
   imageUrl: string | null;
   images: string[];
   colors?: ProductColor[];

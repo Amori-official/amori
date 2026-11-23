@@ -63,14 +63,18 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
   const isSplitAxis = isSplitAxisProduct(product.variants);
   // variant가 있는 상품은 "선택 조합이 존재하지 않음" 또는 "품절/판매중지"를 기준으로 판단하고,
   // variant가 없는 상품은 기존과 동일하게 레거시 stock 필드를 기준으로 판단한다.
-  const isSoldOut = hasVariants ? !resolvedVariant || !resolvedVariant.isActive : product.stock === 0;
+  const isSoldOut = hasVariants
+    ? !resolvedVariant ||
+      !resolvedVariant.isActive ||
+      (resolvedVariant.stock != null && resolvedVariant.stock <= 0)
+    : product.stock === 0;
   const isBlocked = isSplitAxis || isSoldOut;
 
   const displayPrice = selectedSize
     ? (product.sizes?.find((s) => s.name === selectedSize)?.price ?? product.price)
     : product.price;
   const { active: saleActive, label: saleLabel } = useSale();
-  const sale = effectivePrice(displayPrice, product.salePrice, saleActive);
+  const sale = effectivePrice(displayPrice, product.salePercent, saleActive);
 
   // 옵션이 "종류 · 색상" 조합(세컨드 등)이면 2단(종류→색상)으로 나눠 보여준다.
   const comboOptions =

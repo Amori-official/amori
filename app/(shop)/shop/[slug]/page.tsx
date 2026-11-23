@@ -12,10 +12,12 @@ export const revalidate = 30;
 
 interface Props {
   params: { slug: string };
-  searchParams: { color?: string };
+  searchParams: { color?: string; preview?: string };
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://amori.kr";
+// 출시예정 상품을 로그인/관리자 없이 미리보기 위한 공유 토큰(?preview=...).
+const PREVIEW_TOKEN = "amori-bf-2026";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProductBySlug(params.slug);
@@ -44,11 +46,14 @@ export default async function ProductDetailPage({ params, searchParams }: Props)
   const product = await getProductBySlug(params.slug);
 
   if (!product) notFound();
-  // 출시 예정(coming soon) 상품은 일반 고객에겐 상세 열람·구매를 막고 /shop으로
-  // 돌려보낸다. 단, 관리자(로그인)는 출시 전 미리보기를 위해 그대로 열람할 수 있다.
+  // 출시 예정(coming soon) 상품은 일반 고객에겐 상세 열람·구매를 막고 /shop으로 돌려보낸다.
+  // 예외: ①관리자(로그인) ②미리보기 링크(?preview=토큰) — 동업자 등에게 공유해 사전 확인용.
   if (product.isComingSoon) {
-    const isAdmin = await isCurrentUserAdmin();
-    if (!isAdmin) redirect("/shop");
+    const previewOk = searchParams?.preview === PREVIEW_TOKEN;
+    if (!previewOk) {
+      const isAdmin = await isCurrentUserAdmin();
+      if (!isAdmin) redirect("/shop");
+    }
   }
 
   const productReviews = await getProductReviews(product.id);

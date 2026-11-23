@@ -8,7 +8,7 @@ import {
   setVariantActive,
   setProductStock,
   setProductCategory,
-  setProductSalePrice,
+  setProductSalePercent,
   setProductComingSoon,
   deleteProduct,
   type AdminProduct,
@@ -121,8 +121,11 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                   </div>
                   <p className="text-[13px] text-brand-gray-mid mt-1">
                     {p.category ?? "-"} · ₩{p.price.toLocaleString("ko-KR")}
-                    {p.salePrice != null && (
-                      <span className="text-red-600"> → 세일 ₩{p.salePrice.toLocaleString("ko-KR")}</span>
+                    {p.salePercent != null && p.salePercent > 0 && (
+                      <span className="text-red-600">
+                        {" "}→ 세일 {p.salePercent}%(₩
+                        {Math.round((p.price * (100 - p.salePercent)) / 100).toLocaleString("ko-KR")})
+                      </span>
                     )}
                     {" "}· 재고 {p.stock.toLocaleString("ko-KR")} · /{p.slug}
                   </p>
@@ -183,6 +186,7 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                   <div className="flex flex-wrap gap-2">
                     {p.variants.map((v) => {
                       const label = [v.colorName, v.optionName].filter(Boolean).join(" · ") || "기본";
+                      const outOfStock = v.stock != null && v.stock <= 0;
                       return (
                         <button
                           key={v.id}
@@ -191,18 +195,22 @@ export default function ProductsAdminClient({ products }: { products: AdminProdu
                           disabled={pending && busyId === v.id}
                           title={v.isActive ? "클릭 시 품절 처리" : "클릭 시 판매 재개"}
                           className={`px-3 h-8 text-[12px] tracking-wide border transition-colors disabled:opacity-50 ${
-                            v.isActive
-                              ? "border-brand-border text-brand-black hover:bg-brand-gray-light"
-                              : "border-red-200 bg-red-50 text-red-500 line-through"
+                            !v.isActive
+                              ? "border-red-200 bg-red-50 text-red-500 line-through"
+                              : outOfStock
+                                ? "border-amber-300 bg-amber-50 text-amber-700"
+                                : "border-brand-border text-brand-black hover:bg-brand-gray-light"
                           }`}
                         >
                           {label}
+                          {v.stock != null && <span className="ml-1 opacity-70">· {v.stock}개</span>}
                         </button>
                       );
                     })}
                   </div>
                   <p className="text-[12px] text-brand-gray-mid mt-2">
-                    옵션을 클릭하면 판매/품절이 전환됩니다. (품절 = 빨간 취소선)
+                    옵션을 클릭하면 판매/품절이 전환됩니다. (빨간 취소선=품절 처리, 노란색=재고 0) · 옵션별 재고·가격은
+                    &lsquo;수정&rsquo;에서 입력하세요.
                   </p>
                 </div>
               )}
@@ -226,8 +234,8 @@ function InventoryEditor({
 }) {
   const [stock, setStock] = useState(String(product.stock));
   const [category, setCategory] = useState(product.category ?? "");
-  const [salePriceInput, setSalePriceInput] = useState(
-    product.salePrice != null ? String(product.salePrice) : ""
+  const [salePercentInput, setSalePercentInput] = useState(
+    product.salePercent != null && product.salePercent > 0 ? String(product.salePercent) : ""
   );
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
@@ -235,9 +243,9 @@ function InventoryEditor({
 
   const stockChanged = stock.trim() !== "" && Number(stock) !== product.stock;
   const categoryChanged = category.trim() !== (product.category ?? "");
-  const salePriceParsed = salePriceInput.trim() === "" ? null : Number(salePriceInput);
-  const salePriceChanged = salePriceParsed !== (product.salePrice ?? null);
-  const dirty = stockChanged || categoryChanged || salePriceChanged;
+  const salePercentParsed = salePercentInput.trim() === "" ? null : Number(salePercentInput);
+  const salePercentChanged = salePercentParsed !== (product.salePercent ?? null);
+  const dirty = stockChanged || categoryChanged || salePercentChanged;
 
   const save = () => {
     setErr(null);
@@ -257,8 +265,8 @@ function InventoryEditor({
           return;
         }
       }
-      if (salePriceChanged) {
-        const res = await setProductSalePrice(product.id, salePriceParsed);
+      if (salePercentChanged) {
+        const res = await setProductSalePercent(product.id, salePercentParsed);
         if (res.error) {
           setErr(res.error);
           return;
@@ -285,14 +293,18 @@ function InventoryEditor({
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-[12px] tracking-widest text-brand-gray-mid">
-            세일가 (정가 ₩{product.price.toLocaleString("ko-KR")})
+            세일 할인율(%)
+            {salePercentParsed && salePercentParsed > 0
+              ? ` → ₩${Math.round((product.price * (100 - salePercentParsed)) / 100).toLocaleString("ko-KR")}`
+              : ""}
           </span>
           <input
             type="number"
             inputMode="numeric"
             min={0}
-            value={salePriceInput}
-            onChange={(e) => setSalePriceInput(e.target.value.replace(/[^0-9]/g, ""))}
+            max={100}
+            value={salePercentInput}
+            onChange={(e) => setSalePercentInput(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))}
             placeholder="세일 제외"
             className="h-9 w-28 border border-brand-border px-2 text-[13px] focus:outline-none focus:border-brand-black"
           />
@@ -324,8 +336,9 @@ function InventoryEditor({
         {err && <span className="text-[12px] text-red-500">{err}</span>}
       </div>
       <p className="text-[12px] text-brand-gray-mid mt-2">
-        재고를 0으로 두면 상품이 &lsquo;품절&rsquo;로 표시됩니다. 세일가는 비우면 세일 제외, 입력하면
-        세일 기간(콘텐츠 관리에서 설정)에 그 가격으로 판매됩니다.
+        재고를 0으로 두면 상품이 &lsquo;품절&rsquo;로 표시됩니다. 세일 할인율(%)은 비우면 세일 제외,
+        입력하면 세일 기간(콘텐츠 관리에서 설정)에 각 옵션 가격에서 그 비율만큼 할인됩니다. (예: 10 → 10%
+        할인, 사이즈별 가격이 달라도 각각 적용)
       </p>
     </div>
   );

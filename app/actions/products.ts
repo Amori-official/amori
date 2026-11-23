@@ -20,6 +20,7 @@ interface VariantRow {
   price_override: number | null;
   is_active: boolean;
   display_order: number;
+  stock: number | null;
 }
 
 interface ImageRow {
@@ -57,7 +58,7 @@ function mapRow(row: Record<string, unknown>): Product {
   const renewal = byRole("renewal");
 
   const price = Number(row.price);
-  const salePrice = row.sale_price != null ? Number(row.sale_price) : null;
+  const salePercent = row.sale_percent != null ? Number(row.sale_percent) : null;
 
   // colors/sizes는 활성 variant에서만 파생한다 — 비활성 처리된 행(예: 색상+
   // 사이즈 조합형 정비 후 남겨둔 split-axis 레거시 행)이 선택지에 다시
@@ -101,6 +102,7 @@ function mapRow(row: Record<string, unknown>): Product {
     ...(v.image_url ? { imageUrl: v.image_url } : {}),
     ...(v.price_override !== null ? { priceOverride: v.price_override } : {}),
     isActive: v.is_active,
+    stock: v.stock ?? null,
   }));
 
   return {
@@ -111,7 +113,7 @@ function mapRow(row: Record<string, unknown>): Product {
     description: String(row.description ?? ""),
     shortDescription: row.short_description ? String(row.short_description) : undefined,
     price,
-    salePrice,
+    salePercent,
     imageUrl: hero ? hero.image_url : null,
     images: gallery.map((i) => i.image_url),
     colors: colors.length > 0 ? colors : undefined,
