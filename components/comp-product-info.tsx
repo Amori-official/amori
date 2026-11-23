@@ -31,9 +31,20 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
     initialColor ?? product.colors?.[0]?.name
   );
-  const [selectedSize, setSelectedSize] = useState<string | undefined>(
-    product.sizes?.[0]?.name
-  );
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(() => {
+    const sizes = product.sizes;
+    if (!sizes || sizes.length === 0) return undefined;
+    // 조합형(종류·색상)은 품절이 아닌 첫 옵션으로 시작(전부 품절이면 첫 옵션).
+    const combo = sizes.every((s) => s.name.includes(" · "));
+    if (combo) {
+      const inStock = sizes.find((s) => {
+        const v = product.variants?.find((x) => x.optionName === s.name && x.isActive);
+        return !(v && v.stock != null && v.stock <= 0);
+      });
+      return (inStock ?? sizes[0]).name;
+    }
+    return sizes[0].name;
+  });
 
   // Meta 광고 전환 추적: 상품 상세 조회 (상품당 1회)
   const viewTrackedRef = useRef<string | null>(null);
@@ -101,6 +112,15 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
   const isColorSoldOut = (colorName: string) => {
     const vs = product.variants?.filter((x) => x.colorName === colorName && x.isActive) ?? [];
     return vs.length > 0 && vs.every((x) => x.stock != null && x.stock <= 0);
+  };
+  // 조합형: 종류 전체 품절 여부 / 종류의 첫 '재고 있는' 색상(없으면 첫 색상).
+  const isTypeSoldOut = (type: string) => {
+    const opts = product.sizes?.filter((s) => parseOpt(s.name).type === type) ?? [];
+    return opts.length > 0 && opts.every((s) => isSizeSoldOut(s.name));
+  };
+  const firstInStockOfType = (type: string): string | undefined => {
+    const opts = product.sizes?.filter((s) => parseOpt(s.name).type === type) ?? [];
+    return (opts.find((s) => !isSizeSoldOut(s.name)) ?? opts[0])?.name;
   };
 
   const stockLabel = () => {
@@ -196,32 +216,49 @@ export default function CompProductInfo({ product, initialColor, giftBox, taglin
             <select
               value={selOpt?.type ?? ""}
               onChange={(e) => {
-                const first = product.sizes!.find((s) => parseOpt(s.name).type === e.target.value);
-                if (first) setSelectedSize(first.name);
+                const next = firstInStockOfType(e.target.value);
+                if (next) setSelectedSize(next);
               }}
               className="h-11 border border-brand-border px-3 text-[14px] bg-white text-brand-black focus:outline-none focus:border-brand-black cursor-pointer"
             >
-              {comboTypes.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[13px] tracking-widest text-brand-gray-mid">옵션 2 · 색상</label>
-            <select
-              value={selOpt?.color ?? ""}
-              onChange={(e) => setSelectedSize(`${selOpt?.type} · ${e.target.value}`)}
-              className="h-11 border border-brand-border px-3 text-[14px] bg-white text-brand-black focus:outline-none focus:border-brand-black cursor-pointer"
-            >
-              {comboColors.map((c) => {
-                const so = selOpt ? isSizeSoldOut(`${selOpt.type} · ${c}`) : false;
+              {comboTypes.map((t) => {
+                const so = isTypeSoldOut(t);
                 return (
-                  <option key={c} value={c} disabled={so}>
-                    {c}{so ? " — 품절" : ""}
+                  <option key={t} value={t} disabled={so}>
+                    {t}{so ? " (품절)" : ""}
                   </option>
                 );
               })}
             </select>
+          </div>
+          {/* 옵션2 색상 — 품절 색상도 보이게(중간선+품절), 선택은 재고 있는 것만 */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[13px] tracking-widest text-brand-gray-mid">옵션 2 · 색상</label>
+            <div className="flex flex-wrap gap-2">
+              {comboColors.map((c) => {
+                const full = `${selOpt?.type} · ${c}`;
+                const so = selOpt ? isSizeSoldOut(full) : false;
+                const selected = selOpt?.color === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    disabled={so}
+                    onClick={() => !so && setSelectedSize(full)}
+                    aria-pressed={selected}
+                    className={`h-10 px-4 border text-[14px] tracking-wide transition-all ${
+                      so
+                        ? "border-brand-border text-brand-gray-mid line-through opacity-50 cursor-not-allowed"
+                        : selected
+                          ? "border-brand-black bg-brand-black text-white"
+                          : "border-brand-border text-brand-black hover:border-brand-gray-mid"
+                    }`}
+                  >
+                    {c}{so ? " (품절)" : ""}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : (
