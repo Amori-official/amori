@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/store/ui";
 import { useAuthStore } from "@/store/auth";
+import { useSale } from "@/components/providers/sale-provider";
 
 const KAKAO_FRIEND_URL = "https://pf.kakao.com/_dDmTX/friend";
 
@@ -27,6 +28,10 @@ export default function CompCartBenefits({
 
   useEffect(() => setMounted(true), []);
   const isMember = mounted && !!user;
+  const sale = useSale();
+
+  // 세일 기간엔 쿠폰 중복 사용이 불가(결제에서 쿠폰 숨김)하므로 쿠폰 혜택 안내도 숨긴다.
+  if (sale.active) return null;
 
   const linkCls =
     "underline underline-offset-2 text-brand-black hover:text-brand-gray-mid transition-colors";
