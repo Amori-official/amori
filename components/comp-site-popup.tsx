@@ -101,10 +101,12 @@ export default function CompSitePopup(props: Props) {
           </div>
         )}
 
-        <div className="p-6">
-          {props.title && <h3 className="text-base font-medium tracking-wide mb-2">{props.title}</h3>}
+        <div className="p-5">
+          {props.title && (
+            <h3 className="text-[15px] font-medium tracking-wide mb-2 break-keep">{props.title}</h3>
+          )}
           {props.body && (
-            <p className="text-sm text-brand-gray-mid tracking-wide leading-6 whitespace-pre-line">
+            <p className="text-[13px] text-brand-gray-mid leading-[1.7] whitespace-pre-line break-keep">
               {props.body}
             </p>
           )}
