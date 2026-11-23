@@ -29,6 +29,15 @@ export interface CreateOrderResult {
   fulfillmentStatus: string;
 }
 
+// 성공 시 주문 결과, 실패 시 고객에게 보여줄 메시지를 "데이터로" 돌려준다.
+// (에러를 throw하면 프로덕션 빌드에서 Next.js가 메시지를 가려버려 — "An error occurred
+//  in the Server Components render..." — 고객이 실제 사유(재고 부족 등)를 볼 수 없다.)
+export type CreateOrderOutcome =
+  | ({ ok: true } & CreateOrderResult)
+  | { ok: false; message: string };
+
+const GENERIC_ORDER_ERROR = "주문을 생성하지 못했습니다. 다시 시도해주세요.";
+
 interface CreateOrderRpcResponse {
   order_id: string;
   order_number: string;
@@ -48,12 +57,18 @@ interface CreateOrderRpcResponse {
  * 가격/배송비/최종금액/상품정보는 전부 RPC(서버) 쪽에서 결정되며,
  * 이 함수는 그 값을 그대로 전달만 한다 — 클라이언트 값을 신뢰하지 않는다.
  */
-export async function createOrderSecure(raw: unknown): Promise<CreateOrderResult> {
+export async function createOrderSecure(raw: unknown): Promise<CreateOrderOutcome> {
   if (!isSupabaseConfigured()) {
-    throw new Error("주문 기능을 사용할 수 없습니다.");
+    return { ok: false, message: "주문 기능을 사용할 수 없습니다." };
   }
 
-  const input: CreateOrderInput = parseCreateOrderInput(raw);
+  let input: CreateOrderInput;
+  try {
+    input = parseCreateOrderInput(raw);
+  } catch (err) {
+    // 입력(장바구니) 형식 검증 실패 — 사용자용 메시지를 그대로 전달.
+    return { ok: false, message: err instanceof Error ? err.message : GENERIC_ORDER_ERROR };
+  }
 
   const supabase = createServerSideClient();
   const { data, error } = await supabase.rpc("create_order", {
@@ -79,11 +94,20 @@ export async function createOrderSecure(raw: unknown): Promise<CreateOrderResult
 
   if (error || !data) {
     logSupabaseError("createOrder", error);
-    throw new Error("주문을 생성하지 못했습니다. 다시 시도해주세요.");
+    // create_order가 raise exception으로 올린 안내(PostgreSQL code 'P0001')는
+    // 고객용으로 설계된 한글 메시지라 그대로 보여준다
+    // (예: "재고가 부족합니다 (테리빕 · 옐로우)", "최소 주문금액 미달", 쿠폰 안내 등).
+    // 그 외(시스템 오류·버그)는 민감정보 노출 없이 일반 메시지로.
+    const message =
+      error?.code === "P0001" && typeof error.message === "string" && error.message.length > 0
+        ? error.message
+        : GENERIC_ORDER_ERROR;
+    return { ok: false, message };
   }
 
   const result = data as CreateOrderRpcResponse;
   return {
+    ok: true,
     orderId: result.order_id,
     orderNumber: result.order_number,
     subtotalAmount: result.subtotal_amount,

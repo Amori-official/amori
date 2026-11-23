@@ -441,7 +441,7 @@ export default function CheckoutPage() {
     //    주문자·배송지 정보만 전달한다.
     let order;
     try {
-      order = await createOrderSecure({
+      const outcome = await createOrderSecure({
         items: items.map((i) => ({
           productId: i.product.id,
           variantId: i.variantId,
@@ -461,11 +461,16 @@ export default function CheckoutPage() {
         pointsToUse,
         attribution: getAttribution(),
       });
-    } catch (err) {
+      // 실패 시 서버가 돌려준 실제 사유(재고 부족 등)를 그대로 보여준다.
+      if (!outcome.ok) {
+        setSubmitting(false);
+        setFormError(outcome.message);
+        return;
+      }
+      order = outcome;
+    } catch {
       setSubmitting(false);
-      setFormError(
-        err instanceof Error ? err.message : "주문을 생성하지 못했습니다. 다시 시도해주세요."
-      );
+      setFormError("주문을 생성하지 못했습니다. 다시 시도해주세요.");
       return;
     }
 
