@@ -23,7 +23,12 @@ export default function CompProductCard({ product, comingSoon }: Props) {
   const { add } = useCartStore();
   const { setCartOpen } = useUIStore();
   const { active: saleActive } = useSale();
-  const sale = effectivePrice(product.price, product.salePercent, saleActive);
+  // 사이즈 상품은 최저가(from) 기준, 그 외는 기본가 기준으로 세일 계산.
+  const isSized = !!product.sizes && product.sizes.length > 0;
+  const basePrice = isSized ? Math.min(...product.sizes!.map((s) => s.price)) : product.price;
+  const priceSuffix = isSized ? "~" : "";
+  const sale = effectivePrice(basePrice, product.salePercent, saleActive);
+  const salePct = sale.onSale ? Math.round((1 - sale.price / sale.original) * 100) : 0;
 
   const displayImage = hoveredImage ?? CARD_DEFAULT_IMAGE[product.slug] ?? product.imageUrl;
 
