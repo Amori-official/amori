@@ -27,11 +27,13 @@ const FULFILLMENT_OPTIONS = [
 const FULFILLMENT_FILTERS = [{ value: "", label: "전체 배송상태" }, ...FULFILLMENT_OPTIONS];
 
 const PAYMENT_FILTERS = [
+  // 기본 목록은 "실제 결제된 적 있는 주문"만 보여준다(미결제 이탈은 숨김).
   { value: "", label: "전체 결제상태" },
   { value: "paid", label: "결제 완료" },
-  { value: "ready", label: "결제 대기" },
   { value: "cancelled", label: "결제 취소" },
   { value: "failed", label: "결제 실패" },
+  // 결제만 시도하고 나간 미결제 주문을 따로 볼 때.
+  { value: "unpaid", label: "미결제 이탈" },
 ];
 
 // 취소는 전용 '주문 취소' 버튼(쿠폰 복원 포함)으로만 처리한다 — 드롭다운에서는 제외.

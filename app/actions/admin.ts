@@ -497,8 +497,18 @@ export async function getAdminOrders(filters?: {
     if (filters?.fulfillment && FULFILLMENT_VALUES.includes(filters.fulfillment)) {
       query = query.eq("fulfillment_status", filters.fulfillment);
     }
-    if (filters?.payment && PAYMENT_FILTER_VALUES.includes(filters.payment)) {
-      query = query.eq("payment_status", filters.payment);
+    // 결제 필터.
+    // 기본(전체/특정 상태)은 "한 번이라도 결제된 주문"(paid_at 있음)만 보여준다 —
+    // 결제만 시도하고 나간 미결제 주문(결제대기·미결제취소)은 목록을 지저분하게 만들어 숨긴다.
+    // 실제 결제 후 취소/환불은 paid_at이 남아 있어 그대로 보인다.
+    // "미결제 이탈"(unpaid) 필터를 고르면 반대로 그 미결제 주문만 보여준다.
+    if (filters?.payment === "unpaid") {
+      query = query.is("paid_at", null);
+    } else {
+      query = query.not("paid_at", "is", null);
+      if (filters?.payment && PAYMENT_FILTER_VALUES.includes(filters.payment)) {
+        query = query.eq("payment_status", filters.payment);
+      }
     }
     const q = filters?.q?.trim();
     if (q) {
