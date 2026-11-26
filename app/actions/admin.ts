@@ -635,7 +635,22 @@ export interface AdminOrderDetail {
   cancelledBy: string | null;
   cancelReason: string;
   attribution: Attribution | null;
-  items: { productName: string; variantLabel: string; quantity: number; price: number }[];
+  // 부분 취소용 금액 컨텍스트.
+  pointsUsed: number;
+  refundedAmount: number;
+  pointsRefunded: number;
+  shippingReclaimed: boolean;
+  freeShippingThreshold: number;
+  shippingBaseFee: number;
+  items: {
+    id: string;
+    productName: string;
+    variantLabel: string;
+    quantity: number;
+    price: number;
+    /** 이미 취소된 수량(부분취소 누적) */
+    cancelledQuantity: number;
+  }[];
 }
 
 // 배송 자동조회 진단 — 관리자가 특정 주문의 택배 자동전환이 왜 안 되는지 눈으로 확인.
@@ -687,7 +702,7 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
     await syncShippedDelivery(supabase, [id]);
     const { data, error } = await supabase
       .from("orders")
-      .select("*, order_items(product_name, variant_label, quantity, price)")
+      .select("*, order_items(id, product_name, variant_label, quantity, price, variant_id, cancelled_quantity)")
       .eq("id", id)
       .single();
     if (error || !data) {
@@ -708,6 +723,13 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
       const c = (Array.isArray(raw) ? raw[0] : raw) as { name?: string } | undefined;
       couponName = c?.name ?? null;
     }
+
+    // 배송비 정책(부분취소 환불 계산용).
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("free_shipping_threshold, shipping_base_fee")
+      .eq("id", "default")
+      .maybeSingle();
 
     return {
       id: s(d.id),
@@ -738,11 +760,19 @@ export async function getAdminOrderDetail(id: string): Promise<AdminOrderDetail 
       cancelledBy: d.cancelled_by ? s(d.cancelled_by) : null,
       cancelReason: s(d.cancel_reason),
       attribution: toAttribution(d.attribution),
+      pointsUsed: Number(d.points_used ?? 0),
+      refundedAmount: Number(d.refunded_amount ?? 0),
+      pointsRefunded: Number(d.points_refunded ?? 0),
+      shippingReclaimed: Boolean(d.shipping_reclaimed),
+      freeShippingThreshold: Number(settings?.free_shipping_threshold ?? 50000),
+      shippingBaseFee: Number(settings?.shipping_base_fee ?? 3000),
       items: (Array.isArray(d.order_items) ? (d.order_items as Record<string, unknown>[]) : []).map((i) => ({
+        id: s(i.id),
         productName: s(i.product_name),
         variantLabel: s(i.variant_label),
         quantity: Number(i.quantity ?? 0),
         price: Number(i.price ?? 0),
+        cancelledQuantity: Number(i.cancelled_quantity ?? 0),
       })),
     };
   } catch {
@@ -799,9 +829,10 @@ async function cancelOrderCore(
     return { error: "이미 취소된 주문입니다." };
   }
 
-  // 결제 완료 건은 토스 환불을 선 처리한다. 성공해야 상태를 취소로 바꾼다.
+  // 결제 완료 건(부분환불 포함)은 토스 환불을 선 처리한다. 성공해야 상태를 취소로 바꾼다.
+  // 부분환불된 주문은 토스에 '잔액'만 남아 있고, cancelAmount 없이 호출하면 잔액 전액이 환불된다.
   let nextPaymentStatus = "cancelled";
-  if (cur.payment_status === "paid") {
+  if (cur.payment_status === "paid" || cur.payment_status === "partially_refunded") {
     const { data: pay } = await supabase
       .from("payments")
       .select("payment_key")
@@ -892,6 +923,133 @@ export async function bulkCancelOrders(ids: string[]): Promise<BulkCancelResult>
     return { cancelled, failed };
   } catch (e) {
     return { cancelled: 0, failed: [], error: e instanceof Error ? e.message : "오류가 발생했습니다." };
+  }
+}
+
+// ── 부분 취소 (관리자 전용) ──────────────────────────────
+// 주문의 일부 상품만 취소 + 비례 환불. 현금은 토스 부분환불, 포인트는 반환, 쿠폰은 유지.
+// 배송 전(미결제 아님·결제됨/부분환불·미발송)인 주문만 허용하고, 최소 1개 활성 상품은 남겨야 한다.
+export interface PartialCancelLine {
+  itemId: string;
+  qty: number;
+}
+export interface PartialCancelResult {
+  error?: string;
+  cardRefund?: number;
+  pointsReturn?: number;
+  shippingReclaim?: number;
+}
+
+export async function partialCancelOrder(
+  orderId: string,
+  lines: PartialCancelLine[]
+): Promise<PartialCancelResult> {
+  try {
+    const supabase = createServerSideClient();
+    await requireAdmin(supabase);
+
+    const cleanLines = (Array.isArray(lines) ? lines : [])
+      .map((l) => ({ itemId: String(l.itemId), qty: Math.floor(Number(l.qty) || 0) }))
+      .filter((l) => l.itemId && l.qty > 0);
+    if (cleanLines.length === 0) return { error: "취소할 상품을 선택해주세요." };
+
+    // 주문 + 상품 로드.
+    const { data: order, error: oErr } = await supabase
+      .from("orders")
+      .select(
+        "order_status, payment_status, fulfillment_status, subtotal_amount, discount_amount, points_used, points_refunded, shipping_fee, shipping_reclaimed, order_items(id, price, quantity, cancelled_quantity, variant_id)"
+      )
+      .eq("id", orderId)
+      .single();
+    if (oErr || !order) return { error: "주문을 찾을 수 없습니다." };
+
+    if (order.order_status === "cancelled") return { error: "이미 취소된 주문입니다." };
+    if (order.payment_status !== "paid" && order.payment_status !== "partially_refunded") {
+      return { error: "결제 완료(또는 부분환불) 주문만 부분취소할 수 있습니다." };
+    }
+    const ful = String(order.fulfillment_status ?? "unfulfilled");
+    if (ful !== "unfulfilled" && ful !== "preparing") {
+      return { error: "이미 배송이 시작된 주문입니다. 반품 절차를 이용해주세요." };
+    }
+
+    const items = (Array.isArray(order.order_items) ? order.order_items : []).map((i) => ({
+      id: String(i.id),
+      price: Number(i.price ?? 0),
+      quantity: Number(i.quantity ?? 0),
+      cancelledQuantity: Number(i.cancelled_quantity ?? 0),
+      variantId: i.variant_id ? String(i.variant_id) : null,
+    }));
+
+    // 배송비 정책(무료배송 기준·기본 배송비).
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("free_shipping_threshold, shipping_base_fee")
+      .eq("id", "default")
+      .maybeSingle();
+
+    const { computePartialRefund } = await import("@/lib/partial-refund");
+    const refund = computePartialRefund(
+      {
+        subtotalAmount: Number(order.subtotal_amount ?? 0),
+        discountAmount: Number(order.discount_amount ?? 0),
+        pointsUsed: Number(order.points_used ?? 0),
+        pointsRefunded: Number(order.points_refunded ?? 0),
+        shippingFee: Number(order.shipping_fee ?? 0),
+        shippingReclaimed: Boolean(order.shipping_reclaimed),
+        freeShippingThreshold: Number(settings?.free_shipping_threshold ?? 50000),
+        shippingBaseFee: Number(settings?.shipping_base_fee ?? 3000),
+      },
+      items,
+      cleanLines
+    );
+    if (refund.error) return { error: refund.error };
+
+    // 토스 부분 환불(환불 현금이 있을 때만). 성공해야 DB를 반영한다.
+    if (refund.cardRefund > 0) {
+      const { data: pay } = await supabase
+        .from("payments")
+        .select("payment_key")
+        .eq("order_id", orderId)
+        .not("payment_key", "is", null)
+        .maybeSingle();
+      if (!pay?.payment_key) {
+        return { error: "결제키를 찾을 수 없어 환불할 수 없습니다. 고객센터 확인이 필요합니다." };
+      }
+      try {
+        const { cancelTossPayment } = await import("@/lib/toss");
+        await cancelTossPayment(String(pay.payment_key), "관리자 부분 취소", refund.cardRefund);
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : "환불 처리에 실패했습니다." };
+      }
+    }
+
+    // DB 반영(수량 검증 + 취소수량 + 재고 + 금액/상태 + 포인트)을 RPC로 원자 처리.
+    const { error: rpcErr } = await supabase.rpc("partial_cancel_order", {
+      p_order_id: orderId,
+      p_lines: cleanLines.map((l) => ({ item_id: l.itemId, qty: l.qty })),
+      p_card_refund: refund.cardRefund,
+      p_points_return: refund.pointsReturn,
+      p_shipping_reclaim: refund.shippingReclaim,
+    });
+    if (rpcErr) {
+      logSupabaseError("partialCancelOrder", rpcErr);
+      // 토스 환불은 이미 나갔는데 DB 반영 실패 — 운영자 확인 필요.
+      const detail =
+        refund.cardRefund > 0
+          ? ` (주의: 카드 ${refund.cardRefund.toLocaleString()}원은 이미 환불됨 — 고객센터 확인 필요)`
+          : "";
+      return { error: (rpcErr.code === "P0001" ? rpcErr.message : "부분 취소 반영에 실패했습니다.") + detail };
+    }
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+    return {
+      cardRefund: refund.cardRefund,
+      pointsReturn: refund.pointsReturn,
+      shippingReclaim: refund.shippingReclaim,
+    };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "오류가 발생했습니다." };
   }
 }
 

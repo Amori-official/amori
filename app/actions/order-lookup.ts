@@ -49,7 +49,7 @@ function deriveStatus(
   if (fulfillmentStatus === "delivered") return "delivered";
   if (fulfillmentStatus === "shipped") return "shipped";
   if (fulfillmentStatus === "preparing") return "preparing";
-  if (paymentStatus === "paid") return "confirmed";
+  if (paymentStatus === "paid" || paymentStatus === "partially_refunded") return "confirmed";
   return "pending";
 }
 

@@ -11,8 +11,10 @@ import {
   approveReturn,
   rejectReturn,
   adminDiagnoseTracking,
+  partialCancelOrder,
   type AdminOrderDetail,
 } from "@/app/actions/admin";
+import { computePartialRefund } from "@/lib/partial-refund";
 
 const won = (n: number) => `₩${n.toLocaleString("ko-KR")}`;
 
@@ -112,6 +114,78 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
   const doRejectReturn = () => {
     if (!confirm("반품 신청을 반려하시겠습니까?")) return;
     run(() => rejectReturn(order.id), "반품 신청을 반려했습니다.");
+  };
+
+  // ── 부분 취소 ──────────────────────────────────────────
+  // 결제됨/부분환불 + 배송 전(미처리·준비중) 주문만 부분취소 가능.
+  const partialEligible =
+    !cancelled &&
+    (order.paymentStatus === "paid" || order.paymentStatus === "partially_refunded") &&
+    (order.fulfillmentStatus === "unfulfilled" || order.fulfillmentStatus === "preparing");
+  // 아직 취소 안 된 수량이 남은 상품만 대상.
+  const partialItems = order.items.filter((it) => it.quantity - it.cancelledQuantity > 0);
+
+  const [partialOpen, setPartialOpen] = useState(false);
+  const [cancelQty, setCancelQty] = useState<Record<string, number>>({});
+
+  const setQty = (id: string, q: number, max: number) =>
+    setCancelQty((m) => ({ ...m, [id]: Math.max(0, Math.min(q, max)) }));
+
+  const partialLines = Object.entries(cancelQty)
+    .filter(([, q]) => q > 0)
+    .map(([itemId, qty]) => ({ itemId, qty }));
+
+  const preview = computePartialRefund(
+    {
+      subtotalAmount: order.subtotalAmount,
+      discountAmount: order.discountAmount,
+      pointsUsed: order.pointsUsed,
+      pointsRefunded: order.pointsRefunded,
+      shippingFee: order.shippingFee,
+      shippingReclaimed: order.shippingReclaimed,
+      freeShippingThreshold: order.freeShippingThreshold,
+      shippingBaseFee: order.shippingBaseFee,
+    },
+    order.items.map((it) => ({
+      id: it.id,
+      price: it.price,
+      quantity: it.quantity,
+      cancelledQuantity: it.cancelledQuantity,
+    })),
+    partialLines
+  );
+
+  const doPartialCancel = () => {
+    if (partialLines.length === 0 || preview.error) return;
+    const parts = [
+      `카드 환불: ${won(preview.cardRefund)}`,
+      preview.shippingReclaim > 0 ? `배송비 차감: -${won(preview.shippingReclaim)}` : "",
+      preview.pointsReturn > 0 ? `포인트 반환: ${preview.pointsReturn.toLocaleString()}P` : "",
+    ].filter(Boolean);
+    if (
+      !confirm(
+        `선택한 상품을 부분 취소합니다.\n\n${parts.join("\n")}\n\n` +
+          `토스페이먼츠로 카드 환불이 즉시 처리됩니다. 진행할까요?`
+      )
+    )
+      return;
+    setError(null);
+    setMsg(null);
+    startTransition(async () => {
+      const res = await partialCancelOrder(order.id, partialLines);
+      if (res.error) setError(res.error);
+      else {
+        const done = [
+          `카드 ${won(res.cardRefund ?? 0)} 환불`,
+          res.shippingReclaim ? `배송비 ${won(res.shippingReclaim)} 차감` : "",
+          res.pointsReturn ? `포인트 ${(res.pointsReturn).toLocaleString()}P 반환` : "",
+        ].filter(Boolean);
+        setMsg(`부분 취소 완료 — ${done.join(", ")}`);
+        setCancelQty({});
+        setPartialOpen(false);
+        router.refresh();
+      }
+    });
   };
 
   return (
@@ -310,9 +384,14 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
                 {it.variantLabel && (
                   <p className="text-[12px] text-brand-gray-mid mt-0.5">{it.variantLabel}</p>
                 )}
+                {it.cancelledQuantity > 0 && (
+                  <p className="text-[12px] text-red-500 mt-0.5">취소 {it.cancelledQuantity}개</p>
+                )}
               </div>
               <div className="text-right shrink-0 text-[13px]">
-                <p>{won(it.price)} × {it.quantity}</p>
+                <p className={it.cancelledQuantity >= it.quantity ? "line-through text-brand-gray-mid" : ""}>
+                  {won(it.price)} × {it.quantity}
+                </p>
                 <p className="font-medium">{won(it.price * it.quantity)}</p>
               </div>
             </li>
@@ -383,6 +462,119 @@ export default function OrderDetailClient({ order }: { order: AdminOrderDetail }
           <p className="text-[13px] text-brand-gray-mid">직접 방문 또는 기록 없음</p>
         )}
       </Section>
+
+      {/* 부분 취소 (관리자) */}
+      {partialEligible && partialItems.length > 0 && (
+        <Section title="부분 취소">
+          {order.refundedAmount > 0 && (
+            <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+              이미 {won(order.refundedAmount)} 부분 환불됨
+              {order.pointsRefunded > 0 ? ` · 포인트 ${order.pointsRefunded.toLocaleString()}P 반환됨` : ""}
+            </p>
+          )}
+          {!partialOpen ? (
+            <button
+              onClick={() => setPartialOpen(true)}
+              className="h-10 px-4 border border-amber-300 text-amber-700 text-[13px] tracking-widest hover:bg-amber-50"
+            >
+              일부 상품만 취소
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <ul className="divide-y divide-brand-border border-y border-brand-border">
+                {partialItems.map((it) => {
+                  const active = it.quantity - it.cancelledQuantity;
+                  const q = cancelQty[it.id] ?? 0;
+                  return (
+                    <li key={it.id} className="flex items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="text-[14px]">{it.productName}</p>
+                        <p className="text-[12px] text-brand-gray-mid mt-0.5">
+                          {it.variantLabel ? `${it.variantLabel} · ` : ""}
+                          {won(it.price)} · 취소가능 {active}개
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setQty(it.id, q - 1, active)}
+                          disabled={q <= 0}
+                          className="w-8 h-8 border border-brand-border text-[15px] disabled:opacity-40"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={0}
+                          max={active}
+                          value={q}
+                          onChange={(e) => setQty(it.id, parseInt(e.target.value, 10) || 0, active)}
+                          className="w-12 h-8 border border-brand-border text-center text-[13px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setQty(it.id, q + 1, active)}
+                          disabled={q >= active}
+                          className="w-8 h-8 border border-brand-border text-[15px] disabled:opacity-40"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {/* 환불 미리보기 */}
+              {partialLines.length > 0 && (
+                <div className="text-[13px] bg-brand-gray-light rounded p-3 space-y-1">
+                  {preview.error ? (
+                    <p className="text-red-500">{preview.error}</p>
+                  ) : (
+                    <>
+                      <Row label="취소 상품 금액" value={won(preview.cancelledSubtotal)} />
+                      {preview.pointsReturn > 0 && (
+                        <Row label="포인트 반환" value={`${preview.pointsReturn.toLocaleString()}P`} />
+                      )}
+                      {preview.shippingReclaim > 0 && (
+                        <Row label="⚠️ 무료배송 미달 배송비 차감" value={`- ${won(preview.shippingReclaim)}`} />
+                      )}
+                      <div className="flex justify-between pt-1.5 border-t border-brand-border mt-1.5">
+                        <dt className="font-medium">카드 환불액</dt>
+                        <dd className="font-medium text-[15px] text-amber-700">{won(preview.cardRefund)}</dd>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={doPartialCancel}
+                  disabled={pending || partialLines.length === 0 || !!preview.error}
+                  className="h-10 px-4 bg-amber-600 text-white text-[13px] tracking-widest hover:bg-amber-700 disabled:opacity-50"
+                >
+                  선택 상품 부분취소 · 환불
+                </button>
+                <button
+                  onClick={() => {
+                    setPartialOpen(false);
+                    setCancelQty({});
+                  }}
+                  disabled={pending}
+                  className="h-10 px-4 border border-brand-border text-[13px] tracking-widest hover:bg-brand-gray-light disabled:opacity-50"
+                >
+                  닫기
+                </button>
+              </div>
+              <p className="text-[12px] text-brand-gray-mid">
+                취소 상품 몫만큼 카드로 환불되고, 포인트는 반환됩니다(쿠폰은 복원되지 않음). 재고도 자동 복원됩니다.
+                전체를 취소하려면 아래 ‘주문 취소’를 사용하세요.
+              </p>
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* 취소 */}
       {!cancelled && (

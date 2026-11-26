@@ -21,7 +21,8 @@ function deriveOrderStatus(
   if (fulfillmentStatus === "delivered") return "delivered"; // 배송완료(택배사 추적 자동)
   if (fulfillmentStatus === "shipped") return "shipped"; // 배송중(송장 입력)
   if (fulfillmentStatus === "preparing") return "preparing"; // 배송준비중(관리자 전환)
-  if (paymentStatus === "paid") return "confirmed"; // 주문확인중(결제 직후)
+  // paid + partially_refunded(부분취소된 결제건) 모두 '주문확인중'으로 본다.
+  if (paymentStatus === "paid" || paymentStatus === "partially_refunded") return "confirmed"; // 주문확인중(결제 직후)
   return "pending"; // 결제 대기
 }
 
